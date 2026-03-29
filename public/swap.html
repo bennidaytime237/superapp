@@ -178,6 +178,31 @@ tailwind.config = {
 
 </main>
 
+<!-- Token Picker Modal -->
+<div id="token-modal" class="fixed inset-0 z-50 hidden">
+  <!-- Backdrop -->
+  <div class="absolute inset-0 bg-black/30 backdrop-blur-sm" onclick="closeTokenModal()"></div>
+  <!-- Panel -->
+  <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md bg-white rounded-3xl shadow-2xl p-8 max-h-[80vh] flex flex-col">
+    <!-- Header -->
+    <div class="flex items-center justify-between mb-6">
+      <h3 class="text-xl font-black text-on-background">Choose a token</h3>
+      <button onclick="closeTokenModal()" class="w-10 h-10 rounded-full bg-surface-container-low flex items-center justify-center hover:bg-surface-container-high transition-colors">
+        <span class="material-symbols-outlined text-on-surface-variant">close</span>
+      </button>
+    </div>
+    <!-- Token list -->
+    <div class="border border-outline-variant/15 rounded-2xl overflow-hidden">
+      <div class="px-5 py-3 border-b border-outline-variant/10">
+        <p class="font-bold text-on-surface text-sm">Wallet</p>
+      </div>
+      <div id="token-list" class="divide-y divide-outline-variant/10 overflow-y-auto max-h-[50vh]">
+        <!-- Populated by JS -->
+      </div>
+    </div>
+  </div>
+</div>
+
 <script>
 // ── Config ──
 const TW = 'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains';
@@ -248,6 +273,7 @@ async function updateBalance() {
   try {
     const res = await fetch(`/api/balances?address=${walletAddress}`);
     const data = await res.json();
+    cachedBalances = data;
     // find balance for this token on this chain
     const chainData = data[chainId] || {};
     const bal = chainData[token.symbol] || 0;
@@ -285,15 +311,59 @@ function setMode(m) {
   onAmountChange();
 }
 
-// ── Token / Chain cycling ──
+// ── Token picker modal ──
+let pickerSide = 'from'; // which side the modal is picking for
+let cachedBalances = null;
+
 function cycleToken(side) {
-  if (side === 'from') {
-    fromTokenIdx = (fromTokenIdx + 1) % TOKENS.length;
-    if (fromTokenIdx === toTokenIdx) fromTokenIdx = (fromTokenIdx + 1) % TOKENS.length;
+  openTokenModal(side);
+}
+
+function openTokenModal(side) {
+  pickerSide = side;
+  const modal = document.getElementById('token-modal');
+  const list = document.getElementById('token-list');
+  const chainId = CHAINS[mode === 'bridge' ? (side === 'from' ? fromChainIdx : toChainIdx) : 0].id;
+  const otherIdx = side === 'from' ? toTokenIdx : fromTokenIdx;
+
+  // Build rows
+  list.innerHTML = TOKENS.map((token, idx) => {
+    const icon = tokenIconUrl(token, chainId);
+    const bal = cachedBalances?.[chainId]?.[token.symbol] || 0;
+    const price = prices[token.symbol] || 0;
+    const usdVal = bal * price;
+    const isSelected = (side === 'from' ? fromTokenIdx : toTokenIdx) === idx;
+    const isOther = idx === otherIdx;
+    const dimmed = isOther ? 'opacity-40 pointer-events-none' : '';
+    const highlight = isSelected ? 'bg-primary-container/30' : 'hover:bg-surface-container-low';
+
+    return `<button onclick="selectToken(${idx})" class="w-full flex items-center gap-4 px-5 py-4 ${highlight} ${dimmed} transition-colors text-left">
+      <img src="${icon}" alt="${token.symbol}" class="w-10 h-10 rounded-full bg-surface-container" onerror="this.outerHTML='<div class=\\'w-10 h-10 rounded-full bg-surface-container flex items-center justify-center\\'><span class=\\'font-bold text-on-surface-variant\\'>${token.symbol[0]}</span></div>'"/>
+      <div class="flex-1 min-w-0">
+        <p class="font-bold text-on-background text-[15px] ${bal > 0 ? '' : 'text-on-surface-variant'}">${bal > 0 ? fmtNum(bal) + ' ' : '0 '}${token.symbol}</p>
+        <p class="text-sm text-on-surface-variant">${token.name}</p>
+      </div>
+      ${bal > 0 ? `<span class="text-sm text-on-surface-variant">$${fmtNum(usdVal)}</span>` : ''}
+      <span class="material-symbols-outlined text-on-surface-variant text-lg">chevron_right</span>
+    </button>`;
+  }).join('');
+
+  modal.classList.remove('hidden');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeTokenModal() {
+  document.getElementById('token-modal').classList.add('hidden');
+  document.body.style.overflow = '';
+}
+
+function selectToken(idx) {
+  if (pickerSide === 'from') {
+    fromTokenIdx = idx;
   } else {
-    toTokenIdx = (toTokenIdx + 1) % TOKENS.length;
-    if (toTokenIdx === fromTokenIdx) toTokenIdx = (toTokenIdx + 1) % TOKENS.length;
+    toTokenIdx = idx;
   }
+  closeTokenModal();
   updateTokenDisplay();
   updateBalance();
   onAmountChange();
