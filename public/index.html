@@ -5,7 +5,7 @@
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
 <title>Sage | Crypto Dashboard</title>
 <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&display=swap" rel="stylesheet"/>
 <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
 <script>
 tailwind.config = {
@@ -36,7 +36,7 @@ tailwind.config = {
         "on-tertiary-fixed":"#3a4f37","outline":"#727d7c",
         "primary-fixed":"#c9eea9","primary-container":"#c9eea9"
       },
-      fontFamily: { "headline":["Inter"], "body":["Inter"], "label":["Inter"] },
+      fontFamily: { "headline":["Outfit"], "body":["Outfit"], "label":["Outfit"] },
       borderRadius: { "DEFAULT":"1rem","lg":"2rem","xl":"3rem","full":"9999px" },
     },
   },
@@ -44,7 +44,7 @@ tailwind.config = {
 </script>
 <style>
   .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
-  body { font-family: 'Inter', sans-serif; }
+  body { font-family: 'Outfit', sans-serif; }
   .glass-panel { background: rgba(248,250,249,0.7); backdrop-filter: blur(20px); }
   .primary-gradient { background: linear-gradient(135deg, #486730 0%, #c9eea9 100%); }
   .chain-pill { transition: all 0.15s ease; }
@@ -89,23 +89,30 @@ tailwind.config = {
   </nav>
 
   <!-- Wallet Summary -->
-  <div class="mt-auto p-4 bg-surface-container rounded-3xl">
-    <div class="flex items-center gap-3 mb-3">
-      <div class="w-10 h-10 rounded-full primary-gradient flex items-center justify-center">
-        <span class="material-symbols-outlined text-on-primary text-sm">account_balance_wallet</span>
-      </div>
-      <div>
-        <p class="text-xs font-bold text-on-surface">Main Wallet</p>
-        <p class="text-xs text-on-surface-variant font-mono">0x71C7...32a1</p>
-      </div>
+  <div id="sidebar-wallet" class="mt-auto p-4 bg-surface-container rounded-3xl">
+    <div id="sidebar-disconnected">
+      <p class="text-xs text-on-surface-variant mb-3 text-center">Connect your wallet to get started</p>
+      <button onclick="connectWallet()" class="w-full py-3 px-4 primary-gradient text-on-primary rounded-full text-sm font-bold shadow-sm active:scale-[0.98] transition-transform">
+        Connect Wallet
+      </button>
     </div>
-    <div class="flex items-center justify-between mb-4 px-1">
-      <p class="text-sm font-black text-on-surface">$42,850.00</p>
-      <p class="text-xs font-bold text-primary">+2.4%</p>
+    <div id="sidebar-connected" class="hidden">
+      <div class="flex items-center gap-3 mb-3">
+        <div class="w-10 h-10 rounded-full primary-gradient flex items-center justify-center">
+          <span class="material-symbols-outlined text-on-primary text-sm">account_balance_wallet</span>
+        </div>
+        <div>
+          <p class="text-xs font-bold text-on-surface">Connected</p>
+          <p id="sidebar-addr" class="text-xs text-on-surface-variant font-mono">0x...</p>
+        </div>
+      </div>
+      <div class="flex items-center justify-between mb-4 px-1">
+        <p id="sidebar-total" class="text-sm font-black text-on-surface">$0.00</p>
+      </div>
+      <button onclick="window.location.href='swap.html'" class="w-full py-3 px-4 primary-gradient text-on-primary rounded-full text-sm font-bold shadow-sm active:scale-[0.98] transition-transform">
+        Swap & Bridge
+      </button>
     </div>
-    <button class="w-full py-3 px-4 primary-gradient text-on-primary rounded-full text-sm font-bold shadow-sm active:scale-[0.98] transition-transform">
-      Buy Crypto
-    </button>
   </div>
 </aside>
 
@@ -129,11 +136,11 @@ tailwind.config = {
       </div>
       <button class="p-2 text-on-surface-variant hover:bg-surface-container rounded-full transition-colors relative">
         <span class="material-symbols-outlined">notifications</span>
-        <span class="absolute top-1.5 right-1.5 w-2 h-2 bg-primary rounded-full"></span>
       </button>
-      <div class="w-10 h-10 rounded-full primary-gradient flex items-center justify-center text-on-primary text-sm font-bold">
-        SA
-      </div>
+      <button id="connect-btn" onclick="connectWallet()" class="flex items-center gap-2 px-4 py-2 primary-gradient text-on-primary rounded-full text-sm font-bold active:scale-95 transition-transform">
+        <span class="material-symbols-outlined text-lg">account_balance_wallet</span>
+        <span id="connect-label">Connect Wallet</span>
+      </button>
     </div>
   </header>
 
@@ -147,12 +154,12 @@ tailwind.config = {
         <div class="relative z-10">
           <div class="flex items-center gap-3 mb-1">
             <p class="text-on-surface-variant text-sm font-medium">Total Balance</p>
-            <span class="text-xs font-bold text-primary bg-primary-container px-2 py-0.5 rounded-full">6 chains</span>
+            <span id="hero-chain-count" class="text-xs font-bold text-primary bg-primary-container px-2 py-0.5 rounded-full hidden">0 chains</span>
           </div>
-          <h3 class="text-4xl md:text-5xl font-black text-on-background tracking-tighter mb-2">
-            $42,850<span class="text-3xl md:text-4xl">.00</span>
+          <h3 id="hero-balance" class="text-4xl md:text-5xl font-black text-on-background tracking-tighter mb-2">
+            <span class="text-on-surface-variant text-2xl">Connect wallet to view</span>
           </h3>
-          <p class="text-sm text-primary font-bold mb-8">+$1,024.30 (2.4%) today</p>
+          <p id="hero-change" class="text-sm text-primary font-bold mb-8"></p>
           <div class="flex flex-wrap gap-3">
             <button onclick="window.location.href='swap.html'" class="flex items-center gap-2 px-6 py-3 primary-gradient text-on-primary rounded-full font-bold text-sm active:scale-95 transition-transform">
               <span class="material-symbols-outlined text-lg">swap_horiz</span>
@@ -180,43 +187,8 @@ tailwind.config = {
         <div class="flex justify-between items-end mb-4">
           <h4 class="text-sm font-bold text-on-surface-variant uppercase tracking-wider">Chain Breakdown</h4>
         </div>
-        <div class="flex gap-3 overflow-x-auto pb-2 -mx-2 px-2">
-          <div class="flex-shrink-0 px-4 py-3 bg-surface-container-lowest rounded-xl flex items-center gap-3 min-w-[160px]">
-            <div class="w-8 h-8 rounded-full bg-[#627EEA]/10 flex items-center justify-center">
-              <span class="text-xs font-black text-[#627EEA]">E</span>
-            </div>
-            <div>
-              <p class="text-xs text-on-surface-variant">Ethereum</p>
-              <p class="text-sm font-bold">$28,420</p>
-            </div>
-          </div>
-          <div class="flex-shrink-0 px-4 py-3 bg-surface-container-lowest rounded-xl flex items-center gap-3 min-w-[160px]">
-            <div class="w-8 h-8 rounded-full bg-[#28A0F0]/10 flex items-center justify-center">
-              <span class="text-xs font-black text-[#28A0F0]">A</span>
-            </div>
-            <div>
-              <p class="text-xs text-on-surface-variant">Arbitrum</p>
-              <p class="text-sm font-bold">$8,200</p>
-            </div>
-          </div>
-          <div class="flex-shrink-0 px-4 py-3 bg-surface-container-lowest rounded-xl flex items-center gap-3 min-w-[160px]">
-            <div class="w-8 h-8 rounded-full bg-[#0052FF]/10 flex items-center justify-center">
-              <span class="text-xs font-black text-[#0052FF]">B</span>
-            </div>
-            <div>
-              <p class="text-xs text-on-surface-variant">Base</p>
-              <p class="text-sm font-bold">$4,130</p>
-            </div>
-          </div>
-          <div class="flex-shrink-0 px-4 py-3 bg-surface-container-lowest rounded-xl flex items-center gap-3 min-w-[160px]">
-            <div class="w-8 h-8 rounded-full bg-[#FF0420]/10 flex items-center justify-center">
-              <span class="text-xs font-black text-[#FF0420]">O</span>
-            </div>
-            <div>
-              <p class="text-xs text-on-surface-variant">Optimism</p>
-              <p class="text-sm font-bold">$2,100</p>
-            </div>
-          </div>
+        <div id="chain-breakdown" class="flex gap-3 overflow-x-auto pb-2 -mx-2 px-2">
+          <p class="text-sm text-on-surface-variant px-2 py-3">Connect wallet to view chain balances</p>
         </div>
       </section>
 
@@ -224,72 +196,9 @@ tailwind.config = {
       <section>
         <div class="flex justify-between items-end mb-6">
           <h4 class="text-lg font-bold text-on-background">Assets</h4>
-          <button class="text-sm font-bold text-primary hover:underline">View All</button>
         </div>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <!-- ETH -->
-          <div class="asset-card p-6 bg-surface-container-lowest rounded-xl cursor-pointer">
-            <div class="flex justify-between items-start mb-4">
-              <div class="w-12 h-12 rounded-full bg-[#627EEA]/10 flex items-center justify-center">
-                <span class="text-lg font-black text-[#627EEA]">E</span>
-              </div>
-              <div class="flex items-center gap-2">
-                <span class="text-[10px] font-bold text-on-surface-variant bg-surface-container px-2 py-0.5 rounded-full">3 chains</span>
-                <span class="text-xs text-primary font-bold px-2 py-1 bg-primary-container rounded-full">+4.2%</span>
-              </div>
-            </div>
-            <h5 class="text-on-surface-variant text-xs font-bold uppercase tracking-wider mb-1">Ethereum (ETH)</h5>
-            <p class="text-2xl font-black text-on-background mb-1">$28,421.20</p>
-            <p class="text-sm text-on-surface-variant">10.0 ETH &middot; $2,842.12 / ETH</p>
-          </div>
-
-          <!-- USDC -->
-          <div class="asset-card p-6 bg-surface-container-lowest rounded-xl cursor-pointer">
-            <div class="flex justify-between items-start mb-4">
-              <div class="w-12 h-12 rounded-full bg-[#2775CA]/10 flex items-center justify-center">
-                <span class="text-lg font-black text-[#2775CA]">$</span>
-              </div>
-              <div class="flex items-center gap-2">
-                <span class="text-[10px] font-bold text-on-surface-variant bg-surface-container px-2 py-0.5 rounded-full">4 chains</span>
-                <span class="text-xs text-on-surface-variant font-bold px-2 py-1 bg-surface-container rounded-full">Stable</span>
-              </div>
-            </div>
-            <h5 class="text-on-surface-variant text-xs font-bold uppercase tracking-wider mb-1">USD Coin (USDC)</h5>
-            <p class="text-2xl font-black text-on-background mb-1">$10,000.00</p>
-            <p class="text-sm text-on-surface-variant">10,000 USDC &middot; $1.00 / USDC</p>
-          </div>
-
-          <!-- WBTC -->
-          <div class="asset-card p-6 bg-surface-container-lowest rounded-xl cursor-pointer">
-            <div class="flex justify-between items-start mb-4">
-              <div class="w-12 h-12 rounded-full bg-[#F7931A]/10 flex items-center justify-center">
-                <span class="text-lg font-black text-[#F7931A]">B</span>
-              </div>
-              <div class="flex items-center gap-2">
-                <span class="text-[10px] font-bold text-on-surface-variant bg-surface-container px-2 py-0.5 rounded-full">Ethereum</span>
-                <span class="text-xs text-primary font-bold px-2 py-1 bg-primary-container rounded-full">+1.8%</span>
-              </div>
-            </div>
-            <h5 class="text-on-surface-variant text-xs font-bold uppercase tracking-wider mb-1">Wrapped BTC (WBTC)</h5>
-            <p class="text-2xl font-black text-on-background mb-1">$4,210.62</p>
-            <p class="text-sm text-on-surface-variant">0.0447 WBTC &middot; $94,212.45 / WBTC</p>
-          </div>
-
-          <!-- DAI -->
-          <div class="asset-card p-6 bg-surface-container-lowest rounded-xl cursor-pointer">
-            <div class="flex justify-between items-start mb-4">
-              <div class="w-12 h-12 rounded-full bg-[#F5AC37]/10 flex items-center justify-center">
-                <span class="text-lg font-black text-[#F5AC37]">D</span>
-              </div>
-              <div class="flex items-center gap-2">
-                <span class="text-[10px] font-bold text-on-surface-variant bg-surface-container px-2 py-0.5 rounded-full">Arbitrum</span>
-                <span class="text-xs text-on-surface-variant font-bold px-2 py-1 bg-surface-container rounded-full">Stable</span>
-              </div>
-            </div>
-            <h5 class="text-on-surface-variant text-xs font-bold uppercase tracking-wider mb-1">DAI</h5>
-            <p class="text-2xl font-black text-on-background mb-1">$218.18</p>
-            <p class="text-sm text-on-surface-variant">218.18 DAI &middot; $1.00 / DAI</p>
-          </div>
+        <div id="assets-grid" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <p class="text-sm text-on-surface-variant col-span-2">Connect wallet to view your assets</p>
         </div>
       </section>
     </div>
@@ -473,5 +382,210 @@ tailwind.config = {
   </a>
 </nav>
 
+<script>
+// ── Config ──
+const CHAINS = {
+  1:     { name:'Ethereum', letter:'E', color:'#627EEA' },
+  42161: { name:'Arbitrum', letter:'A', color:'#28A0F0' },
+  8453:  { name:'Base',     letter:'B', color:'#0052FF' },
+  10:    { name:'Optimism', letter:'O', color:'#FF0420' },
+  137:   { name:'Polygon',  letter:'P', color:'#8247E5' },
+};
+const TOKEN_META = {
+  ETH:  { label:'Ethereum',     letter:'E', color:'#627EEA', coingecko:'ethereum' },
+  WETH: { label:'Wrapped ETH',  letter:'E', color:'#627EEA', coingecko:'ethereum' },
+  USDC: { label:'USD Coin',     letter:'$', color:'#2775CA', stable:true },
+  USDT: { label:'Tether',       letter:'T', color:'#26A17B', stable:true },
+  DAI:  { label:'Dai',          letter:'D', color:'#F5AC37', stable:true },
+  WBTC: { label:'Wrapped BTC',  letter:'B', color:'#F7931A', coingecko:'bitcoin' },
+  MATIC:{ label:'Polygon',      letter:'P', color:'#8247E5', coingecko:'matic-network' },
+};
+
+let walletAddress = null;
+let prices = {};
+
+// ── Wallet Connect ──
+async function connectWallet() {
+  if (!window.ethereum) {
+    alert('Please install MetaMask to connect your wallet.');
+    return;
+  }
+  try {
+    const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+    walletAddress = accounts[0];
+    onConnected();
+  } catch (e) {
+    console.error('Wallet connection failed:', e);
+  }
+}
+
+async function onConnected() {
+  const short = walletAddress.slice(0,6) + '...' + walletAddress.slice(-4);
+
+  // Update header button
+  document.getElementById('connect-label').textContent = short;
+  document.getElementById('connect-btn').classList.remove('primary-gradient');
+  document.getElementById('connect-btn').classList.add('bg-surface-container-high', 'text-on-surface');
+
+  // Update sidebar
+  document.getElementById('sidebar-disconnected').classList.add('hidden');
+  document.getElementById('sidebar-connected').classList.remove('hidden');
+  document.getElementById('sidebar-addr').textContent = short;
+
+  // Fetch data in parallel
+  await Promise.all([fetchPrices(), fetchBalances()]);
+}
+
+// ── Prices ──
+async function fetchPrices() {
+  try {
+    const res = await fetch('/api/prices');
+    const raw = await res.json();
+    // Normalise CoinGecko format
+    prices = {
+      ETH:  { usd: raw.ethereum?.usd || 0,          change: raw.ethereum?.usd_24h_change || 0 },
+      WETH: { usd: raw.ethereum?.usd || 0,          change: raw.ethereum?.usd_24h_change || 0 },
+      BTC:  { usd: raw.bitcoin?.usd || 0,           change: raw.bitcoin?.usd_24h_change || 0 },
+      WBTC: { usd: raw['wrapped-bitcoin']?.usd || raw.bitcoin?.usd || 0, change: raw['wrapped-bitcoin']?.usd_24h_change || raw.bitcoin?.usd_24h_change || 0 },
+      USDC: { usd:1, change:0 },
+      USDT: { usd:1, change:0 },
+      DAI:  { usd:1, change:0 },
+      MATIC:{ usd: raw['matic-network']?.usd || 0.5, change: raw['matic-network']?.usd_24h_change || 0 },
+    };
+  } catch {
+    console.warn('Could not fetch prices, using defaults');
+  }
+}
+
+// ── Balances ──
+async function fetchBalances() {
+  if (!walletAddress) return;
+  try {
+    const res = await fetch(`/api/balances?address=${walletAddress}`);
+    const data = await res.json(); // { chainId: { SYMBOL: amount } }
+    renderPortfolio(data);
+  } catch (e) {
+    console.error('Balance fetch failed:', e);
+    document.getElementById('hero-balance').innerHTML = '<span class="text-on-surface-variant text-lg">Could not load balances</span>';
+  }
+}
+
+// ── Render ──
+function usd(n) {
+  return '$' + n.toLocaleString('en-US', { minimumFractionDigits:2, maximumFractionDigits:2 });
+}
+function pct(n) {
+  const sign = n >= 0 ? '+' : '';
+  return sign + n.toFixed(2) + '%';
+}
+
+function renderPortfolio(balancesByChain) {
+  // Aggregate by token across chains
+  const agg = {}; // symbol → { total, chains: [chainId,...], usdValue }
+  let totalUsd = 0;
+  let chainTotals = {}; // chainId → usd
+
+  for (const [chainId, tokens] of Object.entries(balancesByChain)) {
+    let chainUsd = 0;
+    for (const [symbol, amount] of Object.entries(tokens)) {
+      const price = prices[symbol]?.usd || 0;
+      const val = amount * price;
+      chainUsd += val;
+      totalUsd += val;
+      if (!agg[symbol]) agg[symbol] = { total:0, chains:[], usdValue:0 };
+      agg[symbol].total += amount;
+      agg[symbol].chains.push(Number(chainId));
+      agg[symbol].usdValue += val;
+    }
+    if (chainUsd > 0) chainTotals[chainId] = chainUsd;
+  }
+
+  // Hero
+  const whole = Math.floor(totalUsd).toLocaleString('en-US');
+  const cents = (totalUsd % 1).toFixed(2).slice(1);
+  document.getElementById('hero-balance').innerHTML =
+    `$${whole}<span class="text-3xl md:text-4xl">${cents}</span>`;
+
+  const chainCount = Object.keys(chainTotals).length;
+  const badge = document.getElementById('hero-chain-count');
+  badge.textContent = chainCount + ' chain' + (chainCount !== 1 ? 's' : '');
+  badge.classList.remove('hidden');
+
+  // Sidebar
+  document.getElementById('sidebar-total').textContent = usd(totalUsd);
+
+  // Chain breakdown
+  const chainEl = document.getElementById('chain-breakdown');
+  if (chainCount === 0) {
+    chainEl.innerHTML = '<p class="text-sm text-on-surface-variant px-2 py-3">No balances found</p>';
+  } else {
+    chainEl.innerHTML = Object.entries(chainTotals)
+      .sort((a,b) => b[1] - a[1])
+      .map(([cid, val]) => {
+        const c = CHAINS[cid] || { name:'Chain '+cid, letter:'?', color:'#727d7c' };
+        return `<div class="flex-shrink-0 px-4 py-3 bg-surface-container-lowest rounded-xl flex items-center gap-3 min-w-[160px]">
+          <div class="w-8 h-8 rounded-full flex items-center justify-center" style="background:${c.color}1a">
+            <span class="text-xs font-black" style="color:${c.color}">${c.letter}</span>
+          </div>
+          <div>
+            <p class="text-xs text-on-surface-variant">${c.name}</p>
+            <p class="text-sm font-bold">${usd(val)}</p>
+          </div>
+        </div>`;
+      }).join('');
+  }
+
+  // Assets grid
+  const grid = document.getElementById('assets-grid');
+  const sorted = Object.entries(agg).sort((a,b) => b[1].usdValue - a[1].usdValue);
+  if (sorted.length === 0) {
+    grid.innerHTML = '<p class="text-sm text-on-surface-variant col-span-2">No tokens found in this wallet</p>';
+    return;
+  }
+  grid.innerHTML = sorted.map(([symbol, info]) => {
+    const meta = TOKEN_META[symbol] || { label:symbol, letter:symbol[0], color:'#727d7c' };
+    const price = prices[symbol]?.usd || 0;
+    const change = prices[symbol]?.change || 0;
+    const isStable = meta.stable;
+    const changeBadge = isStable
+      ? `<span class="text-xs text-on-surface-variant font-bold px-2 py-1 bg-surface-container rounded-full">Stable</span>`
+      : `<span class="text-xs font-bold px-2 py-1 rounded-full ${change >= 0 ? 'text-primary bg-primary-container' : 'text-error bg-error-container/20'}">${pct(change)}</span>`;
+    const chainLabel = info.chains.length > 1
+      ? info.chains.length + ' chains'
+      : (CHAINS[info.chains[0]]?.name || 'Chain ' + info.chains[0]);
+    return `<div class="asset-card p-6 bg-surface-container-lowest rounded-xl cursor-pointer">
+      <div class="flex justify-between items-start mb-4">
+        <div class="w-12 h-12 rounded-full flex items-center justify-center" style="background:${meta.color}1a">
+          <span class="text-lg font-black" style="color:${meta.color}">${meta.letter}</span>
+        </div>
+        <div class="flex items-center gap-2">
+          <span class="text-[10px] font-bold text-on-surface-variant bg-surface-container px-2 py-0.5 rounded-full">${chainLabel}</span>
+          ${changeBadge}
+        </div>
+      </div>
+      <h5 class="text-on-surface-variant text-xs font-bold uppercase tracking-wider mb-1">${meta.label} (${symbol})</h5>
+      <p class="text-2xl font-black text-on-background mb-1">${usd(info.usdValue)}</p>
+      <p class="text-sm text-on-surface-variant">${info.total.toLocaleString('en-US',{maximumFractionDigits:6})} ${symbol}${price ? ' · ' + usd(price) + ' / ' + symbol : ''}</p>
+    </div>`;
+  }).join('');
+}
+
+// ── Auto-reconnect if already connected ──
+(async function init() {
+  await fetchPrices(); // always get prices
+  if (window.ethereum) {
+    const accounts = await window.ethereum.request({ method: 'eth_accounts' });
+    if (accounts.length > 0) {
+      walletAddress = accounts[0];
+      onConnected();
+    }
+    window.ethereum.on('accountsChanged', (accs) => {
+      if (accs.length === 0) { location.reload(); return; }
+      walletAddress = accs[0];
+      onConnected();
+    });
+  }
+})();
+</script>
 </body>
 </html>
