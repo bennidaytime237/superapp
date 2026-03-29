@@ -59,125 +59,137 @@ tailwind.config = {
   </div>
 </header>
 
-<!-- Main — single viewport, no scroll -->
-<main class="w-full max-w-xl mx-auto px-6 flex-1 flex flex-col justify-center min-h-0">
+<!-- Main -->
+<main class="w-full max-w-2xl mx-auto px-8 flex-1 flex flex-col justify-center">
 
   <!-- Mode Tabs -->
-  <div class="flex justify-center mb-4">
+  <div class="flex justify-center mb-6">
     <div class="inline-flex bg-surface-container-low rounded-full p-1 gap-1">
-      <button id="tab-swap" onclick="setMode('swap')" class="tab-active px-5 py-2 rounded-full text-sm font-bold transition-all">Swap</button>
-      <button id="tab-bridge" onclick="setMode('bridge')" class="px-5 py-2 rounded-full text-sm font-bold text-on-surface-variant transition-all">Bridge</button>
+      <button id="tab-swap" onclick="setMode('swap')" class="tab-active px-6 py-2 rounded-full text-sm font-bold transition-all">Swap</button>
+      <button id="tab-bridge" onclick="setMode('bridge')" class="px-6 py-2 rounded-full text-sm font-bold text-on-surface-variant transition-all">Bridge</button>
     </div>
   </div>
 
   <!-- Chain selectors (bridge mode) -->
-  <div id="chain-selectors" class="hidden mb-3">
+  <div id="chain-selectors" class="hidden mb-6">
     <div class="flex items-center gap-3">
-      <button id="from-chain-btn" onclick="cycleChain('from')" class="flex-1 flex items-center gap-2 bg-surface-container-low px-3 py-2 rounded-xl border border-outline-variant/10 hover:bg-surface-container-high transition-colors">
+      <button id="from-chain-btn" onclick="cycleChain('from')" class="flex-1 flex items-center gap-2 bg-surface-container-low px-4 py-2.5 rounded-full border border-outline-variant/10 hover:bg-surface-container-high transition-colors">
         <img id="from-chain-icon" src="" alt="" class="w-6 h-6 rounded-full"/>
-        <span class="font-bold text-xs" id="from-chain-name">Ethereum</span>
-        <span class="material-symbols-outlined text-xs ml-auto">expand_more</span>
+        <span class="font-bold text-sm" id="from-chain-name">Ethereum</span>
+        <span class="material-symbols-outlined text-sm ml-auto">expand_more</span>
       </button>
-      <button onclick="swapChains()" class="w-8 h-8 bg-white border border-outline-variant/10 shadow-sm rounded-full flex items-center justify-center text-on-surface-variant hover:text-primary transition-colors flex-shrink-0">
-        <span class="material-symbols-outlined text-sm">swap_horiz</span>
+      <button onclick="swapChains()" class="w-10 h-10 bg-white border border-outline-variant/10 shadow-md rounded-full flex items-center justify-center text-on-surface-variant hover:text-primary transition-colors flex-shrink-0">
+        <span class="material-symbols-outlined">swap_horiz</span>
       </button>
-      <button id="to-chain-btn" onclick="cycleChain('to')" class="flex-1 flex items-center gap-2 bg-surface-container-low px-3 py-2 rounded-xl border border-outline-variant/10 hover:bg-surface-container-high transition-colors">
+      <button id="to-chain-btn" onclick="cycleChain('to')" class="flex-1 flex items-center gap-2 bg-surface-container-low px-4 py-2.5 rounded-full border border-outline-variant/10 hover:bg-surface-container-high transition-colors">
         <img id="to-chain-icon" src="" alt="" class="w-6 h-6 rounded-full"/>
-        <span class="font-bold text-xs" id="to-chain-name">Arbitrum</span>
-        <span class="material-symbols-outlined text-xs ml-auto">expand_more</span>
+        <span class="font-bold text-sm" id="to-chain-name">Arbitrum</span>
+        <span class="material-symbols-outlined text-sm ml-auto">expand_more</span>
       </button>
     </div>
   </div>
 
-  <!-- Swap Card -->
-  <div class="bg-surface-container-lowest rounded-2xl border border-outline-variant/10 shadow-sm p-5 space-y-1">
-
-    <!-- From -->
-    <div class="flex items-center justify-between gap-3">
-      <button onclick="cycleToken('from')" class="inline-flex items-center gap-2 bg-surface-container-low px-3 py-2 rounded-full border border-outline-variant/10 hover:bg-surface-container-high transition-colors flex-shrink-0">
-        <img id="from-token-icon" src="" alt="" class="w-5 h-5 rounded-full"/>
-        <span id="from-token-label" class="font-bold text-sm">ETH</span>
-        <span class="material-symbols-outlined text-xs">expand_more</span>
-      </button>
-      <input id="input-amount" class="flex-1 text-right text-3xl font-black text-on-surface border-none focus:ring-0 p-0 bg-transparent placeholder:text-on-surface-variant/30 min-w-0" placeholder="0" type="number" oninput="onAmountChange()"/>
-    </div>
-    <div class="flex justify-between items-center px-1">
-      <p class="text-[11px] text-on-surface-variant">You pay</p>
-      <div class="flex items-center gap-2">
-        <span id="from-balance" class="text-[11px] text-on-surface-variant">Balance: --</span>
-        <button onclick="setMax()" class="text-[11px] font-bold text-primary hover:underline">MAX</button>
-        <button onclick="setHalf()" class="text-[11px] font-bold text-primary hover:underline">HALF</button>
-      </div>
-    </div>
-
-    <!-- Swap button -->
-    <div class="flex justify-center py-1">
-      <button onclick="swapTokens()" class="w-8 h-8 bg-white border border-outline-variant/10 shadow-sm rounded-full flex items-center justify-center text-on-surface-variant hover:text-primary hover:rotate-180 transition-all duration-300">
-        <span class="material-symbols-outlined text-sm">swap_vert</span>
-      </button>
-    </div>
-
-    <!-- To -->
-    <div class="flex items-center justify-between gap-3">
-      <button onclick="cycleToken('to')" class="inline-flex items-center gap-2 bg-surface-container-low px-3 py-2 rounded-full border border-outline-variant/10 hover:bg-surface-container-high transition-colors flex-shrink-0">
-        <img id="to-token-icon" src="" alt="" class="w-5 h-5 rounded-full"/>
-        <span id="to-token-label" class="font-bold text-sm">USDC</span>
-        <span class="material-symbols-outlined text-xs">expand_more</span>
-      </button>
-      <input id="output-amount" class="flex-1 text-right text-3xl font-black text-primary border-none focus:ring-0 p-0 bg-transparent min-w-0" placeholder="0" readonly type="text" value=""/>
-    </div>
-    <div class="flex justify-between items-center px-1">
-      <p class="text-[11px] text-on-surface-variant">You receive</p>
-      <span id="output-usd" class="text-[11px] text-on-surface-variant"></span>
-    </div>
-  </div>
-
-  <!-- Details row -->
-  <div class="mt-3 space-y-2">
-    <!-- Rate -->
-    <div class="flex items-center justify-between px-2">
-      <span class="text-xs text-on-surface-variant">Rate</span>
-      <span id="rate-display" class="text-xs font-bold text-on-surface">--</span>
-    </div>
-    <!-- Route -->
-    <div class="flex items-center justify-between px-2">
-      <span class="text-xs text-on-surface-variant">Route</span>
-      <span id="route-display" class="text-xs font-bold text-on-surface flex items-center gap-1">
-        <span class="material-symbols-outlined text-xs text-primary">route</span>
-        <span id="route-label">--</span>
-      </span>
-    </div>
-    <!-- Fees -->
-    <div class="flex items-center justify-between px-2">
-      <span class="text-xs text-on-surface-variant">Estimated fee</span>
-      <span id="fee-display" class="text-xs font-bold text-on-surface">--</span>
-    </div>
-    <!-- Slippage -->
-    <div class="flex items-center justify-between px-2">
-      <span class="text-xs text-on-surface-variant">Slippage</span>
-      <div class="flex items-center gap-1">
-        <button onclick="setSlippage('auto')" id="slip-auto" class="px-2 py-0.5 bg-primary-container text-on-primary-container rounded-full text-[11px] font-bold">Auto</button>
-        <button onclick="setSlippage('0.005')" id="slip-05" class="px-2 py-0.5 bg-surface-container text-on-surface-variant rounded-full text-[11px] font-bold hover:bg-surface-container-high">0.5%</button>
-        <button onclick="setSlippage('0.01')" id="slip-1" class="px-2 py-0.5 bg-surface-container text-on-surface-variant rounded-full text-[11px] font-bold hover:bg-surface-container-high">1%</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Action Button -->
-  <div class="mt-4">
-    <button id="action-btn" onclick="executeSwap()" class="w-full py-4 primary-gradient text-on-primary rounded-full font-black text-lg active:scale-[0.98] transition-transform shadow-lg shadow-primary/20 disabled:opacity-50 disabled:cursor-not-allowed">
-      Connect Wallet
+  <!-- Rate pill -->
+  <div class="flex justify-end mb-6">
+    <button class="bg-surface-container-low px-4 py-2 rounded-full text-xs font-bold text-on-surface-variant flex items-center gap-2 border border-outline-variant/10">
+      <span id="rate-display">--</span>
+      <span class="material-symbols-outlined text-[14px]">chevron_right</span>
     </button>
   </div>
 
-  <!-- Footer inline -->
-  <div class="flex justify-center gap-4 mt-3 mb-2">
-    <span class="text-[10px] text-on-surface-variant flex items-center gap-1">
-      <span class="material-symbols-outlined text-[12px]">bolt</span>Across Protocol
-    </span>
-    <span class="text-[10px] text-on-surface-variant flex items-center gap-1">
-      <span class="material-symbols-outlined text-[12px]">verified_user</span>Non-custodial
-    </span>
+  <!-- ═══ FROM SECTION ═══ -->
+  <div class="space-y-2 mb-2">
+    <p class="text-sm text-on-surface-variant">From <span class="font-bold text-on-surface">Wallet</span></p>
+    <div class="flex items-end justify-between gap-4">
+      <button onclick="cycleToken('from')" class="inline-flex items-center gap-2 bg-surface-container-low px-4 py-2.5 rounded-full border border-outline-variant/10 hover:bg-surface-container-high transition-colors">
+        <img id="from-token-icon" src="" alt="" class="w-6 h-6 rounded-full"/>
+        <span id="from-token-label" class="font-bold text-sm">ETH</span>
+        <span class="material-symbols-outlined text-sm">expand_more</span>
+      </button>
+      <input id="input-amount" class="flex-1 text-right text-6xl md:text-7xl font-black text-on-background border-none focus:ring-0 p-0 bg-transparent placeholder:text-on-surface-variant/20 min-w-0" placeholder="0" type="number" oninput="onAmountChange()"/>
+    </div>
+    <div id="balance-warning" class="flex justify-end">
+      <div class="inline-flex items-center gap-1.5 text-xs text-on-surface-variant">
+        <span id="from-balance">Balance: --</span>
+        <button onclick="setMax()" class="font-bold text-primary hover:underline underline-offset-2">MAX</button>
+        <button onclick="setHalf()" class="font-bold text-primary hover:underline underline-offset-2">HALF</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ DIVIDER + SWAP BUTTON ═══ -->
+  <div class="relative h-px bg-outline-variant/15 w-full my-6">
+    <button onclick="swapTokens()" class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-10 h-10 bg-white border border-outline-variant/10 shadow-md rounded-full flex items-center justify-center text-on-surface-variant hover:text-primary hover:rotate-180 transition-all duration-300">
+      <span class="material-symbols-outlined">swap_vert</span>
+    </button>
+  </div>
+
+  <!-- ═══ TO SECTION ═══ -->
+  <div class="space-y-2 mb-2">
+    <p class="text-sm text-on-surface-variant">To <span class="font-bold text-on-surface">Wallet</span></p>
+    <div class="flex items-end justify-between gap-4">
+      <button onclick="cycleToken('to')" class="inline-flex items-center gap-2 bg-surface-container-low px-4 py-2.5 rounded-full border border-outline-variant/10 hover:bg-surface-container-high transition-colors">
+        <img id="to-token-icon" src="" alt="" class="w-6 h-6 rounded-full"/>
+        <span id="to-token-label" class="font-bold text-sm">USDC</span>
+        <span class="material-symbols-outlined text-sm">expand_more</span>
+      </button>
+      <input id="output-amount" class="flex-1 text-right text-6xl md:text-7xl font-black text-primary border-none focus:ring-0 p-0 bg-transparent min-w-0" placeholder="0" readonly type="text" value=""/>
+    </div>
+    <div class="flex justify-end">
+      <span id="output-usd" class="text-xs text-on-surface-variant"></span>
+    </div>
+  </div>
+
+  <!-- ═══ CARDS ═══ -->
+  <div class="mt-8 space-y-3">
+
+    <!-- DCA Card -->
+    <button class="w-full flex items-center justify-between p-4 bg-surface-container-low rounded-2xl hover:bg-surface-container transition-colors group">
+      <div class="flex items-center gap-4 text-left">
+        <div class="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-sm">
+          <span class="material-symbols-outlined text-on-surface-variant">schedule</span>
+        </div>
+        <div>
+          <p class="font-bold text-on-surface text-sm">Set up an auto-swap</p>
+          <p class="text-xs text-on-surface-variant">We'll convert when it hits your target rate.</p>
+        </div>
+      </div>
+      <span class="material-symbols-outlined text-on-surface-variant group-hover:translate-x-1 transition-transform">chevron_right</span>
+    </button>
+
+    <!-- Fees Card -->
+    <button class="w-full flex items-center justify-between p-4 bg-surface-container-low rounded-2xl hover:bg-surface-container transition-colors group">
+      <div class="flex items-center gap-4 text-left">
+        <div class="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-sm">
+          <span class="material-symbols-outlined text-on-surface-variant">receipt_long</span>
+        </div>
+        <div>
+          <p class="text-xs text-on-surface-variant">Total fees</p>
+          <p class="font-bold text-on-surface text-sm" id="fee-card-label">Included in amount</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-1 font-bold text-on-surface text-sm underline underline-offset-4">
+        <span id="fee-display">--</span>
+        <span class="material-symbols-outlined text-sm">chevron_right</span>
+      </div>
+    </button>
+
+    <!-- Slippage row -->
+    <div class="flex items-center justify-between px-4 py-2">
+      <span class="text-xs text-on-surface-variant">Slippage tolerance</span>
+      <div class="flex items-center gap-1.5">
+        <button onclick="setSlippage('auto')" id="slip-auto" class="px-3 py-1 bg-primary-container text-on-primary-container rounded-full text-xs font-bold">Auto</button>
+        <button onclick="setSlippage('0.005')" id="slip-05" class="px-3 py-1 bg-surface-container text-on-surface-variant rounded-full text-xs font-bold hover:bg-surface-container-high">0.5%</button>
+        <button onclick="setSlippage('0.01')" id="slip-1" class="px-3 py-1 bg-surface-container text-on-surface-variant rounded-full text-xs font-bold hover:bg-surface-container-high">1%</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ ACTION BUTTON ═══ -->
+  <div class="mt-6">
+    <button id="action-btn" onclick="executeSwap()" class="w-full py-5 bg-surface-container-high text-on-surface-variant rounded-full font-black text-xl hover:bg-primary/10 transition-colors">
+      Review
+    </button>
   </div>
 
 </main>
@@ -278,11 +290,11 @@ async function fetchPrices() {
 function setMode(m) {
   mode = m;
   document.getElementById('tab-swap').className = m === 'swap'
-    ? 'tab-active px-5 py-2 rounded-full text-sm font-bold transition-all'
-    : 'px-5 py-2 rounded-full text-sm font-bold text-on-surface-variant transition-all';
+    ? 'tab-active px-6 py-2 rounded-full text-sm font-bold transition-all'
+    : 'px-6 py-2 rounded-full text-sm font-bold text-on-surface-variant transition-all';
   document.getElementById('tab-bridge').className = m === 'bridge'
-    ? 'tab-active px-5 py-2 rounded-full text-sm font-bold transition-all'
-    : 'px-5 py-2 rounded-full text-sm font-bold text-on-surface-variant transition-all';
+    ? 'tab-active px-6 py-2 rounded-full text-sm font-bold transition-all'
+    : 'px-6 py-2 rounded-full text-sm font-bold text-on-surface-variant transition-all';
   document.getElementById('chain-selectors').classList.toggle('hidden', m === 'swap');
   updateRoute();
   updateBalance();
@@ -365,11 +377,11 @@ function updateRate() {
 }
 
 function updateRoute() {
-  const el = document.getElementById('route-label');
+  const el = document.getElementById('fee-card-label');
   if (mode === 'bridge') {
-    el.textContent = `${CHAINS[fromChainIdx].name} → ${CHAINS[toChainIdx].name} (~2s)`;
+    el.textContent = `${CHAINS[fromChainIdx].name} → ${CHAINS[toChainIdx].name} via Across`;
   } else {
-    el.textContent = 'Same-chain swap';
+    el.textContent = 'Included in amount';
   }
 }
 
@@ -377,10 +389,10 @@ function updateActionBtn() {
   const btn = document.getElementById('action-btn');
   if (!walletAddress) {
     btn.textContent = 'Connect Wallet';
-    btn.disabled = false;
+    btn.className = 'w-full py-5 primary-gradient text-on-primary rounded-full font-black text-xl active:scale-[0.98] transition-transform shadow-lg shadow-primary/20';
   } else {
-    btn.textContent = mode === 'bridge' ? 'Review Bridge' : 'Review Swap';
-    btn.disabled = false;
+    btn.textContent = 'Review';
+    btn.className = 'w-full py-5 bg-surface-container-high text-on-surface-variant rounded-full font-black text-xl hover:bg-primary/10 transition-colors';
   }
 }
 
@@ -389,8 +401,8 @@ function setSlippage(val) {
   ['auto','0.005','0.01'].forEach((v,i) => {
     const ids = ['slip-auto','slip-05','slip-1'];
     document.getElementById(ids[i]).className = v === val
-      ? 'px-2 py-0.5 bg-primary-container text-on-primary-container rounded-full text-[11px] font-bold'
-      : 'px-2 py-0.5 bg-surface-container text-on-surface-variant rounded-full text-[11px] font-bold hover:bg-surface-container-high';
+      ? 'px-3 py-1 bg-primary-container text-on-primary-container rounded-full text-xs font-bold'
+      : 'px-3 py-1 bg-surface-container text-on-surface-variant rounded-full text-xs font-bold hover:bg-surface-container-high';
   });
 }
 
