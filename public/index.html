@@ -13,28 +13,26 @@ tailwind.config = {
   theme: {
     extend: {
       colors: {
-        "surface-bright":"#f8faf9","tertiary-dim":"#435940","inverse-primary":"#d7fcb6",
-        "secondary-fixed-dim":"#bbd9e9","surface":"#f8faf9","secondary-container":"#c9e7f7",
-        "surface-container-lowest":"#ffffff","surface-tint":"#486730","on-error":"#fff7f6",
-        "error-container":"#fe8b70","primary":"#486730","secondary-dim":"#3a5764",
-        "on-primary":"#e9ffd2","on-tertiary-container":"#4c6148","error-dim":"#5c1202",
-        "on-tertiary":"#eaffe2","on-secondary-fixed":"#264350",
-        "on-tertiary-fixed-variant":"#566c52","on-error-container":"#742410",
-        "on-secondary-container":"#395663","on-primary-fixed":"#2a4714",
-        "error":"#9e422c","outline-variant":"#a9b4b3","primary-fixed-dim":"#bbdf9c",
-        "tertiary-container":"#e2fbda","primary-dim":"#3d5a26",
-        "on-surface-variant":"#576160","secondary":"#466370",
-        "surface-container-highest":"#dae5e4","on-primary-container":"#3c5a25",
-        "on-secondary-fixed-variant":"#435f6d","secondary-fixed":"#c9e7f7",
-        "inverse-on-surface":"#9b9d9d","tertiary-fixed-dim":"#d4eccc",
-        "inverse-surface":"#0b0f0f","on-secondary":"#f3faff",
-        "on-background":"#2a3434","surface-container-high":"#e1eae9",
-        "tertiary":"#4f654b","surface-dim":"#cfdddb","surface-variant":"#dae5e4",
-        "on-surface":"#2a3434","surface-container":"#e9efee",
-        "surface-container-low":"#f0f4f3","on-primary-fixed-variant":"#45642e",
-        "background":"#f8faf9","tertiary-fixed":"#e2fbda",
-        "on-tertiary-fixed":"#3a4f37","outline":"#727d7c",
-        "primary-fixed":"#c9eea9","primary-container":"#c9eea9"
+        "surface-bright":"#faf7f5","surface":"#faf7f5","background":"#faf7f5",
+        "surface-container-lowest":"#ffffff","surface-container-low":"#fceee9",
+        "surface-container":"#fceee9","surface-container-high":"#dde6d5",
+        "surface-container-highest":"#dde6d5","surface-dim":"#dde6d5",
+        "surface-variant":"#dde6d5","surface-tint":"#667b68",
+        "primary":"#667b68","primary-dim":"#2f3a33","primary-fixed":"#dde6d5",
+        "primary-fixed-dim":"#a3b899","primary-container":"#dde6d5",
+        "on-primary":"#faf7f5","on-primary-container":"#2f3a33",
+        "on-primary-fixed":"#2f3a33","on-primary-fixed-variant":"#667b68",
+        "on-surface":"#2f3a33","on-surface-variant":"#667b68",
+        "on-background":"#1f2622",
+        "outline":"#667b68","outline-variant":"#a3b899",
+        "error":"#9e422c","error-container":"#f8d3c5",
+        "on-error":"#faf7f5","on-error-container":"#742410",
+        "inverse-surface":"#1f2622","inverse-on-surface":"#a3b899",
+        "inverse-primary":"#dde6d5",
+        "secondary":"#667b68","secondary-container":"#dde6d5",
+        "on-secondary":"#faf7f5","on-secondary-container":"#2f3a33",
+        "tertiary":"#667b68","tertiary-container":"#dde6d5",
+        "on-tertiary":"#faf7f5","on-tertiary-container":"#2f3a33",
       },
       fontFamily: { "headline":["Outfit"], "body":["Outfit"], "label":["Outfit"] },
       borderRadius: { "DEFAULT":"1rem","lg":"2rem","xl":"3rem","full":"9999px" },
@@ -46,7 +44,7 @@ tailwind.config = {
   .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
   body { font-family: 'Outfit', sans-serif; }
   .glass-panel { background: rgba(248,250,249,0.7); backdrop-filter: blur(20px); }
-  .primary-gradient { background: linear-gradient(135deg, #486730 0%, #c9eea9 100%); }
+  .primary-gradient { background: linear-gradient(135deg, #2f3a33 0%, #667b68 100%); }
   .chain-pill { transition: all 0.15s ease; }
   .chain-pill:hover { transform: translateY(-1px); box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
   .asset-card { transition: all 0.2s ease; }
@@ -227,119 +225,57 @@ tailwind.config = {
         </div>
       </section>
 
-      <!-- Cross-Chain Opportunities -->
+      <!-- Crosschain Actions -->
       <section class="bg-surface-container-low rounded-xl p-6">
-        <h4 class="text-lg font-bold text-on-background mb-6">Yield Opportunities</h4>
-        <div class="space-y-4">
+        <h4 class="text-lg font-bold text-on-background mb-4">Get Started</h4>
+        <div class="space-y-3">
+          <a href="swap.html" class="p-4 bg-surface-container-lowest rounded-xl flex items-center justify-between cursor-pointer hover:bg-primary-container transition-colors">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-full bg-surface-container flex items-center justify-center">
+                <span class="material-symbols-outlined text-primary">swap_horiz</span>
+              </div>
+              <div>
+                <p class="text-sm font-bold text-on-background">Swap tokens</p>
+                <p class="text-xs text-on-surface-variant">Exchange any token, any chain</p>
+              </div>
+            </div>
+            <span class="material-symbols-outlined text-on-surface-variant">chevron_right</span>
+          </a>
+          <a href="swap.html" class="p-4 bg-surface-container-lowest rounded-xl flex items-center justify-between cursor-pointer hover:bg-primary-container transition-colors">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-full bg-surface-container flex items-center justify-center">
+                <span class="material-symbols-outlined text-primary">layers</span>
+              </div>
+              <div>
+                <p class="text-sm font-bold text-on-background">Bridge crosschain</p>
+                <p class="text-xs text-on-surface-variant">Move assets between chains in ~2s</p>
+              </div>
+            </div>
+            <span class="material-symbols-outlined text-on-surface-variant">chevron_right</span>
+          </a>
           <div class="p-4 bg-surface-container-lowest rounded-xl flex items-center justify-between cursor-pointer hover:bg-primary-container transition-colors">
             <div class="flex items-center gap-3">
               <div class="w-10 h-10 rounded-full bg-surface-container flex items-center justify-center">
-                <span class="material-symbols-outlined text-primary">trending_up</span>
+                <span class="material-symbols-outlined text-primary">shopping_cart</span>
               </div>
               <div>
-                <p class="text-sm font-bold text-on-background">ETH Staking</p>
-                <p class="text-xs text-on-surface-variant">Lido &middot; Ethereum</p>
+                <p class="text-sm font-bold text-on-background">Buy with fiat</p>
+                <p class="text-xs text-on-surface-variant">On-ramp via card or bank transfer</p>
               </div>
             </div>
-            <p class="text-sm font-black text-primary">3.8% APR</p>
-          </div>
-          <div class="p-4 bg-surface-container-lowest rounded-xl flex items-center justify-between cursor-pointer hover:bg-primary-container transition-colors">
-            <div class="flex items-center gap-3">
-              <div class="w-10 h-10 rounded-full bg-surface-container flex items-center justify-center">
-                <span class="material-symbols-outlined text-primary">savings</span>
-              </div>
-              <div>
-                <p class="text-sm font-bold text-on-background">USDC Supply</p>
-                <p class="text-xs text-on-surface-variant">Aave V3 &middot; Arbitrum</p>
-              </div>
-            </div>
-            <p class="text-sm font-black text-primary">5.2% APR</p>
-          </div>
-          <div class="p-4 bg-surface-container-lowest rounded-xl flex items-center justify-between cursor-pointer hover:bg-primary-container transition-colors">
-            <div class="flex items-center gap-3">
-              <div class="w-10 h-10 rounded-full bg-surface-container flex items-center justify-center">
-                <span class="material-symbols-outlined text-primary">bolt</span>
-              </div>
-              <div>
-                <p class="text-sm font-bold text-on-background">ETH-USDC LP</p>
-                <p class="text-xs text-on-surface-variant">Uniswap &middot; Base</p>
-              </div>
-            </div>
-            <p class="text-sm font-black text-primary">12.1% APR</p>
+            <span class="material-symbols-outlined text-on-surface-variant">chevron_right</span>
           </div>
         </div>
-        <button class="w-full mt-6 py-3 border-2 border-primary/20 text-primary font-bold rounded-full text-sm hover:bg-primary/5 transition-colors">
-          Explore Protocols
-        </button>
       </section>
 
-      <!-- Recent Activity -->
+      <!-- Activity — empty state until wallet connected -->
       <section>
-        <div class="flex justify-between items-center mb-6 px-2">
+        <div class="flex justify-between items-center mb-4 px-2">
           <h4 class="text-lg font-bold text-on-background">Activity</h4>
-          <span class="material-symbols-outlined text-on-surface-variant cursor-pointer">history</span>
         </div>
-        <div class="space-y-5">
-          <div class="flex items-center gap-4 px-2">
-            <div class="w-10 h-10 rounded-full bg-primary-container flex items-center justify-center flex-shrink-0">
-              <span class="material-symbols-outlined text-primary text-lg">layers</span>
-            </div>
-            <div class="flex-1 border-b border-outline-variant/10 pb-4">
-              <div class="flex justify-between">
-                <p class="text-sm font-bold text-on-background">Bridged USDC</p>
-                <p class="text-sm font-bold text-on-background">2,000 USDC</p>
-              </div>
-              <div class="flex justify-between">
-                <p class="text-xs text-on-surface-variant">Ethereum → Arbitrum</p>
-                <p class="text-xs text-primary font-bold">~2s via Across</p>
-              </div>
-            </div>
-          </div>
-          <div class="flex items-center gap-4 px-2">
-            <div class="w-10 h-10 rounded-full bg-surface-container-high flex items-center justify-center flex-shrink-0">
-              <span class="material-symbols-outlined text-on-surface-variant text-lg">swap_horiz</span>
-            </div>
-            <div class="flex-1 border-b border-outline-variant/10 pb-4">
-              <div class="flex justify-between">
-                <p class="text-sm font-bold text-on-background">Swapped ETH → USDC</p>
-                <p class="text-sm font-bold text-on-background">-1.2 ETH</p>
-              </div>
-              <div class="flex justify-between">
-                <p class="text-xs text-on-surface-variant">Base &middot; MoonPay</p>
-                <p class="text-xs text-on-surface-variant">2h ago</p>
-              </div>
-            </div>
-          </div>
-          <div class="flex items-center gap-4 px-2">
-            <div class="w-10 h-10 rounded-full bg-primary-container flex items-center justify-center flex-shrink-0">
-              <span class="material-symbols-outlined text-primary text-lg">add_circle</span>
-            </div>
-            <div class="flex-1 border-b border-outline-variant/10 pb-4">
-              <div class="flex justify-between">
-                <p class="text-sm font-bold text-on-background">Bought ETH</p>
-                <p class="text-sm font-bold text-primary">+$500.00</p>
-              </div>
-              <div class="flex justify-between">
-                <p class="text-xs text-on-surface-variant">Fiat on-ramp &middot; MoonPay</p>
-                <p class="text-xs text-on-surface-variant">Yesterday</p>
-              </div>
-            </div>
-          </div>
-          <div class="flex items-center gap-4 px-2">
-            <div class="w-10 h-10 rounded-full bg-primary-container flex items-center justify-center flex-shrink-0">
-              <span class="material-symbols-outlined text-primary text-lg">call_received</span>
-            </div>
-            <div class="flex-1">
-              <div class="flex justify-between">
-                <p class="text-sm font-bold text-on-background">Yield Claimed</p>
-                <p class="text-sm font-bold text-primary">+$82.45</p>
-              </div>
-              <div class="flex justify-between">
-                <p class="text-xs text-on-surface-variant">Lido stETH &middot; Ethereum</p>
-                <p class="text-xs text-on-surface-variant">Mar 27</p>
-              </div>
-            </div>
-          </div>
+        <div class="text-center py-8">
+          <span class="material-symbols-outlined text-4xl text-on-surface-variant/30 mb-2">history</span>
+          <p class="text-sm text-on-surface-variant">Your transaction history will appear here</p>
         </div>
       </section>
 
@@ -348,7 +284,7 @@ tailwind.config = {
         <div class="relative z-10">
           <img src="sage-logo.svg" alt="Sage" class="w-8 h-8 mb-3 brightness-200"/>
           <h5 class="text-lg font-bold mb-2 leading-tight">Powered by Across + MoonPay</h5>
-          <p class="text-sm opacity-80 mb-4">Cross-chain swaps in ~2 seconds. Non-custodial wallets. Fiat on/off ramps. All in one place.</p>
+          <p class="text-sm opacity-80 mb-4">Crosschain swaps in ~2 seconds. Non-custodial wallets. Fiat on/off ramps. All in one place.</p>
           <div class="flex gap-2">
             <span class="bg-white/20 px-3 py-1 rounded-full text-xs font-bold">Across Protocol</span>
             <span class="bg-white/20 px-3 py-1 rounded-full text-xs font-bold">MoonPay</span>

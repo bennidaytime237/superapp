@@ -2,7 +2,7 @@
 
 ## Design Philosophy
 
-SuperApp is built on the principle that **cross-chain should be invisible**. Users express intent ("swap 100 USDC on Ethereum to WETH on Arbitrum") and the app figures out the optimal route, combining Across Protocol's cross-chain infrastructure with MoonPay's wallet and fiat layer.
+SuperApp is built on the principle that **crosschain should be invisible**. Users express intent ("swap 100 USDC on Ethereum to WETH on Arbitrum") and the app figures out the optimal route, combining Across Protocol's crosschain infrastructure with MoonPay's wallet and fiat layer.
 
 ## Core Components
 
@@ -51,7 +51,7 @@ User Intent
 
 ### 2. Across Protocol Integration
 
-Handles all cross-chain movement with ~2 second fill times on mainnet.
+Handles all crosschain movement with ~2 second fill times on mainnet.
 
 **Key Design Decisions:**
 

@@ -5,11 +5,11 @@ import { getBridgeableChains } from "../shared/chains.js";
  * Unified Router — resolves user intents to execution plans.
  *
  * Decision logic:
- * - Cross-chain operations → Across Protocol (fastest, ~2s fills)
+ * - Crosschain operations → Across Protocol (fastest, ~2s fills)
  * - Same-chain swaps → MoonPay CLI
  * - Fiat on/off ramps → MoonPay CLI
  * - Wallet operations → MoonPay CLI
- * - Cross-chain + post-bridge action → Across embedded actions
+ * - Crosschain + post-bridge action → Across embedded actions
  */
 export function resolveIntent(intent: UserIntent): ExecutionPlan {
   const isCrossChain =
@@ -56,7 +56,7 @@ function planCrossChainSwap(intent: UserIntent): ExecutionPlan {
 
   if (!originSupported || !destSupported) {
     throw new Error(
-      `Cross-chain swap requires Across-supported chains. ` +
+      `Crosschain swap requires Across-supported chains. ` +
       `Origin: ${intent.originChainId}, Destination: ${intent.destinationChainId}`
     );
   }

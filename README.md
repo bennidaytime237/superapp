@@ -1,20 +1,20 @@
 # SuperApp - Unified Crypto Mega-App
 
-A unified crypto super-app powered by **Across Protocol** (cross-chain bridging/swapping) and **MoonPay** (agent wallets, fiat ramps, trading) — designed for AI-native crypto users.
+A unified crypto super-app powered by **Across Protocol** (crosschain bridging/swapping) and **MoonPay** (agent wallets, fiat ramps, trading) — designed for AI-native crypto users.
 
 ## Vision
 
 One interface. Every chain. Every action. AI-powered.
 
-SuperApp combines cross-chain liquidity (Across Protocol) with agent-native wallet infrastructure (MoonPay) to deliver a single surface for all crypto operations:
+SuperApp combines crosschain liquidity (Across Protocol) with agent-native wallet infrastructure (MoonPay) to deliver a single surface for all crypto operations:
 
 - **Bridge** tokens across 10+ chains in ~2 seconds
-- **Swap** any token to any token, cross-chain, in one transaction
+- **Swap** any token to any token, crosschain, in one transaction
 - **Hold** crypto in non-custodial AI-agent wallets
 - **Buy/Sell** crypto with fiat on/off ramps
 - **Trade** with DCA, limit orders, and stop losses
 - **Research** tokens, markets, and alpha opportunities
-- **Execute** embedded cross-chain actions (stake, mint, deposit post-bridge)
+- **Execute** embedded crosschain actions (stake, mint, deposit post-bridge)
 
 ## Architecture
 
@@ -28,7 +28,7 @@ SuperApp combines cross-chain liquidity (Across Protocol) with agent-native wall
 ├──────────────────────┬──────────────────────────────┤
 │   Across Protocol    │        MoonPay Agent          │
 │                      │        Infrastructure         │
-│  - Cross-chain swap  │  - Non-custodial wallets     │
+│  - Crosschain swap  │  - Non-custodial wallets     │
 │  - Bridge (2s fills) │  - Fiat on/off ramps         │
 │  - Embedded actions  │  - DCA / Limit orders        │
 │  - Fee optimization  │  - Token discovery           │
@@ -93,7 +93,7 @@ Add to `.claude/settings.json`:
 
 | Endpoint | Purpose |
 |---|---|
-| `GET /swap/approval` | Get cross-chain swap transaction data |
+| `GET /swap/approval` | Get crosschain swap transaction data |
 | `POST /swap/approval` | Swap + embedded destination actions |
 | `GET /swap/chains` | List supported chains |
 | `GET /swap/tokens` | List whitelisted tokens |
@@ -136,7 +136,7 @@ superapp/
 │   ├── across/                # Across Protocol integration
 │   │   ├── client.ts          # API client
 │   │   ├── swap.ts            # Swap/bridge operations
-│   │   ├── actions.ts         # Embedded cross-chain actions
+│   │   ├── actions.ts         # Embedded crosschain actions
 │   │   └── types.ts           # Across-specific types
 │   ├── moonpay/               # MoonPay integration
 │   │   ├── wallet.ts          # Wallet management

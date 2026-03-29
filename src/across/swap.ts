@@ -2,7 +2,7 @@ import { AcrossClient } from "./client.js";
 import type { SwapApprovalParams, SwapApprovalResponse, DepositStatus } from "./types.js";
 
 /**
- * Execute a cross-chain swap via Across Protocol.
+ * Execute a crosschain swap via Across Protocol.
  *
  * Flow:
  * 1. Get swap approval (quote + transaction data)

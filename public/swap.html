@@ -13,16 +13,19 @@ tailwind.config = {
   theme: {
     extend: {
       colors: {
-        "outline-variant":"#a9b4b3","on-surface":"#2a3434","background":"#ffffff",
-        "on-primary-container":"#3c5a25","on-primary":"#e9ffd2","primary":"#486730",
-        "surface-container-lowest":"#ffffff","surface-container-high":"#e1eae9",
-        "surface-bright":"#f8faf9","on-background":"#2a3434","on-error":"#fff7f6",
-        "outline":"#727d7c","error":"#9e422c","surface":"#ffffff",
-        "surface-dim":"#cfdddb","on-surface-variant":"#576160",
-        "surface-container":"#e9efee","surface-container-low":"#f0f4f3",
-        "primary-fixed":"#c9eea9","primary-container":"#c9eea9",
-        "error-container":"#fe8b70","surface-variant":"#dae5e4",
-        "surface-container-highest":"#dae5e4","on-secondary":"#f3faff",
+        "outline-variant":"#a3b899","on-surface":"#2f3a33","background":"#faf7f5",
+        "on-primary-container":"#2f3a33","on-primary":"#faf7f5","primary":"#667b68",
+        "surface-container-lowest":"#ffffff","surface-container-high":"#dde6d5",
+        "surface-bright":"#faf7f5","on-background":"#1f2622","on-error":"#faf7f5",
+        "outline":"#667b68","error":"#9e422c","surface":"#faf7f5",
+        "surface-dim":"#dde6d5","on-surface-variant":"#667b68",
+        "surface-container":"#fceee9","surface-container-low":"#fceee9",
+        "primary-fixed":"#dde6d5","primary-container":"#dde6d5",
+        "error-container":"#f8d3c5","surface-variant":"#dde6d5",
+        "surface-container-highest":"#dde6d5",
+        "sage-dark":"#1f2622","sage-cream":"#faf7f5","sage-peach":"#f8d3c5",
+        "sage-peach-light":"#fceee9","sage-green-light":"#dde6d5",
+        "sage-green":"#a3b899","sage-green-mid":"#667b68","sage-dark-green":"#2f3a33",
       },
       fontFamily: { "headline":["Outfit"], "body":["Outfit"], "label":["Outfit"] },
       borderRadius: { "DEFAULT":"1rem","lg":"2rem","xl":"3rem","full":"9999px" },
@@ -33,14 +36,14 @@ tailwind.config = {
 <style>
   body { font-family: 'Outfit', sans-serif; }
   .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
-  .primary-gradient { background: linear-gradient(135deg, #486730 0%, #c9eea9 100%); }
+  .primary-gradient { background: linear-gradient(135deg, #2f3a33 0%, #667b68 100%); }
   input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
   input[type=number] { -moz-appearance: textfield; }
-  .tab-active { background: white; color: #486730; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+  .tab-active { background: white; color: #2f3a33; box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
   html { height: 100%; }
 </style>
 </head>
-<body class="bg-background text-on-surface antialiased h-full flex flex-col">
+<body class="bg-background text-on-surface antialiased h-screen flex flex-col overflow-hidden">
 
 <!-- Header -->
 <header class="w-full max-w-2xl mx-auto h-14 flex justify-between items-center px-6 flex-shrink-0">
@@ -60,10 +63,10 @@ tailwind.config = {
 </header>
 
 <!-- Main -->
-<main class="w-full max-w-[680px] mx-auto px-8 py-12 flex-1">
+<main class="w-full max-w-[640px] mx-auto px-8 py-6 flex-1 flex flex-col justify-center min-h-0">
 
   <!-- Mode Tabs + Chain selectors (bridge) -->
-  <div class="flex items-center justify-between mb-8">
+  <div class="flex items-center justify-between mb-5">
     <div class="inline-flex bg-surface-container-low rounded-full p-1 gap-1">
       <button id="tab-swap" onclick="setMode('swap')" class="tab-active px-6 py-2 rounded-full text-sm font-bold transition-all">Swap</button>
       <button id="tab-bridge" onclick="setMode('bridge')" class="px-6 py-2 rounded-full text-sm font-bold text-on-surface-variant transition-all">Bridge</button>
@@ -87,7 +90,7 @@ tailwind.config = {
   </div>
 
   <!-- Rate pill — right aligned -->
-  <div class="flex justify-end mb-10">
+  <div class="flex justify-end mb-5">
     <button class="bg-surface-container-low px-5 py-2.5 rounded-full text-sm font-bold text-on-surface flex items-center gap-2 border border-outline-variant/10 shadow-sm hover:bg-surface-container-high transition-colors">
       <span id="rate-display">--</span>
       <span class="material-symbols-outlined text-base">chevron_right</span>
@@ -103,7 +106,7 @@ tailwind.config = {
         <span id="from-token-label" class="font-bold text-base">ETH</span>
         <span class="material-symbols-outlined text-base text-on-surface-variant">expand_more</span>
       </button>
-      <input id="input-amount" class="flex-1 text-right text-7xl md:text-8xl font-black text-on-background border-none focus:ring-0 p-0 bg-transparent placeholder:text-on-surface-variant/15 min-w-0 leading-none" placeholder="0" type="number" oninput="onAmountChange()"/>
+      <input id="input-amount" class="flex-1 text-right text-5xl md:text-6xl font-black text-on-background border-none focus:ring-0 p-0 bg-transparent placeholder:text-on-surface-variant/15 min-w-0 leading-none" placeholder="0" type="number" oninput="onAmountChange()"/>
     </div>
     <!-- Balance / warning -->
     <div id="balance-warning" class="flex justify-end mt-3">
@@ -115,7 +118,7 @@ tailwind.config = {
   </div>
 
   <!-- ═══ DIVIDER + SWAP ═══ -->
-  <div class="relative h-px bg-outline-variant/15 w-full my-8">
+  <div class="relative h-px bg-outline-variant/15 w-full my-5">
     <button onclick="swapTokens()" class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-11 h-11 bg-white border border-outline-variant/10 shadow-md rounded-full flex items-center justify-center text-on-surface-variant hover:text-primary hover:rotate-180 transition-all duration-300">
       <span class="material-symbols-outlined text-xl">swap_vert</span>
     </button>
@@ -130,7 +133,7 @@ tailwind.config = {
         <span id="to-token-label" class="font-bold text-base">USDC</span>
         <span class="material-symbols-outlined text-base text-on-surface-variant">expand_more</span>
       </button>
-      <span id="output-amount" class="flex-1 text-right text-7xl md:text-8xl font-black text-on-background leading-none min-w-0 select-text">--</span>
+      <span id="output-amount" class="flex-1 text-right text-5xl md:text-6xl font-black text-on-background leading-none min-w-0 select-text">--</span>
     </div>
     <div class="flex justify-end mt-1">
       <span id="output-usd" class="text-sm text-on-surface-variant"></span>
@@ -138,10 +141,10 @@ tailwind.config = {
   </div>
 
   <!-- Separator -->
-  <div class="h-px bg-outline-variant/10 w-full my-6"></div>
+  <div class="h-px bg-outline-variant/10 w-full my-4"></div>
 
   <!-- ═══ ACTIONS ═══ -->
-  <div class="space-y-6 mb-8">
+  <div class="space-y-4 mb-4">
 
     <!-- DCA row -->
     <button class="w-full flex items-center gap-5 text-left group">
@@ -172,7 +175,7 @@ tailwind.config = {
   </div>
 
   <!-- ═══ REVIEW BUTTON ═══ -->
-  <button id="action-btn" onclick="executeSwap()" class="w-full py-5 bg-surface-container-high text-on-surface-variant rounded-full font-black text-xl transition-colors">
+  <button id="action-btn" onclick="executeSwap()" class="w-full py-4 bg-surface-container-high text-on-surface-variant rounded-full font-black text-lg transition-colors">
     Review
   </button>
 
@@ -521,10 +524,10 @@ function updateActionBtn() {
   const btn = document.getElementById('action-btn');
   if (!walletAddress) {
     btn.textContent = 'Connect Wallet';
-    btn.className = 'w-full py-5 primary-gradient text-on-primary rounded-full font-black text-xl active:scale-[0.98] transition-transform shadow-lg shadow-primary/20';
+    btn.className = 'w-full py-4 primary-gradient text-on-primary rounded-full font-black text-lg active:scale-[0.98] transition-transform shadow-lg shadow-primary/20';
   } else {
     btn.textContent = 'Review';
-    btn.className = 'w-full py-5 bg-surface-container-high text-on-surface-variant rounded-full font-black text-xl hover:bg-primary/10 transition-colors';
+    btn.className = 'w-full py-4 bg-surface-container-high text-on-surface-variant rounded-full font-black text-lg hover:bg-primary/10 transition-colors';
   }
 }
 

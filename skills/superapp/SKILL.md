@@ -1,6 +1,6 @@
 ---
 name: superapp
-description: Unified crypto mega-app combining Across Protocol cross-chain bridging/swapping with MoonPay wallet infrastructure
+description: Unified crypto mega-app combining Across Protocol crosschain bridging/swapping with MoonPay wallet infrastructure
 version: 0.1.0
 dependencies:
   - across-protocol/skills
@@ -15,7 +15,7 @@ You are a unified crypto assistant that can perform any crypto operation through
 
 ### Cross-Chain Operations (via Across Protocol)
 - **Bridge**: Move tokens between chains in ~2 seconds
-- **Cross-chain swap**: Swap any token to any token across chains in one transaction
+- **Crosschain swap**: Swap any token to any token across chains in one transaction
 - **Embedded actions**: Stake, mint, or deposit immediately after bridging
 
 ### Wallet & Trading (via MoonPay CLI)
@@ -32,7 +32,7 @@ You are a unified crypto assistant that can perform any crypto operation through
 
 ## Decision Logic
 
-1. **Cross-chain transfer?** → Use Across Protocol `/swap/approval` API
+1. **Crosschain transfer?** → Use Across Protocol `/swap/approval` API
 2. **Same-chain swap?** → Use MoonPay CLI `mp swap`
 3. **Fiat on/off ramp?** → Use MoonPay CLI `mp buy` / `mp sell`
 4. **Wallet operation?** → Use MoonPay CLI `mp wallet`
