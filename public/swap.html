@@ -19,13 +19,11 @@ tailwind.config = {
         "surface-bright":"#faf7f5","on-background":"#1f2622","on-error":"#faf7f5",
         "outline":"#667b68","error":"#9e422c","surface":"#faf7f5",
         "surface-dim":"#dde6d5","on-surface-variant":"#667b68",
-        "surface-container":"#fceee9","surface-container-low":"#fceee9",
+        "surface-container":"#eaefe5","surface-container-low":"#f2f5ef",
         "primary-fixed":"#dde6d5","primary-container":"#dde6d5",
         "error-container":"#f8d3c5","surface-variant":"#dde6d5",
-        "surface-container-highest":"#dde6d5",
-        "sage-dark":"#1f2622","sage-cream":"#faf7f5","sage-peach":"#f8d3c5",
-        "sage-peach-light":"#fceee9","sage-green-light":"#dde6d5",
-        "sage-green":"#a3b899","sage-green-mid":"#667b68","sage-dark-green":"#2f3a33",
+        "surface-container-highest":"#d3deca",
+        "sage-peach":"#f8d3c5","sage-peach-light":"#fceee9",
       },
       fontFamily: { "headline":["Outfit"], "body":["Outfit"], "label":["Outfit"] },
       borderRadius: { "DEFAULT":"1rem","lg":"2rem","xl":"3rem","full":"9999px" },
@@ -110,7 +108,7 @@ tailwind.config = {
     </div>
     <!-- Balance / warning -->
     <div id="balance-warning" class="flex justify-end mt-3">
-      <div class="inline-flex items-center gap-2 text-sm text-on-surface-variant bg-[#FFF8E1] px-3 py-1.5 rounded-lg" id="balance-pill">
+      <div class="inline-flex items-center gap-2 text-sm text-on-surface-variant bg-sage-peach-light px-3 py-1.5 rounded-lg" id="balance-pill">
         <span class="text-amber-600 text-base">&#9888;</span>
         <span>You only have <button onclick="setMax()" class="font-bold underline underline-offset-2 decoration-dotted" id="from-balance">--</button> available</span>
       </div>
