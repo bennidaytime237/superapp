@@ -191,14 +191,11 @@ tailwind.config = {
         <span class="material-symbols-outlined text-on-surface-variant">close</span>
       </button>
     </div>
+    <!-- Search -->
+    <input id="token-search" type="text" placeholder="Search token or chain..." class="w-full px-4 py-3 rounded-xl border border-outline-variant/15 text-sm mb-4 focus:outline-none focus:ring-2 focus:ring-primary/30" oninput="filterTokenList()"/>
     <!-- Token list -->
-    <div class="border border-outline-variant/15 rounded-2xl overflow-hidden">
-      <div class="px-5 py-3 border-b border-outline-variant/10">
-        <p class="font-bold text-on-surface text-sm">Wallet</p>
-      </div>
-      <div id="token-list" class="divide-y divide-outline-variant/10 overflow-y-auto max-h-[50vh]">
-        <!-- Populated by JS -->
-      </div>
+    <div id="token-list" class="overflow-y-auto max-h-[55vh] space-y-1">
+      <!-- Populated by JS -->
     </div>
   </div>
 </div>
@@ -208,18 +205,26 @@ tailwind.config = {
 const TW = 'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains';
 const ACROSS_API = 'https://app.across.to/api';
 
-const CHAINS = [
+let CHAINS = [
   { id: 1, name: 'Ethereum', slug: 'ethereum' },
   { id: 42161, name: 'Arbitrum', slug: 'arbitrum' },
   { id: 8453, name: 'Base', slug: 'base' },
   { id: 10, name: 'Optimism', slug: 'optimism' },
   { id: 137, name: 'Polygon', slug: 'polygon' },
+  { id: 324, name: 'zkSync Era', slug: 'zksync' },
+  { id: 59144, name: 'Linea', slug: 'linea' },
+  { id: 34443, name: 'Mode', slug: 'mode' },
+  { id: 1135, name: 'Lisk', slug: 'lisk' },
+  { id: 480, name: 'World Chain', slug: 'worldchain' },
+  { id: 81457, name: 'Blast', slug: 'blast' },
+  { id: 534352, name: 'Scroll', slug: 'scroll' },
+  { id: 7777777, name: 'Zora', slug: 'zora' },
 ];
 
-const TOKENS = [
+let TOKENS = [
   { symbol: 'ETH', name: 'Ethereum', decimals: 18, native: true,
-    addresses: { 1:null, 42161:null, 8453:null, 10:null },
-    wrapAddresses: { 1:'0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2', 42161:'0x82aF49447D8a07e3bd95BD0d56f35241523fBab1', 8453:'0x4200000000000000000000000000000000000006', 10:'0x4200000000000000000000000000000000000006' }},
+    addresses: { 1:null, 42161:null, 8453:null, 10:null, 324:null, 59144:null, 34443:null, 81457:null, 534352:null, 7777777:null, 480:null },
+    wrapAddresses: { 1:'0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2', 42161:'0x82aF49447D8a07e3bd95BD0d56f35241523fBab1', 8453:'0x4200000000000000000000000000000000000006', 10:'0x4200000000000000000000000000000000000006', 324:'0x5AEa5775959fBC2557Cc8789bC1bf90A239D9a91', 59144:'0xe5D7C2a44FfDDf6b295A15c148167daaAf5Cf34f', 34443:'0x4200000000000000000000000000000000000006', 81457:'0x4300000000000000000000000000000000000004', 534352:'0x5300000000000000000000000000000000000004', 7777777:'0x4200000000000000000000000000000000000006', 480:'0x4200000000000000000000000000000000000006' }},
   { symbol: 'USDC', name: 'USD Coin', decimals: 6, native: false,
     addresses: { 1:'0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48', 42161:'0xaf88d065e77c8cC2239327C5EDb3A432268e5831', 8453:'0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913', 10:'0x0b2C639c533813f4Aa9D7837CAf62653d097Ff85', 137:'0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359' }},
   { symbol: 'USDT', name: 'Tether', decimals: 6, native: false,
@@ -228,6 +233,16 @@ const TOKENS = [
     addresses: { 1:'0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599', 42161:'0x2f2a2543B76A4166549F7aaB2e75Bef0aefC5B0f' }},
   { symbol: 'DAI', name: 'Dai', decimals: 18, native: false,
     addresses: { 1:'0x6B175474E89094C44Da98b954EedeAC495271d0F', 42161:'0xDA10009cBd5D07dd0CeCc66161FC93D7c9000da1' }},
+  { symbol: 'WETH', name: 'Wrapped ETH', decimals: 18, native: false,
+    addresses: { 1:'0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2', 42161:'0x82aF49447D8a07e3bd95BD0d56f35241523fBab1', 8453:'0x4200000000000000000000000000000000000006', 10:'0x4200000000000000000000000000000000000006' }},
+  { symbol: 'UMA', name: 'UMA', decimals: 18, native: false,
+    addresses: { 1:'0x04Fa0d235C4abf4BcF4787aF4CF447DE572eF828', 42161:'0xd693Ec944A85eeca4247eC1c3b130DCa9B0C3b22', 10:'0xE7798f023fC62146e8Aa1b36Da45fb70855a77Ea', 137:'0x3066818837c5e6eD6601bd5a91B0762a89fB4EB5' }},
+  { symbol: 'ACX', name: 'Across Protocol', decimals: 18, native: false,
+    addresses: { 1:'0x44108f0223A3C3028F5Fe7AEC7f9bb2E66beF82F', 42161:'0x53691596d1BCe8CEa565b3fBC4d3b90d8b025213', 10:'0xFf733b2A3557a7ed6697007ab5D11B79FdD1b76B', 137:'0xF328b73B6c685831F238c30a23Fc19140CB4D8FC' }},
+  { symbol: 'POOL', name: 'PoolTogether', decimals: 18, native: false,
+    addresses: { 1:'0x0cEC1A9154Ff802e7934Fc916Ed7Ca50bDE6844e', 10:'0x395Ae52bB17aef68C2888d941736A71dC6d4e125' }},
+  { symbol: 'SNX', name: 'Synthetix', decimals: 18, native: false,
+    addresses: { 1:'0xC011a73ee8576Fb46F5E1c5751cA3B9Fe0af2a6F', 10:'0x8700dAec35aF8Ff88c16BdF0418774CB3D7599B4' }},
 ];
 
 // ── State ──
@@ -312,44 +327,95 @@ function setMode(m) {
 }
 
 // ── Token picker modal ──
-let pickerSide = 'from'; // which side the modal is picking for
+let pickerSide = 'from';
 let cachedBalances = null;
+let allModalRows = []; // cached for filtering
 
-function cycleToken(side) {
-  openTokenModal(side);
-}
+function cycleToken(side) { openTokenModal(side); }
 
 function openTokenModal(side) {
   pickerSide = side;
-  const modal = document.getElementById('token-modal');
-  const list = document.getElementById('token-list');
-  const chainId = CHAINS[mode === 'bridge' ? (side === 'from' ? fromChainIdx : toChainIdx) : 0].id;
-  const otherIdx = side === 'from' ? toTokenIdx : fromTokenIdx;
+  document.getElementById('token-search').value = '';
+  buildTokenList();
+  document.getElementById('token-modal').classList.remove('hidden');
+  document.body.style.overflow = 'hidden';
+  document.getElementById('token-search').focus();
+}
 
-  // Build rows
-  list.innerHTML = TOKENS.map((token, idx) => {
-    const icon = tokenIconUrl(token, chainId);
-    const bal = cachedBalances?.[chainId]?.[token.symbol] || 0;
+function buildTokenList() {
+  const list = document.getElementById('token-list');
+  const currentFromToken = TOKENS[fromTokenIdx];
+  const currentToToken = TOKENS[toTokenIdx];
+  const currentFromChain = CHAINS[mode === 'bridge' ? fromChainIdx : 0];
+  const currentToChain = CHAINS[mode === 'bridge' ? toChainIdx : 0];
+
+  // Build flat list: each entry is a { chainId, tokenIdx } pair
+  allModalRows = [];
+  CHAINS.forEach((chain) => {
+    TOKENS.forEach((token, tIdx) => {
+      // token must exist on this chain
+      const hasAddr = token.native
+        ? (token.addresses.hasOwnProperty(chain.id))
+        : (token.addresses[chain.id]);
+      if (!hasAddr) return;
+      allModalRows.push({ chain, token, tIdx });
+    });
+  });
+
+  // Sort: tokens with balance first, then alphabetically
+  allModalRows.sort((a, b) => {
+    const balA = cachedBalances?.[a.chain.id]?.[a.token.symbol] || 0;
+    const balB = cachedBalances?.[b.chain.id]?.[b.token.symbol] || 0;
+    if (balA > 0 && balB <= 0) return -1;
+    if (balB > 0 && balA <= 0) return 1;
+    if (a.token.symbol < b.token.symbol) return -1;
+    if (a.token.symbol > b.token.symbol) return 1;
+    return a.chain.name.localeCompare(b.chain.name);
+  });
+
+  renderModalRows(allModalRows);
+}
+
+function renderModalRows(rows) {
+  const list = document.getElementById('token-list');
+  const selToken = pickerSide === 'from' ? TOKENS[fromTokenIdx] : TOKENS[toTokenIdx];
+  const selChain = pickerSide === 'from'
+    ? CHAINS[mode === 'bridge' ? fromChainIdx : 0]
+    : CHAINS[mode === 'bridge' ? toChainIdx : 0];
+
+  list.innerHTML = rows.map(({ chain, token, tIdx }) => {
+    const bal = cachedBalances?.[chain.id]?.[token.symbol] || 0;
     const price = prices[token.symbol] || 0;
     const usdVal = bal * price;
-    const isSelected = (side === 'from' ? fromTokenIdx : toTokenIdx) === idx;
-    const isOther = idx === otherIdx;
-    const dimmed = isOther ? 'opacity-40 pointer-events-none' : '';
-    const highlight = isSelected ? 'bg-primary-container/30' : 'hover:bg-surface-container-low';
+    const isSelected = selToken.symbol === token.symbol && selChain.id === chain.id;
+    const highlight = isSelected ? 'bg-primary-container/20' : 'hover:bg-surface-container-low';
+    const tIcon = tokenIconUrl(token, chain.id);
+    const cIcon = `${TW}/${chain.slug}/info/logo.png`;
 
-    return `<button onclick="selectToken(${idx})" class="w-full flex items-center gap-4 px-5 py-4 ${highlight} ${dimmed} transition-colors text-left">
-      <img src="${icon}" alt="${token.symbol}" class="w-10 h-10 rounded-full bg-surface-container" onerror="this.outerHTML='<div class=\\'w-10 h-10 rounded-full bg-surface-container flex items-center justify-center\\'><span class=\\'font-bold text-on-surface-variant\\'>${token.symbol[0]}</span></div>'"/>
-      <div class="flex-1 min-w-0">
-        <p class="font-bold text-on-background text-[15px] ${bal > 0 ? '' : 'text-on-surface-variant'}">${bal > 0 ? fmtNum(bal) + ' ' : '0 '}${token.symbol}</p>
-        <p class="text-sm text-on-surface-variant">${token.name}</p>
+    return `<button onclick="selectToken(${tIdx}, ${chain.id})" class="w-full flex items-center gap-3 px-4 py-3 ${highlight} rounded-xl transition-colors text-left" data-search="${token.symbol} ${token.name} ${chain.name}">
+      <div class="relative flex-shrink-0">
+        <img src="${tIcon}" alt="${token.symbol}" class="w-10 h-10 rounded-full bg-surface-container" onerror="this.style.display='none'"/>
+        <img src="${cIcon}" alt="${chain.name}" class="w-5 h-5 rounded-full absolute -bottom-0.5 -right-0.5 border-2 border-white bg-white"/>
       </div>
-      ${bal > 0 ? `<span class="text-sm text-on-surface-variant">$${fmtNum(usdVal)}</span>` : ''}
-      <span class="material-symbols-outlined text-on-surface-variant text-lg">chevron_right</span>
+      <div class="flex-1 min-w-0">
+        <p class="font-bold text-[15px] ${bal > 0 ? 'text-on-background' : 'text-on-surface-variant'}">${bal > 0 ? fmtNum(bal) + ' ' : '0 '}${token.symbol}</p>
+        <p class="text-xs text-on-surface-variant">${token.name} · ${chain.name}</p>
+      </div>
+      ${bal > 0 ? `<span class="text-xs text-on-surface-variant font-medium">$${fmtNum(usdVal)}</span>` : ''}
+      <span class="material-symbols-outlined text-on-surface-variant text-base flex-shrink-0">chevron_right</span>
     </button>`;
   }).join('');
+}
 
-  modal.classList.remove('hidden');
-  document.body.style.overflow = 'hidden';
+function filterTokenList() {
+  const q = document.getElementById('token-search').value.toLowerCase().trim();
+  if (!q) { renderModalRows(allModalRows); return; }
+  const filtered = allModalRows.filter(({ chain, token }) =>
+    token.symbol.toLowerCase().includes(q) ||
+    token.name.toLowerCase().includes(q) ||
+    chain.name.toLowerCase().includes(q)
+  );
+  renderModalRows(filtered);
 }
 
 function closeTokenModal() {
@@ -357,14 +423,25 @@ function closeTokenModal() {
   document.body.style.overflow = '';
 }
 
-function selectToken(idx) {
+function selectToken(tokenIdx, chainId) {
+  const chainIdx = CHAINS.findIndex(c => c.id === chainId);
   if (pickerSide === 'from') {
-    fromTokenIdx = idx;
+    fromTokenIdx = tokenIdx;
+    if (mode === 'bridge' && chainIdx >= 0) fromChainIdx = chainIdx;
+    // avoid same token+chain on both sides
+    if (fromTokenIdx === toTokenIdx && fromChainIdx === toChainIdx) {
+      toChainIdx = (toChainIdx + 1) % CHAINS.length;
+    }
   } else {
-    toTokenIdx = idx;
+    toTokenIdx = tokenIdx;
+    if (mode === 'bridge' && chainIdx >= 0) toChainIdx = chainIdx;
+    if (fromTokenIdx === toTokenIdx && fromChainIdx === toChainIdx) {
+      fromChainIdx = (fromChainIdx + 1) % CHAINS.length;
+    }
   }
   closeTokenModal();
   updateTokenDisplay();
+  updateChainDisplay();
   updateBalance();
   onAmountChange();
 }
@@ -535,7 +612,7 @@ async function fetchQuote(amount) {
     // Parse output
     if (data.expectedOutput) {
       const outNum = Number(BigInt(data.expectedOutput)) / 10 ** toToken.decimals;
-      document.getElementById('output-amount').value = fmtNum(outNum);
+      document.getElementById('output-amount').textContent = fmtNum(outNum);
       const tp = prices[toToken.symbol] || 0;
       document.getElementById('output-usd').textContent = `≈ $${fmtNum(outNum * tp)}`;
     }
@@ -567,12 +644,60 @@ function fmtNum(n) {
   return n.toLocaleString('en-US', { maximumFractionDigits: 6 });
 }
 
+// ── Load Across routes dynamically ──
+async function loadRoutes() {
+  try {
+    const res = await fetch('/api/routes');
+    if (!res.ok) return;
+    const { chains, tokens, routes } = await res.json();
+
+    // Enrich TOKENS with any new tokens from Across that we don't have
+    if (Array.isArray(tokens)) {
+      for (const t of tokens) {
+        const existing = TOKENS.find(x => x.symbol === t.symbol);
+        if (existing) {
+          // Add any new chain addresses
+          if (t.chainId && t.address) {
+            existing.addresses[t.chainId] = t.address;
+          }
+        } else if (t.symbol && t.address && t.chainId) {
+          // New token we didn't have
+          const newToken = {
+            symbol: t.symbol,
+            name: t.name || t.symbol,
+            decimals: t.decimals || 18,
+            native: false,
+            addresses: { [t.chainId]: t.address },
+          };
+          TOKENS.push(newToken);
+        }
+      }
+    }
+
+    // Enrich CHAINS
+    if (Array.isArray(chains)) {
+      for (const c of chains) {
+        if (!CHAINS.find(x => x.id === c.chainId)) {
+          CHAINS.push({
+            id: c.chainId,
+            name: c.name || `Chain ${c.chainId}`,
+            slug: (c.name || '').toLowerCase().replace(/\s+/g, ''),
+          });
+        }
+      }
+    }
+    console.log(`Loaded ${TOKENS.length} tokens across ${CHAINS.length} chains from Across`);
+  } catch (e) {
+    console.warn('Could not load Across routes, using defaults:', e);
+  }
+}
+
 // ── Init ──
 (async function init() {
   updateChainDisplay();
   updateTokenDisplay();
   updateActionBtn();
-  await fetchPrices();
+  await Promise.all([fetchPrices(), loadRoutes()]);
   onAmountChange();
 
   if (window.ethereum) {
