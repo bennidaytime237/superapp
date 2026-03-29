@@ -13,29 +13,16 @@ tailwind.config = {
   theme: {
     extend: {
       colors: {
-        "on-secondary-fixed-variant":"#435f6d","outline-variant":"#a9b4b3",
-        "secondary-container":"#c9e7f7","primary-fixed-dim":"#bbdf9c",
-        "on-surface":"#2a3434","on-tertiary-fixed":"#3a4f37","error-dim":"#5c1202",
-        "background":"#ffffff","on-secondary-container":"#395663",
-        "on-error-container":"#742410","on-primary-container":"#3c5a25",
-        "error-container":"#fe8b70","on-primary":"#e9ffd2","primary":"#486730",
-        "tertiary-container":"#e2fbda","inverse-on-surface":"#9b9d9d",
+        "outline-variant":"#a9b4b3","on-surface":"#2a3434","background":"#ffffff",
+        "on-primary-container":"#3c5a25","on-primary":"#e9ffd2","primary":"#486730",
         "surface-container-lowest":"#ffffff","surface-container-high":"#e1eae9",
-        "on-secondary-fixed":"#264350","primary-dim":"#3d5a26",
-        "on-primary-fixed":"#2a4714","surface-bright":"#f8faf9",
-        "on-background":"#2a3434","tertiary-fixed":"#e2fbda","on-error":"#fff7f6",
-        "on-tertiary-container":"#4c6148","on-tertiary-fixed-variant":"#566c52",
+        "surface-bright":"#f8faf9","on-background":"#2a3434","on-error":"#fff7f6",
         "outline":"#727d7c","error":"#9e422c","surface":"#ffffff",
-        "inverse-primary":"#d7fcb6","surface-dim":"#cfdddb","tertiary":"#4f654b",
-        "on-secondary":"#f3faff","secondary-dim":"#3a5764","tertiary-dim":"#435940",
-        "secondary-fixed-dim":"#bbd9e9","surface-container":"#e9efee",
-        "inverse-surface":"#0b0f0f","surface-tint":"#486730",
-        "surface-variant":"#dae5e4","primary-fixed":"#c9eea9",
-        "secondary":"#466370","tertiary-fixed-dim":"#d4eccc",
-        "primary-container":"#c9eea9","on-surface-variant":"#576160",
-        "on-primary-fixed-variant":"#45642e","surface-container-low":"#f0f4f3",
-        "on-tertiary":"#eaffe2","secondary-fixed":"#c9e7f7",
-        "surface-container-highest":"#dae5e4"
+        "surface-dim":"#cfdddb","on-surface-variant":"#576160",
+        "surface-container":"#e9efee","surface-container-low":"#f0f4f3",
+        "primary-fixed":"#c9eea9","primary-container":"#c9eea9",
+        "error-container":"#fe8b70","surface-variant":"#dae5e4",
+        "surface-container-highest":"#dae5e4","on-secondary":"#f3faff",
       },
       fontFamily: { "headline":["Outfit"], "body":["Outfit"], "label":["Outfit"] },
       borderRadius: { "DEFAULT":"1rem","lg":"2rem","xl":"3rem","full":"9999px" },
@@ -50,313 +37,503 @@ tailwind.config = {
   input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
   input[type=number] { -moz-appearance: textfield; }
   .tab-active { background: white; color: #486730; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
-  .chain-badge { transition: all 0.15s ease; }
-  .chain-badge:hover { transform: scale(1.05); }
-  .chain-badge.selected { ring: 2px; ring-color: #486730; }
+  html, body { height: 100%; overflow: hidden; }
 </style>
 </head>
-<body class="bg-background text-on-surface antialiased min-h-screen flex flex-col">
+<body class="bg-background text-on-surface antialiased h-full flex flex-col">
 
 <!-- Header -->
-<header class="w-full max-w-7xl mx-auto h-16 flex justify-between items-center px-6">
+<header class="w-full max-w-2xl mx-auto h-14 flex justify-between items-center px-6 flex-shrink-0">
   <a href="index.html" class="flex items-center gap-2">
-    <img src="sage-wordmark.svg" alt="Sage" class="h-7"/>
+    <img src="sage-wordmark.svg" alt="Sage" class="h-6"/>
   </a>
-  <div class="flex items-center gap-4">
-    <a href="index.html" class="text-sm font-medium text-on-surface-variant hover:text-primary transition-colors flex items-center gap-1">
+  <div class="flex items-center gap-3">
+    <a href="index.html" class="text-xs font-medium text-on-surface-variant hover:text-primary transition-colors flex items-center gap-1">
       <span class="material-symbols-outlined text-sm">arrow_back</span>
       Dashboard
     </a>
-    <div class="w-10 h-10 rounded-full primary-gradient flex items-center justify-center text-on-primary text-sm font-bold">
-      SA
-    </div>
+    <button id="connect-btn" onclick="connectWallet()" class="flex items-center gap-2 px-3 py-1.5 primary-gradient text-on-primary rounded-full text-xs font-bold active:scale-95 transition-transform">
+      <span class="material-symbols-outlined text-sm">account_balance_wallet</span>
+      <span id="connect-label">Connect</span>
+    </button>
   </div>
 </header>
 
-<!-- Main -->
-<main class="w-full max-w-2xl mx-auto px-6 py-8 flex-1">
-  <div class="space-y-10">
+<!-- Main — single viewport, no scroll -->
+<main class="w-full max-w-xl mx-auto px-6 flex-1 flex flex-col justify-center min-h-0">
 
-    <!-- Mode Tabs: Swap / Bridge -->
-    <div class="flex justify-center">
-      <div class="inline-flex bg-surface-container-low rounded-full p-1 gap-1">
-        <button id="tab-swap" onclick="setMode('swap')" class="tab-active px-6 py-2.5 rounded-full text-sm font-bold transition-all">
-          Swap
-        </button>
-        <button id="tab-bridge" onclick="setMode('bridge')" class="px-6 py-2.5 rounded-full text-sm font-bold text-on-surface-variant transition-all">
-          Bridge
-        </button>
-      </div>
+  <!-- Mode Tabs -->
+  <div class="flex justify-center mb-4">
+    <div class="inline-flex bg-surface-container-low rounded-full p-1 gap-1">
+      <button id="tab-swap" onclick="setMode('swap')" class="tab-active px-5 py-2 rounded-full text-sm font-bold transition-all">Swap</button>
+      <button id="tab-bridge" onclick="setMode('bridge')" class="px-5 py-2 rounded-full text-sm font-bold text-on-surface-variant transition-all">Bridge</button>
     </div>
-
-    <!-- Chain Selectors (visible in bridge mode) -->
-    <div id="chain-selectors" class="hidden space-y-4">
-      <div class="flex items-center gap-4">
-        <div class="flex-1">
-          <label class="text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-2 block">From Chain</label>
-          <button id="from-chain-btn" class="w-full flex items-center gap-3 bg-surface-container-low px-4 py-3 rounded-xl border border-outline-variant/10 hover:bg-surface-container-high transition-colors">
-            <img id="from-chain-icon" src="" alt="" class="w-8 h-8 rounded-full"/>
-            <span class="font-bold text-sm" id="from-chain-name">Ethereum</span>
-            <span class="material-symbols-outlined text-sm ml-auto">expand_more</span>
-          </button>
-        </div>
-
-        <div class="pt-6">
-          <button onclick="swapChains()" class="w-10 h-10 bg-white border border-outline-variant/10 shadow-md rounded-full flex items-center justify-center text-on-surface-variant hover:text-primary transition-colors">
-            <span class="material-symbols-outlined">swap_horiz</span>
-          </button>
-        </div>
-
-        <div class="flex-1">
-          <label class="text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-2 block">To Chain</label>
-          <button id="to-chain-btn" class="w-full flex items-center gap-3 bg-surface-container-low px-4 py-3 rounded-xl border border-outline-variant/10 hover:bg-surface-container-high transition-colors">
-            <img id="to-chain-icon" src="" alt="" class="w-8 h-8 rounded-full"/>
-            <span class="font-bold text-sm" id="to-chain-name">Arbitrum</span>
-            <span class="material-symbols-outlined text-sm ml-auto">expand_more</span>
-          </button>
-        </div>
-      </div>
-
-      <!-- Supported chains hint -->
-      <div class="flex items-center gap-2 text-xs text-on-surface-variant">
-        <span class="material-symbols-outlined text-sm text-primary">bolt</span>
-        Powered by Across Protocol &middot; ~2 second fills &middot; 7 chains supported
-      </div>
-    </div>
-
-    <!-- Exchange Rate -->
-    <div class="flex justify-end">
-      <button class="bg-surface-container-low px-4 py-2 rounded-full text-xs font-bold text-on-surface-variant flex items-center gap-2 border border-outline-variant/10 shadow-sm">
-        <span id="rate-display">1 ETH = 2,842.12 USDC</span>
-        <span class="material-symbols-outlined text-[14px]">refresh</span>
-      </button>
-    </div>
-
-    <!-- Swap Interface -->
-    <div class="space-y-6 relative">
-
-      <!-- From Token -->
-      <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div class="space-y-2">
-          <p class="text-sm font-medium text-on-surface-variant">You pay</p>
-          <button class="inline-flex items-center gap-2 bg-surface-container-low px-4 py-2.5 rounded-full border border-outline-variant/10 cursor-pointer hover:bg-surface-container-high transition-colors">
-            <img id="from-token-icon" src="" alt="ETH" class="w-6 h-6 rounded-full"/>
-            <span class="font-bold uppercase text-sm">ETH</span>
-            <span class="material-symbols-outlined text-sm">expand_more</span>
-          </button>
-        </div>
-        <div class="flex-1 flex flex-col items-end">
-          <input id="input-amount" class="w-full text-right text-5xl md:text-6xl font-black text-on-surface border-none focus:ring-0 p-0 bg-transparent placeholder:text-on-surface-variant/30" placeholder="0" type="number" value="0.5"/>
-          <div class="flex items-center gap-3 mt-2">
-            <span class="text-xs text-on-surface-variant">Balance: <span class="font-bold">10.0 ETH</span></span>
-            <button onclick="document.getElementById('input-amount').value='10'" class="text-xs font-bold text-primary hover:underline">MAX</button>
-            <button onclick="document.getElementById('input-amount').value='5'" class="text-xs font-bold text-primary hover:underline">HALF</button>
-          </div>
-        </div>
-      </div>
-
-      <!-- Swap Direction Button -->
-      <div class="relative h-px bg-outline-variant/10 w-full">
-        <button onclick="swapTokens()" class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-10 h-10 bg-white border border-outline-variant/10 shadow-md rounded-full flex items-center justify-center text-on-surface-variant hover:text-primary hover:rotate-180 transition-all duration-300">
-          <span class="material-symbols-outlined">swap_vert</span>
-        </button>
-      </div>
-
-      <!-- To Token -->
-      <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div class="space-y-2">
-          <p class="text-sm font-medium text-on-surface-variant">You receive</p>
-          <button class="inline-flex items-center gap-2 bg-surface-container-low px-4 py-2.5 rounded-full border border-outline-variant/10 cursor-pointer hover:bg-surface-container-high transition-colors">
-            <img id="to-token-icon" src="" alt="USDC" class="w-6 h-6 rounded-full"/>
-            <span class="font-bold uppercase text-sm">USDC</span>
-            <span class="material-symbols-outlined text-sm">expand_more</span>
-          </button>
-        </div>
-        <div class="flex-1 text-right">
-          <input id="output-amount" class="w-full text-right text-5xl md:text-6xl font-black text-primary border-none focus:ring-0 p-0 bg-transparent" placeholder="0" readonly type="number" value="1421.06"/>
-          <p class="text-xs text-on-surface-variant mt-2">≈ $1,421.06</p>
-        </div>
-      </div>
-
-      <!-- Route & Fee Details -->
-      <div class="pt-8 space-y-3">
-
-        <!-- Route Info -->
-        <div id="route-info" class="w-full flex items-center justify-between p-4 bg-primary-container/30 rounded-2xl">
-          <div class="flex items-center gap-3">
-            <div class="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-sm">
-              <span class="material-symbols-outlined text-primary">route</span>
-            </div>
-            <div>
-              <p class="text-sm font-bold text-on-surface" id="route-label">Same-chain swap</p>
-              <p class="text-xs text-on-surface-variant" id="route-detail">Routed via MoonPay</p>
-            </div>
-          </div>
-          <div class="flex items-center gap-1">
-            <span class="text-xs font-bold text-primary" id="route-speed">Instant</span>
-          </div>
-        </div>
-
-        <!-- Auto-swap / DCA -->
-        <button class="w-full flex items-center justify-between p-4 bg-surface-container-low rounded-2xl hover:bg-surface-container transition-colors group">
-          <div class="flex items-center gap-3 text-left">
-            <div class="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-sm">
-              <span class="material-symbols-outlined text-on-surface-variant">schedule</span>
-            </div>
-            <div>
-              <p class="font-bold text-on-surface text-sm">Set up recurring swap (DCA)</p>
-              <p class="text-xs text-on-surface-variant">Auto-convert on a daily, weekly, or monthly schedule</p>
-            </div>
-          </div>
-          <span class="material-symbols-outlined text-on-surface-variant group-hover:translate-x-1 transition-transform">chevron_right</span>
-        </button>
-
-        <!-- Fee Breakdown -->
-        <button class="w-full flex items-center justify-between p-4 bg-surface-container-low rounded-2xl hover:bg-surface-container transition-colors group">
-          <div class="flex items-center gap-3 text-left">
-            <div class="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-sm">
-              <span class="material-symbols-outlined text-on-surface-variant">receipt_long</span>
-            </div>
-            <div>
-              <p class="text-xs text-on-surface-variant">Estimated fees</p>
-              <p class="font-bold text-on-surface text-sm">Included in output amount</p>
-            </div>
-          </div>
-          <div class="flex items-center gap-1 font-bold text-on-surface text-sm underline decoration-solid decoration-1 underline-offset-4">
-            ~$2.14 <span class="material-symbols-outlined text-sm">chevron_right</span>
-          </div>
-        </button>
-
-        <!-- Slippage -->
-        <div class="flex items-center justify-between px-4 py-3">
-          <div class="flex items-center gap-2">
-            <span class="text-xs text-on-surface-variant">Slippage tolerance</span>
-            <span class="material-symbols-outlined text-sm text-on-surface-variant cursor-help">help</span>
-          </div>
-          <div class="flex items-center gap-2">
-            <button class="px-3 py-1 bg-primary-container text-on-primary-container rounded-full text-xs font-bold">Auto</button>
-            <button class="px-3 py-1 bg-surface-container text-on-surface-variant rounded-full text-xs font-bold hover:bg-surface-container-high">0.5%</button>
-            <button class="px-3 py-1 bg-surface-container text-on-surface-variant rounded-full text-xs font-bold hover:bg-surface-container-high">1%</button>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Action Button -->
-    <div class="pt-4 flex flex-col items-center gap-4">
-      <button id="action-btn" class="w-full py-5 primary-gradient text-on-primary rounded-full font-black text-xl active:scale-[0.98] transition-transform shadow-lg shadow-primary/20">
-        Review Swap
-      </button>
-      <p class="text-xs text-on-surface-variant text-center">
-        Non-custodial &middot; You always control your keys
-      </p>
-    </div>
-
   </div>
+
+  <!-- Chain selectors (bridge mode) -->
+  <div id="chain-selectors" class="hidden mb-3">
+    <div class="flex items-center gap-3">
+      <button id="from-chain-btn" onclick="cycleChain('from')" class="flex-1 flex items-center gap-2 bg-surface-container-low px-3 py-2 rounded-xl border border-outline-variant/10 hover:bg-surface-container-high transition-colors">
+        <img id="from-chain-icon" src="" alt="" class="w-6 h-6 rounded-full"/>
+        <span class="font-bold text-xs" id="from-chain-name">Ethereum</span>
+        <span class="material-symbols-outlined text-xs ml-auto">expand_more</span>
+      </button>
+      <button onclick="swapChains()" class="w-8 h-8 bg-white border border-outline-variant/10 shadow-sm rounded-full flex items-center justify-center text-on-surface-variant hover:text-primary transition-colors flex-shrink-0">
+        <span class="material-symbols-outlined text-sm">swap_horiz</span>
+      </button>
+      <button id="to-chain-btn" onclick="cycleChain('to')" class="flex-1 flex items-center gap-2 bg-surface-container-low px-3 py-2 rounded-xl border border-outline-variant/10 hover:bg-surface-container-high transition-colors">
+        <img id="to-chain-icon" src="" alt="" class="w-6 h-6 rounded-full"/>
+        <span class="font-bold text-xs" id="to-chain-name">Arbitrum</span>
+        <span class="material-symbols-outlined text-xs ml-auto">expand_more</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Swap Card -->
+  <div class="bg-surface-container-lowest rounded-2xl border border-outline-variant/10 shadow-sm p-5 space-y-1">
+
+    <!-- From -->
+    <div class="flex items-center justify-between gap-3">
+      <button onclick="cycleToken('from')" class="inline-flex items-center gap-2 bg-surface-container-low px-3 py-2 rounded-full border border-outline-variant/10 hover:bg-surface-container-high transition-colors flex-shrink-0">
+        <img id="from-token-icon" src="" alt="" class="w-5 h-5 rounded-full"/>
+        <span id="from-token-label" class="font-bold text-sm">ETH</span>
+        <span class="material-symbols-outlined text-xs">expand_more</span>
+      </button>
+      <input id="input-amount" class="flex-1 text-right text-3xl font-black text-on-surface border-none focus:ring-0 p-0 bg-transparent placeholder:text-on-surface-variant/30 min-w-0" placeholder="0" type="number" oninput="onAmountChange()"/>
+    </div>
+    <div class="flex justify-between items-center px-1">
+      <p class="text-[11px] text-on-surface-variant">You pay</p>
+      <div class="flex items-center gap-2">
+        <span id="from-balance" class="text-[11px] text-on-surface-variant">Balance: --</span>
+        <button onclick="setMax()" class="text-[11px] font-bold text-primary hover:underline">MAX</button>
+        <button onclick="setHalf()" class="text-[11px] font-bold text-primary hover:underline">HALF</button>
+      </div>
+    </div>
+
+    <!-- Swap button -->
+    <div class="flex justify-center py-1">
+      <button onclick="swapTokens()" class="w-8 h-8 bg-white border border-outline-variant/10 shadow-sm rounded-full flex items-center justify-center text-on-surface-variant hover:text-primary hover:rotate-180 transition-all duration-300">
+        <span class="material-symbols-outlined text-sm">swap_vert</span>
+      </button>
+    </div>
+
+    <!-- To -->
+    <div class="flex items-center justify-between gap-3">
+      <button onclick="cycleToken('to')" class="inline-flex items-center gap-2 bg-surface-container-low px-3 py-2 rounded-full border border-outline-variant/10 hover:bg-surface-container-high transition-colors flex-shrink-0">
+        <img id="to-token-icon" src="" alt="" class="w-5 h-5 rounded-full"/>
+        <span id="to-token-label" class="font-bold text-sm">USDC</span>
+        <span class="material-symbols-outlined text-xs">expand_more</span>
+      </button>
+      <input id="output-amount" class="flex-1 text-right text-3xl font-black text-primary border-none focus:ring-0 p-0 bg-transparent min-w-0" placeholder="0" readonly type="text" value=""/>
+    </div>
+    <div class="flex justify-between items-center px-1">
+      <p class="text-[11px] text-on-surface-variant">You receive</p>
+      <span id="output-usd" class="text-[11px] text-on-surface-variant"></span>
+    </div>
+  </div>
+
+  <!-- Details row -->
+  <div class="mt-3 space-y-2">
+    <!-- Rate -->
+    <div class="flex items-center justify-between px-2">
+      <span class="text-xs text-on-surface-variant">Rate</span>
+      <span id="rate-display" class="text-xs font-bold text-on-surface">--</span>
+    </div>
+    <!-- Route -->
+    <div class="flex items-center justify-between px-2">
+      <span class="text-xs text-on-surface-variant">Route</span>
+      <span id="route-display" class="text-xs font-bold text-on-surface flex items-center gap-1">
+        <span class="material-symbols-outlined text-xs text-primary">route</span>
+        <span id="route-label">--</span>
+      </span>
+    </div>
+    <!-- Fees -->
+    <div class="flex items-center justify-between px-2">
+      <span class="text-xs text-on-surface-variant">Estimated fee</span>
+      <span id="fee-display" class="text-xs font-bold text-on-surface">--</span>
+    </div>
+    <!-- Slippage -->
+    <div class="flex items-center justify-between px-2">
+      <span class="text-xs text-on-surface-variant">Slippage</span>
+      <div class="flex items-center gap-1">
+        <button onclick="setSlippage('auto')" id="slip-auto" class="px-2 py-0.5 bg-primary-container text-on-primary-container rounded-full text-[11px] font-bold">Auto</button>
+        <button onclick="setSlippage('0.005')" id="slip-05" class="px-2 py-0.5 bg-surface-container text-on-surface-variant rounded-full text-[11px] font-bold hover:bg-surface-container-high">0.5%</button>
+        <button onclick="setSlippage('0.01')" id="slip-1" class="px-2 py-0.5 bg-surface-container text-on-surface-variant rounded-full text-[11px] font-bold hover:bg-surface-container-high">1%</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Action Button -->
+  <div class="mt-4">
+    <button id="action-btn" onclick="executeSwap()" class="w-full py-4 primary-gradient text-on-primary rounded-full font-black text-lg active:scale-[0.98] transition-transform shadow-lg shadow-primary/20 disabled:opacity-50 disabled:cursor-not-allowed">
+      Connect Wallet
+    </button>
+  </div>
+
+  <!-- Footer inline -->
+  <div class="flex justify-center gap-4 mt-3 mb-2">
+    <span class="text-[10px] text-on-surface-variant flex items-center gap-1">
+      <span class="material-symbols-outlined text-[12px]">bolt</span>Across Protocol
+    </span>
+    <span class="text-[10px] text-on-surface-variant flex items-center gap-1">
+      <span class="material-symbols-outlined text-[12px]">verified_user</span>Non-custodial
+    </span>
+  </div>
+
 </main>
 
-<!-- Footer -->
-<footer class="w-full max-w-2xl mx-auto px-6 py-6">
-  <div class="flex justify-center gap-6 text-xs text-on-surface-variant">
-    <span class="flex items-center gap-1">
-      <span class="material-symbols-outlined text-sm">bolt</span>
-      Across Protocol
-    </span>
-    <span class="flex items-center gap-1">
-      <span class="material-symbols-outlined text-sm">account_balance_wallet</span>
-      MoonPay
-    </span>
-    <span class="flex items-center gap-1">
-      <span class="material-symbols-outlined text-sm">verified_user</span>
-      Non-custodial
-    </span>
-  </div>
-</footer>
-
 <script>
-  // State
-  const TW = 'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains';
-  let mode = 'swap';
-  const chains = [
-    { id: 1, name: 'Ethereum', slug: 'ethereum' },
-    { id: 42161, name: 'Arbitrum', slug: 'arbitrum' },
-    { id: 8453, name: 'Base', slug: 'base' },
-    { id: 10, name: 'Optimism', slug: 'optimism' },
-    { id: 137, name: 'Polygon', slug: 'polygon' },
-    { id: 324, name: 'zkSync Era', slug: 'zksync' },
-    { id: 59144, name: 'Linea', slug: 'linea' },
-  ];
-  let fromChainIdx = 0;
-  let toChainIdx = 1;
+// ── Config ──
+const TW = 'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains';
+const ACROSS_API = 'https://app.across.to/api';
 
-  function setMode(m) {
-    mode = m;
-    const tabSwap = document.getElementById('tab-swap');
-    const tabBridge = document.getElementById('tab-bridge');
-    const chainSelectors = document.getElementById('chain-selectors');
-    const routeLabel = document.getElementById('route-label');
-    const routeDetail = document.getElementById('route-detail');
-    const routeSpeed = document.getElementById('route-speed');
-    const actionBtn = document.getElementById('action-btn');
+const CHAINS = [
+  { id: 1, name: 'Ethereum', slug: 'ethereum' },
+  { id: 42161, name: 'Arbitrum', slug: 'arbitrum' },
+  { id: 8453, name: 'Base', slug: 'base' },
+  { id: 10, name: 'Optimism', slug: 'optimism' },
+  { id: 137, name: 'Polygon', slug: 'polygon' },
+];
 
-    if (m === 'swap') {
-      tabSwap.className = 'tab-active px-6 py-2.5 rounded-full text-sm font-bold transition-all';
-      tabBridge.className = 'px-6 py-2.5 rounded-full text-sm font-bold text-on-surface-variant transition-all';
-      chainSelectors.classList.add('hidden');
-      routeLabel.textContent = 'Same-chain swap';
-      routeDetail.textContent = 'Routed via MoonPay';
-      routeSpeed.textContent = 'Instant';
-      actionBtn.textContent = 'Review Swap';
-    } else {
-      tabBridge.className = 'tab-active px-6 py-2.5 rounded-full text-sm font-bold transition-all';
-      tabSwap.className = 'px-6 py-2.5 rounded-full text-sm font-bold text-on-surface-variant transition-all';
-      chainSelectors.classList.remove('hidden');
-      routeLabel.textContent = chains[fromChainIdx].name + ' → ' + chains[toChainIdx].name;
-      routeDetail.textContent = 'Cross-chain via Across Protocol';
-      routeSpeed.textContent = '~2 sec';
-      actionBtn.textContent = 'Review Bridge';
-    }
+const TOKENS = [
+  { symbol: 'ETH', name: 'Ethereum', decimals: 18, native: true,
+    addresses: { 1:null, 42161:null, 8453:null, 10:null },
+    wrapAddresses: { 1:'0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2', 42161:'0x82aF49447D8a07e3bd95BD0d56f35241523fBab1', 8453:'0x4200000000000000000000000000000000000006', 10:'0x4200000000000000000000000000000000000006' }},
+  { symbol: 'USDC', name: 'USD Coin', decimals: 6, native: false,
+    addresses: { 1:'0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48', 42161:'0xaf88d065e77c8cC2239327C5EDb3A432268e5831', 8453:'0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913', 10:'0x0b2C639c533813f4Aa9D7837CAf62653d097Ff85', 137:'0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359' }},
+  { symbol: 'USDT', name: 'Tether', decimals: 6, native: false,
+    addresses: { 1:'0xdAC17F958D2ee523a2206206994597C13D831ec7', 42161:'0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9', 10:'0x94b008aA00579c1307B0EF2c499aD98a8ce58e58' }},
+  { symbol: 'WBTC', name: 'Wrapped BTC', decimals: 8, native: false,
+    addresses: { 1:'0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599', 42161:'0x2f2a2543B76A4166549F7aaB2e75Bef0aefC5B0f' }},
+  { symbol: 'DAI', name: 'Dai', decimals: 18, native: false,
+    addresses: { 1:'0x6B175474E89094C44Da98b954EedeAC495271d0F', 42161:'0xDA10009cBd5D07dd0CeCc66161FC93D7c9000da1' }},
+];
+
+// ── State ──
+let mode = 'swap';
+let fromChainIdx = 0, toChainIdx = 1;
+let fromTokenIdx = 0, toTokenIdx = 1;
+let slippage = 'auto';
+let walletAddress = null;
+let fromBal = null; // raw number
+let prices = {};
+let quoteTimer = null;
+
+// ── Icon helpers ──
+function chainIconUrl(idx) { return `${TW}/${CHAINS[idx].slug}/info/logo.png`; }
+function tokenIconUrl(token, chainId) {
+  if (token.native) return `${TW}/${CHAINS.find(c=>c.id===chainId)?.slug || 'ethereum'}/info/logo.png`;
+  const addr = token.addresses[chainId];
+  const slug = CHAINS.find(c=>c.id===chainId)?.slug;
+  if (addr && slug) return `${TW}/${slug}/assets/${addr}/logo.png`;
+  // fallback to ethereum address
+  const ethAddr = token.addresses[1];
+  if (ethAddr) return `${TW}/ethereum/assets/${ethAddr}/logo.png`;
+  return '';
+}
+
+// ── Wallet ──
+async function connectWallet() {
+  if (!window.ethereum) { alert('Install MetaMask to continue'); return; }
+  try {
+    const accs = await window.ethereum.request({ method: 'eth_requestAccounts' });
+    walletAddress = accs[0];
+    const short = walletAddress.slice(0,6) + '...' + walletAddress.slice(-4);
+    document.getElementById('connect-label').textContent = short;
+    updateBalance();
+    updateActionBtn();
+  } catch(e) { console.error(e); }
+}
+
+async function updateBalance() {
+  if (!walletAddress) return;
+  const token = TOKENS[fromTokenIdx];
+  const chainId = CHAINS[mode === 'bridge' ? fromChainIdx : 0].id;
+  try {
+    const res = await fetch(`/api/balances?address=${walletAddress}`);
+    const data = await res.json();
+    // find balance for this token on this chain
+    const chainData = data[chainId] || {};
+    const bal = chainData[token.symbol] || 0;
+    fromBal = bal;
+    document.getElementById('from-balance').textContent = `Balance: ${fmtNum(bal)} ${token.symbol}`;
+  } catch { fromBal = null; }
+}
+
+// ── Prices ──
+async function fetchPrices() {
+  try {
+    const res = await fetch('/api/prices');
+    const raw = await res.json();
+    prices = {
+      ETH: raw.ethereum?.usd || 0,
+      WBTC: raw['wrapped-bitcoin']?.usd || raw.bitcoin?.usd || 0,
+      USDC: 1, USDT: 1, DAI: 1,
+    };
+  } catch { prices = { ETH:2800, WBTC:94000, USDC:1, USDT:1, DAI:1 }; }
+  updateRate();
+}
+
+// ── Mode ──
+function setMode(m) {
+  mode = m;
+  document.getElementById('tab-swap').className = m === 'swap'
+    ? 'tab-active px-5 py-2 rounded-full text-sm font-bold transition-all'
+    : 'px-5 py-2 rounded-full text-sm font-bold text-on-surface-variant transition-all';
+  document.getElementById('tab-bridge').className = m === 'bridge'
+    ? 'tab-active px-5 py-2 rounded-full text-sm font-bold transition-all'
+    : 'px-5 py-2 rounded-full text-sm font-bold text-on-surface-variant transition-all';
+  document.getElementById('chain-selectors').classList.toggle('hidden', m === 'swap');
+  updateRoute();
+  updateBalance();
+  onAmountChange();
+}
+
+// ── Token / Chain cycling ──
+function cycleToken(side) {
+  if (side === 'from') {
+    fromTokenIdx = (fromTokenIdx + 1) % TOKENS.length;
+    if (fromTokenIdx === toTokenIdx) fromTokenIdx = (fromTokenIdx + 1) % TOKENS.length;
+  } else {
+    toTokenIdx = (toTokenIdx + 1) % TOKENS.length;
+    if (toTokenIdx === fromTokenIdx) toTokenIdx = (toTokenIdx + 1) % TOKENS.length;
+  }
+  updateTokenDisplay();
+  updateBalance();
+  onAmountChange();
+}
+
+function cycleChain(side) {
+  if (side === 'from') {
+    fromChainIdx = (fromChainIdx + 1) % CHAINS.length;
+    if (fromChainIdx === toChainIdx) fromChainIdx = (fromChainIdx + 1) % CHAINS.length;
+  } else {
+    toChainIdx = (toChainIdx + 1) % CHAINS.length;
+    if (toChainIdx === fromChainIdx) toChainIdx = (toChainIdx + 1) % CHAINS.length;
+  }
+  updateChainDisplay();
+  updateBalance();
+  onAmountChange();
+}
+
+function swapChains() {
+  [fromChainIdx, toChainIdx] = [toChainIdx, fromChainIdx];
+  updateChainDisplay();
+  updateBalance();
+  onAmountChange();
+}
+
+function swapTokens() {
+  [fromTokenIdx, toTokenIdx] = [toTokenIdx, fromTokenIdx];
+  updateTokenDisplay();
+  updateBalance();
+  // swap amounts
+  const inp = document.getElementById('input-amount');
+  const out = document.getElementById('output-amount');
+  inp.value = out.value || '';
+  out.value = '';
+  onAmountChange();
+}
+
+// ── Display updates ──
+function updateChainDisplay() {
+  document.getElementById('from-chain-icon').src = chainIconUrl(fromChainIdx);
+  document.getElementById('from-chain-name').textContent = CHAINS[fromChainIdx].name;
+  document.getElementById('to-chain-icon').src = chainIconUrl(toChainIdx);
+  document.getElementById('to-chain-name').textContent = CHAINS[toChainIdx].name;
+  updateRoute();
+}
+
+function updateTokenDisplay() {
+  const ft = TOKENS[fromTokenIdx], tt = TOKENS[toTokenIdx];
+  const fromChainId = CHAINS[mode === 'bridge' ? fromChainIdx : 0].id;
+  const toChainId = CHAINS[mode === 'bridge' ? toChainIdx : 0].id;
+  document.getElementById('from-token-icon').src = tokenIconUrl(ft, fromChainId);
+  document.getElementById('from-token-label').textContent = ft.symbol;
+  document.getElementById('to-token-icon').src = tokenIconUrl(tt, toChainId);
+  document.getElementById('to-token-label').textContent = tt.symbol;
+  updateRate();
+}
+
+function updateRate() {
+  const fp = prices[TOKENS[fromTokenIdx].symbol] || 0;
+  const tp = prices[TOKENS[toTokenIdx].symbol] || 0;
+  if (fp && tp) {
+    const rate = fp / tp;
+    document.getElementById('rate-display').textContent = `1 ${TOKENS[fromTokenIdx].symbol} = ${fmtNum(rate)} ${TOKENS[toTokenIdx].symbol}`;
+  }
+}
+
+function updateRoute() {
+  const el = document.getElementById('route-label');
+  if (mode === 'bridge') {
+    el.textContent = `${CHAINS[fromChainIdx].name} → ${CHAINS[toChainIdx].name} (~2s)`;
+  } else {
+    el.textContent = 'Same-chain swap';
+  }
+}
+
+function updateActionBtn() {
+  const btn = document.getElementById('action-btn');
+  if (!walletAddress) {
+    btn.textContent = 'Connect Wallet';
+    btn.disabled = false;
+  } else {
+    btn.textContent = mode === 'bridge' ? 'Review Bridge' : 'Review Swap';
+    btn.disabled = false;
+  }
+}
+
+function setSlippage(val) {
+  slippage = val;
+  ['auto','0.005','0.01'].forEach((v,i) => {
+    const ids = ['slip-auto','slip-05','slip-1'];
+    document.getElementById(ids[i]).className = v === val
+      ? 'px-2 py-0.5 bg-primary-container text-on-primary-container rounded-full text-[11px] font-bold'
+      : 'px-2 py-0.5 bg-surface-container text-on-surface-variant rounded-full text-[11px] font-bold hover:bg-surface-container-high';
+  });
+}
+
+function setMax() {
+  if (fromBal != null) {
+    document.getElementById('input-amount').value = fromBal;
+    onAmountChange();
+  }
+}
+function setHalf() {
+  if (fromBal != null) {
+    document.getElementById('input-amount').value = (fromBal / 2).toFixed(6);
+    onAmountChange();
+  }
+}
+
+// ── Quote / Amount ──
+function onAmountChange() {
+  clearTimeout(quoteTimer);
+  const val = parseFloat(document.getElementById('input-amount').value) || 0;
+  if (val <= 0) {
+    document.getElementById('output-amount').value = '';
+    document.getElementById('output-usd').textContent = '';
+    document.getElementById('fee-display').textContent = '--';
+    return;
+  }
+  // Instant estimate from prices
+  const fp = prices[TOKENS[fromTokenIdx].symbol] || 0;
+  const tp = prices[TOKENS[toTokenIdx].symbol] || 0;
+  if (fp && tp) {
+    const est = (val * fp / tp);
+    document.getElementById('output-amount').value = fmtNum(est);
+    document.getElementById('output-usd').textContent = `≈ $${fmtNum(val * fp)}`;
+  }
+  // Debounced real quote for bridge mode
+  if (mode === 'bridge') {
+    quoteTimer = setTimeout(() => fetchQuote(val), 600);
+  } else {
+    document.getElementById('fee-display').textContent = '< $0.50';
+  }
+}
+
+async function fetchQuote(amount) {
+  const fromToken = TOKENS[fromTokenIdx];
+  const toToken = TOKENS[toTokenIdx];
+  const originChain = CHAINS[fromChainIdx].id;
+  const destChain = CHAINS[toChainIdx].id;
+
+  // Across needs token addresses — use wrap address for native ETH
+  const inputAddr = fromToken.native
+    ? fromToken.wrapAddresses?.[originChain]
+    : fromToken.addresses[originChain];
+  const outputAddr = toToken.native
+    ? toToken.wrapAddresses?.[destChain]
+    : toToken.addresses[destChain];
+
+  if (!inputAddr || !outputAddr) {
+    document.getElementById('fee-display').textContent = 'Route unavailable';
+    return;
   }
 
-  function swapChains() {
-    [fromChainIdx, toChainIdx] = [toChainIdx, fromChainIdx];
-    updateChainDisplay();
-  }
+  const amountWei = BigInt(Math.floor(amount * 10 ** fromToken.decimals)).toString();
 
-  function updateChainDisplay() {
-    const fc = chains[fromChainIdx];
-    const tc = chains[toChainIdx];
-    document.getElementById('from-chain-icon').src = `${TW}/${fc.slug}/info/logo.png`;
-    document.getElementById('from-chain-icon').alt = fc.name;
-    document.getElementById('from-chain-name').textContent = fc.name;
-    document.getElementById('to-chain-icon').src = `${TW}/${tc.slug}/info/logo.png`;
-    document.getElementById('to-chain-icon').alt = tc.name;
-    document.getElementById('to-chain-name').textContent = tc.name;
-
-    if (mode === 'bridge') {
-      document.getElementById('route-label').textContent = fc.name + ' → ' + tc.name;
-    }
-  }
-
-  function swapTokens() {
-    // Visual feedback only in this prototype
-    const btn = event.currentTarget;
-    btn.classList.add('rotate-180');
-    setTimeout(() => btn.classList.remove('rotate-180'), 300);
-  }
-
-  // Simple input reactivity
-  document.getElementById('input-amount').addEventListener('input', function(e) {
-    const val = parseFloat(e.target.value) || 0;
-    const rate = 2842.12;
-    const output = (val * rate).toFixed(2);
-    document.getElementById('output-amount').value = output;
+  const params = new URLSearchParams({
+    tradeType: 'exactInput',
+    amount: amountWei,
+    inputToken: inputAddr,
+    outputToken: outputAddr,
+    originChainId: originChain,
+    destinationChainId: destChain,
+    depositor: walletAddress || '0x0000000000000000000000000000000000000000',
+    slippage: slippage,
   });
 
-  // Init icons
+  try {
+    document.getElementById('fee-display').textContent = 'Fetching...';
+    const res = await fetch(`${ACROSS_API}/swap/approval?${params}`);
+    if (!res.ok) throw new Error(res.status);
+    const data = await res.json();
+
+    // Parse output
+    if (data.expectedOutput) {
+      const outNum = Number(BigInt(data.expectedOutput)) / 10 ** toToken.decimals;
+      document.getElementById('output-amount').value = fmtNum(outNum);
+      const tp = prices[toToken.symbol] || 0;
+      document.getElementById('output-usd').textContent = `≈ $${fmtNum(outNum * tp)}`;
+    }
+
+    // Parse fees
+    if (data.fees?.totalRelayFee?.total) {
+      const feeRaw = Number(BigInt(data.fees.totalRelayFee.total)) / 10 ** fromToken.decimals;
+      const fp = prices[fromToken.symbol] || 0;
+      document.getElementById('fee-display').textContent = `~$${fmtNum(feeRaw * fp)}`;
+    }
+  } catch (e) {
+    console.warn('Quote failed:', e);
+    document.getElementById('fee-display').textContent = 'Quote unavailable';
+  }
+}
+
+// ── Execute ──
+async function executeSwap() {
+  if (!walletAddress) { connectWallet(); return; }
+  const amount = parseFloat(document.getElementById('input-amount').value) || 0;
+  if (amount <= 0) { alert('Enter an amount'); return; }
+  alert(`Swap execution coming soon!\n\n${amount} ${TOKENS[fromTokenIdx].symbol} → ${TOKENS[toTokenIdx].symbol}\nMode: ${mode}\nRoute: ${mode === 'bridge' ? CHAINS[fromChainIdx].name + ' → ' + CHAINS[toChainIdx].name : 'Same-chain'}`);
+}
+
+// ── Helpers ──
+function fmtNum(n) {
+  if (n >= 1000) return n.toLocaleString('en-US', { maximumFractionDigits: 2 });
+  if (n >= 1) return n.toLocaleString('en-US', { maximumFractionDigits: 4 });
+  return n.toLocaleString('en-US', { maximumFractionDigits: 6 });
+}
+
+// ── Init ──
+(async function init() {
   updateChainDisplay();
-  document.getElementById('from-token-icon').src = `${TW}/ethereum/info/logo.png`;
-  document.getElementById('to-token-icon').src = `${TW}/ethereum/assets/0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48/logo.png`;
+  updateTokenDisplay();
+  updateActionBtn();
+  await fetchPrices();
+  onAmountChange();
+
+  if (window.ethereum) {
+    const accs = await window.ethereum.request({ method: 'eth_accounts' });
+    if (accs.length > 0) { walletAddress = accs[0]; }
+    window.ethereum.on('accountsChanged', (a) => {
+      walletAddress = a[0] || null;
+      if (walletAddress) {
+        document.getElementById('connect-label').textContent = walletAddress.slice(0,6)+'...'+walletAddress.slice(-4);
+      } else {
+        document.getElementById('connect-label').textContent = 'Connect';
+      }
+      updateBalance();
+      updateActionBtn();
+    });
+    if (walletAddress) {
+      document.getElementById('connect-label').textContent = walletAddress.slice(0,6)+'...'+walletAddress.slice(-4);
+      updateBalance();
+    }
+    updateActionBtn();
+  }
+})();
 </script>
 
 </body>
