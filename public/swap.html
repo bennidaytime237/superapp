@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html class="light" lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Swap & Bridge - SuperApp</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<script>
+tailwind.config = {
+  darkMode: "class",
+  theme: {
+    extend: {
+      colors: {
+        "on-secondary-fixed-variant":"#435f6d","outline-variant":"#a9b4b3",
+        "secondary-container":"#c9e7f7","primary-fixed-dim":"#bbdf9c",
+        "on-surface":"#2a3434","on-tertiary-fixed":"#3a4f37","error-dim":"#5c1202",
+        "background":"#ffffff","on-secondary-container":"#395663",
+        "on-error-container":"#742410","on-primary-container":"#3c5a25",
+        "error-container":"#fe8b70","on-primary":"#e9ffd2","primary":"#486730",
+        "tertiary-container":"#e2fbda","inverse-on-surface":"#9b9d9d",
+        "surface-container-lowest":"#ffffff","surface-container-high":"#e1eae9",
+        "on-secondary-fixed":"#264350","primary-dim":"#3d5a26",
+        "on-primary-fixed":"#2a4714","surface-bright":"#f8faf9",
+        "on-background":"#2a3434","tertiary-fixed":"#e2fbda","on-error":"#fff7f6",
+        "on-tertiary-container":"#4c6148","on-tertiary-fixed-variant":"#566c52",
+        "outline":"#727d7c","error":"#9e422c","surface":"#ffffff",
+        "inverse-primary":"#d7fcb6","surface-dim":"#cfdddb","tertiary":"#4f654b",
+        "on-secondary":"#f3faff","secondary-dim":"#3a5764","tertiary-dim":"#435940",
+        "secondary-fixed-dim":"#bbd9e9","surface-container":"#e9efee",
+        "inverse-surface":"#0b0f0f","surface-tint":"#486730",
+        "surface-variant":"#dae5e4","primary-fixed":"#c9eea9",
+        "secondary":"#466370","tertiary-fixed-dim":"#d4eccc",
+        "primary-container":"#c9eea9","on-surface-variant":"#576160",
+        "on-primary-fixed-variant":"#45642e","surface-container-low":"#f0f4f3",
+        "on-tertiary":"#eaffe2","secondary-fixed":"#c9e7f7",
+        "surface-container-highest":"#dae5e4"
+      },
+      fontFamily: { "headline":["Inter"], "body":["Inter"], "label":["Inter"] },
+      borderRadius: { "DEFAULT":"1rem","lg":"2rem","xl":"3rem","full":"9999px" },
+    },
+  },
+}
+</script>
+<style>
+  body { font-family: 'Inter', sans-serif; }
+  .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+  .primary-gradient { background: linear-gradient(135deg, #486730 0%, #c9eea9 100%); }
+  input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+  input[type=number] { -moz-appearance: textfield; }
+  .tab-active { background: white; color: #486730; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+  .chain-badge { transition: all 0.15s ease; }
+  .chain-badge:hover { transform: scale(1.05); }
+  .chain-badge.selected { ring: 2px; ring-color: #486730; }
+</style>
+</head>
+<body class="bg-background text-on-surface antialiased min-h-screen flex flex-col">
+
+<!-- Header -->
+<header class="w-full max-w-7xl mx-auto h-16 flex justify-between items-center px-6">
+  <a href="index.html" class="flex items-center gap-2">
+    <span class="material-symbols-outlined text-primary" style="font-variation-settings: 'FILL' 1;">hub</span>
+    <h1 class="text-xl font-black text-primary tracking-tighter">SuperApp</h1>
+  </a>
+  <div class="flex items-center gap-4">
+    <a href="index.html" class="text-sm font-medium text-on-surface-variant hover:text-primary transition-colors flex items-center gap-1">
+      <span class="material-symbols-outlined text-sm">arrow_back</span>
+      Dashboard
+    </a>
+    <div class="w-10 h-10 rounded-full primary-gradient flex items-center justify-center text-on-primary text-sm font-bold">
+      SA
+    </div>
+  </div>
+</header>
+
+<!-- Main -->
+<main class="w-full max-w-2xl mx-auto px-6 py-8 flex-1">
+  <div class="space-y-10">
+
+    <!-- Mode Tabs: Swap / Bridge -->
+    <div class="flex justify-center">
+      <div class="inline-flex bg-surface-container-low rounded-full p-1 gap-1">
+        <button id="tab-swap" onclick="setMode('swap')" class="tab-active px-6 py-2.5 rounded-full text-sm font-bold transition-all">
+          Swap
+        </button>
+        <button id="tab-bridge" onclick="setMode('bridge')" class="px-6 py-2.5 rounded-full text-sm font-bold text-on-surface-variant transition-all">
+          Bridge
+        </button>
+      </div>
+    </div>
+
+    <!-- Chain Selectors (visible in bridge mode) -->
+    <div id="chain-selectors" class="hidden space-y-4">
+      <div class="flex items-center gap-4">
+        <div class="flex-1">
+          <label class="text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-2 block">From Chain</label>
+          <button id="from-chain-btn" class="w-full flex items-center gap-3 bg-surface-container-low px-4 py-3 rounded-xl border border-outline-variant/10 hover:bg-surface-container-high transition-colors">
+            <div class="w-8 h-8 rounded-full bg-[#627EEA]/10 flex items-center justify-center">
+              <span class="text-xs font-black text-[#627EEA]" id="from-chain-icon">E</span>
+            </div>
+            <span class="font-bold text-sm" id="from-chain-name">Ethereum</span>
+            <span class="material-symbols-outlined text-sm ml-auto">expand_more</span>
+          </button>
+        </div>
+
+        <div class="pt-6">
+          <button onclick="swapChains()" class="w-10 h-10 bg-white border border-outline-variant/10 shadow-md rounded-full flex items-center justify-center text-on-surface-variant hover:text-primary transition-colors">
+            <span class="material-symbols-outlined">swap_horiz</span>
+          </button>
+        </div>
+
+        <div class="flex-1">
+          <label class="text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-2 block">To Chain</label>
+          <button id="to-chain-btn" class="w-full flex items-center gap-3 bg-surface-container-low px-4 py-3 rounded-xl border border-outline-variant/10 hover:bg-surface-container-high transition-colors">
+            <div class="w-8 h-8 rounded-full bg-[#28A0F0]/10 flex items-center justify-center">
+              <span class="text-xs font-black text-[#28A0F0]" id="to-chain-icon">A</span>
+            </div>
+            <span class="font-bold text-sm" id="to-chain-name">Arbitrum</span>
+            <span class="material-symbols-outlined text-sm ml-auto">expand_more</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Supported chains hint -->
+      <div class="flex items-center gap-2 text-xs text-on-surface-variant">
+        <span class="material-symbols-outlined text-sm text-primary">bolt</span>
+        Powered by Across Protocol &middot; ~2 second fills &middot; 7 chains supported
+      </div>
+    </div>
+
+    <!-- Exchange Rate -->
+    <div class="flex justify-end">
+      <button class="bg-surface-container-low px-4 py-2 rounded-full text-xs font-bold text-on-surface-variant flex items-center gap-2 border border-outline-variant/10 shadow-sm">
+        <span id="rate-display">1 ETH = 2,842.12 USDC</span>
+        <span class="material-symbols-outlined text-[14px]">refresh</span>
+      </button>
+    </div>
+
+    <!-- Swap Interface -->
+    <div class="space-y-6 relative">
+
+      <!-- From Token -->
+      <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div class="space-y-2">
+          <p class="text-sm font-medium text-on-surface-variant">You pay</p>
+          <button class="inline-flex items-center gap-2 bg-surface-container-low px-4 py-2.5 rounded-full border border-outline-variant/10 cursor-pointer hover:bg-surface-container-high transition-colors">
+            <div class="w-6 h-6 rounded-full bg-[#627EEA]/10 flex items-center justify-center">
+              <span class="text-[10px] font-black text-[#627EEA]">E</span>
+            </div>
+            <span class="font-bold uppercase text-sm">ETH</span>
+            <span class="material-symbols-outlined text-sm">expand_more</span>
+          </button>
+        </div>
+        <div class="flex-1 flex flex-col items-end">
+          <input id="input-amount" class="w-full text-right text-5xl md:text-6xl font-black text-on-surface border-none focus:ring-0 p-0 bg-transparent placeholder:text-on-surface-variant/30" placeholder="0" type="number" value="0.5"/>
+          <div class="flex items-center gap-3 mt-2">
+            <span class="text-xs text-on-surface-variant">Balance: <span class="font-bold">10.0 ETH</span></span>
+            <button onclick="document.getElementById('input-amount').value='10'" class="text-xs font-bold text-primary hover:underline">MAX</button>
+            <button onclick="document.getElementById('input-amount').value='5'" class="text-xs font-bold text-primary hover:underline">HALF</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Swap Direction Button -->
+      <div class="relative h-px bg-outline-variant/10 w-full">
+        <button onclick="swapTokens()" class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-10 h-10 bg-white border border-outline-variant/10 shadow-md rounded-full flex items-center justify-center text-on-surface-variant hover:text-primary hover:rotate-180 transition-all duration-300">
+          <span class="material-symbols-outlined">swap_vert</span>
+        </button>
+      </div>
+
+      <!-- To Token -->
+      <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div class="space-y-2">
+          <p class="text-sm font-medium text-on-surface-variant">You receive</p>
+          <button class="inline-flex items-center gap-2 bg-surface-container-low px-4 py-2.5 rounded-full border border-outline-variant/10 cursor-pointer hover:bg-surface-container-high transition-colors">
+            <div class="w-6 h-6 rounded-full bg-[#2775CA]/10 flex items-center justify-center">
+              <span class="text-[10px] font-black text-[#2775CA]">$</span>
+            </div>
+            <span class="font-bold uppercase text-sm">USDC</span>
+            <span class="material-symbols-outlined text-sm">expand_more</span>
+          </button>
+        </div>
+        <div class="flex-1 text-right">
+          <input id="output-amount" class="w-full text-right text-5xl md:text-6xl font-black text-primary border-none focus:ring-0 p-0 bg-transparent" placeholder="0" readonly type="number" value="1421.06"/>
+          <p class="text-xs text-on-surface-variant mt-2">≈ $1,421.06</p>
+        </div>
+      </div>
+
+      <!-- Route & Fee Details -->
+      <div class="pt-8 space-y-3">
+
+        <!-- Route Info -->
+        <div id="route-info" class="w-full flex items-center justify-between p-4 bg-primary-container/30 rounded-2xl">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-sm">
+              <span class="material-symbols-outlined text-primary">route</span>
+            </div>
+            <div>
+              <p class="text-sm font-bold text-on-surface" id="route-label">Same-chain swap</p>
+              <p class="text-xs text-on-surface-variant" id="route-detail">Routed via MoonPay</p>
+            </div>
+          </div>
+          <div class="flex items-center gap-1">
+            <span class="text-xs font-bold text-primary" id="route-speed">Instant</span>
+          </div>
+        </div>
+
+        <!-- Auto-swap / DCA -->
+        <button class="w-full flex items-center justify-between p-4 bg-surface-container-low rounded-2xl hover:bg-surface-container transition-colors group">
+          <div class="flex items-center gap-3 text-left">
+            <div class="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-sm">
+              <span class="material-symbols-outlined text-on-surface-variant">schedule</span>
+            </div>
+            <div>
+              <p class="font-bold text-on-surface text-sm">Set up recurring swap (DCA)</p>
+              <p class="text-xs text-on-surface-variant">Auto-convert on a daily, weekly, or monthly schedule</p>
+            </div>
+          </div>
+          <span class="material-symbols-outlined text-on-surface-variant group-hover:translate-x-1 transition-transform">chevron_right</span>
+        </button>
+
+        <!-- Fee Breakdown -->
+        <button class="w-full flex items-center justify-between p-4 bg-surface-container-low rounded-2xl hover:bg-surface-container transition-colors group">
+          <div class="flex items-center gap-3 text-left">
+            <div class="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-sm">
+              <span class="material-symbols-outlined text-on-surface-variant">receipt_long</span>
+            </div>
+            <div>
+              <p class="text-xs text-on-surface-variant">Estimated fees</p>
+              <p class="font-bold text-on-surface text-sm">Included in output amount</p>
+            </div>
+          </div>
+          <div class="flex items-center gap-1 font-bold text-on-surface text-sm underline decoration-solid decoration-1 underline-offset-4">
+            ~$2.14 <span class="material-symbols-outlined text-sm">chevron_right</span>
+          </div>
+        </button>
+
+        <!-- Slippage -->
+        <div class="flex items-center justify-between px-4 py-3">
+          <div class="flex items-center gap-2">
+            <span class="text-xs text-on-surface-variant">Slippage tolerance</span>
+            <span class="material-symbols-outlined text-sm text-on-surface-variant cursor-help">help</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <button class="px-3 py-1 bg-primary-container text-on-primary-container rounded-full text-xs font-bold">Auto</button>
+            <button class="px-3 py-1 bg-surface-container text-on-surface-variant rounded-full text-xs font-bold hover:bg-surface-container-high">0.5%</button>
+            <button class="px-3 py-1 bg-surface-container text-on-surface-variant rounded-full text-xs font-bold hover:bg-surface-container-high">1%</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Action Button -->
+    <div class="pt-4 flex flex-col items-center gap-4">
+      <button id="action-btn" class="w-full py-5 primary-gradient text-on-primary rounded-full font-black text-xl active:scale-[0.98] transition-transform shadow-lg shadow-primary/20">
+        Review Swap
+      </button>
+      <p class="text-xs text-on-surface-variant text-center">
+        Non-custodial &middot; You always control your keys
+      </p>
+    </div>
+
+  </div>
+</main>
+
+<!-- Footer -->
+<footer class="w-full max-w-2xl mx-auto px-6 py-6">
+  <div class="flex justify-center gap-6 text-xs text-on-surface-variant">
+    <span class="flex items-center gap-1">
+      <span class="material-symbols-outlined text-sm">bolt</span>
+      Across Protocol
+    </span>
+    <span class="flex items-center gap-1">
+      <span class="material-symbols-outlined text-sm">account_balance_wallet</span>
+      MoonPay
+    </span>
+    <span class="flex items-center gap-1">
+      <span class="material-symbols-outlined text-sm">verified_user</span>
+      Non-custodial
+    </span>
+  </div>
+</footer>
+
+<script>
+  // State
+  let mode = 'swap';
+  const chains = [
+    { id: 1, name: 'Ethereum', letter: 'E', color: '#627EEA' },
+    { id: 42161, name: 'Arbitrum', letter: 'A', color: '#28A0F0' },
+    { id: 8453, name: 'Base', letter: 'B', color: '#0052FF' },
+    { id: 10, name: 'Optimism', letter: 'O', color: '#FF0420' },
+    { id: 137, name: 'Polygon', letter: 'P', color: '#8247E5' },
+    { id: 324, name: 'zkSync Era', letter: 'Z', color: '#4E529A' },
+    { id: 59144, name: 'Linea', letter: 'L', color: '#121212' },
+  ];
+  let fromChainIdx = 0;
+  let toChainIdx = 1;
+
+  function setMode(m) {
+    mode = m;
+    const tabSwap = document.getElementById('tab-swap');
+    const tabBridge = document.getElementById('tab-bridge');
+    const chainSelectors = document.getElementById('chain-selectors');
+    const routeLabel = document.getElementById('route-label');
+    const routeDetail = document.getElementById('route-detail');
+    const routeSpeed = document.getElementById('route-speed');
+    const actionBtn = document.getElementById('action-btn');
+
+    if (m === 'swap') {
+      tabSwap.className = 'tab-active px-6 py-2.5 rounded-full text-sm font-bold transition-all';
+      tabBridge.className = 'px-6 py-2.5 rounded-full text-sm font-bold text-on-surface-variant transition-all';
+      chainSelectors.classList.add('hidden');
+      routeLabel.textContent = 'Same-chain swap';
+      routeDetail.textContent = 'Routed via MoonPay';
+      routeSpeed.textContent = 'Instant';
+      actionBtn.textContent = 'Review Swap';
+    } else {
+      tabBridge.className = 'tab-active px-6 py-2.5 rounded-full text-sm font-bold transition-all';
+      tabSwap.className = 'px-6 py-2.5 rounded-full text-sm font-bold text-on-surface-variant transition-all';
+      chainSelectors.classList.remove('hidden');
+      routeLabel.textContent = chains[fromChainIdx].name + ' → ' + chains[toChainIdx].name;
+      routeDetail.textContent = 'Cross-chain via Across Protocol';
+      routeSpeed.textContent = '~2 sec';
+      actionBtn.textContent = 'Review Bridge';
+    }
+  }
+
+  function swapChains() {
+    [fromChainIdx, toChainIdx] = [toChainIdx, fromChainIdx];
+    updateChainDisplay();
+  }
+
+  function updateChainDisplay() {
+    const fc = chains[fromChainIdx];
+    const tc = chains[toChainIdx];
+    document.getElementById('from-chain-icon').textContent = fc.letter;
+    document.getElementById('from-chain-icon').style.color = fc.color;
+    document.getElementById('from-chain-icon').parentElement.style.background = fc.color + '1a';
+    document.getElementById('from-chain-name').textContent = fc.name;
+    document.getElementById('to-chain-icon').textContent = tc.letter;
+    document.getElementById('to-chain-icon').style.color = tc.color;
+    document.getElementById('to-chain-icon').parentElement.style.background = tc.color + '1a';
+    document.getElementById('to-chain-name').textContent = tc.name;
+
+    if (mode === 'bridge') {
+      document.getElementById('route-label').textContent = fc.name + ' → ' + tc.name;
+    }
+  }
+
+  function swapTokens() {
+    // Visual feedback only in this prototype
+    const btn = event.currentTarget;
+    btn.classList.add('rotate-180');
+    setTimeout(() => btn.classList.remove('rotate-180'), 300);
+  }
+
+  // Simple input reactivity
+  document.getElementById('input-amount').addEventListener('input', function(e) {
+    const val = parseFloat(e.target.value) || 0;
+    const rate = 2842.12;
+    const output = (val * rate).toFixed(2);
+    document.getElementById('output-amount').value = output;
+  });
+</script>
+
+</body>
+</html>

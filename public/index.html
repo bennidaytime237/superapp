@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html class="light" lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>SuperApp | Crypto Dashboard</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<script>
+tailwind.config = {
+  darkMode: "class",
+  theme: {
+    extend: {
+      colors: {
+        "surface-bright":"#f8faf9","tertiary-dim":"#435940","inverse-primary":"#d7fcb6",
+        "secondary-fixed-dim":"#bbd9e9","surface":"#f8faf9","secondary-container":"#c9e7f7",
+        "surface-container-lowest":"#ffffff","surface-tint":"#486730","on-error":"#fff7f6",
+        "error-container":"#fe8b70","primary":"#486730","secondary-dim":"#3a5764",
+        "on-primary":"#e9ffd2","on-tertiary-container":"#4c6148","error-dim":"#5c1202",
+        "on-tertiary":"#eaffe2","on-secondary-fixed":"#264350",
+        "on-tertiary-fixed-variant":"#566c52","on-error-container":"#742410",
+        "on-secondary-container":"#395663","on-primary-fixed":"#2a4714",
+        "error":"#9e422c","outline-variant":"#a9b4b3","primary-fixed-dim":"#bbdf9c",
+        "tertiary-container":"#e2fbda","primary-dim":"#3d5a26",
+        "on-surface-variant":"#576160","secondary":"#466370",
+        "surface-container-highest":"#dae5e4","on-primary-container":"#3c5a25",
+        "on-secondary-fixed-variant":"#435f6d","secondary-fixed":"#c9e7f7",
+        "inverse-on-surface":"#9b9d9d","tertiary-fixed-dim":"#d4eccc",
+        "inverse-surface":"#0b0f0f","on-secondary":"#f3faff",
+        "on-background":"#2a3434","surface-container-high":"#e1eae9",
+        "tertiary":"#4f654b","surface-dim":"#cfdddb","surface-variant":"#dae5e4",
+        "on-surface":"#2a3434","surface-container":"#e9efee",
+        "surface-container-low":"#f0f4f3","on-primary-fixed-variant":"#45642e",
+        "background":"#f8faf9","tertiary-fixed":"#e2fbda",
+        "on-tertiary-fixed":"#3a4f37","outline":"#727d7c",
+        "primary-fixed":"#c9eea9","primary-container":"#c9eea9"
+      },
+      fontFamily: { "headline":["Inter"], "body":["Inter"], "label":["Inter"] },
+      borderRadius: { "DEFAULT":"1rem","lg":"2rem","xl":"3rem","full":"9999px" },
+    },
+  },
+}
+</script>
+<style>
+  .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+  body { font-family: 'Inter', sans-serif; }
+  .glass-panel { background: rgba(248,250,249,0.7); backdrop-filter: blur(20px); }
+  .primary-gradient { background: linear-gradient(135deg, #486730 0%, #c9eea9 100%); }
+  .chain-pill { transition: all 0.15s ease; }
+  .chain-pill:hover { transform: translateY(-1px); box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  .asset-card { transition: all 0.2s ease; }
+  .asset-card:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(42,52,52,0.08); }
+</style>
+</head>
+<body class="bg-surface text-on-surface selection:bg-primary-fixed selection:text-on-primary-fixed min-h-screen">
+
+<!-- Sidebar Navigation (Desktop) -->
+<aside class="hidden md:flex flex-col fixed left-0 top-0 h-full w-64 p-4 bg-surface-container-low z-40">
+  <div class="mb-10 px-4 py-2 flex items-center gap-2">
+    <span class="material-symbols-outlined text-primary" style="font-variation-settings: 'FILL' 1;">hub</span>
+    <span class="text-lg font-black text-primary tracking-tight">SuperApp</span>
+  </div>
+  <nav class="flex-1 space-y-1">
+    <a class="flex items-center gap-3 px-4 py-3 bg-surface-container-lowest text-primary rounded-full shadow-sm" href="index.html">
+      <span class="material-symbols-outlined">grid_view</span>
+      <span class="font-medium text-sm">Dashboard</span>
+    </a>
+    <a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:text-primary hover:bg-white/50 rounded-full transition-all" href="swap.html">
+      <span class="material-symbols-outlined">swap_horiz</span>
+      <span class="font-medium text-sm">Swap & Bridge</span>
+    </a>
+    <a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:text-primary hover:bg-white/50 rounded-full transition-all" href="#">
+      <span class="material-symbols-outlined">account_balance_wallet</span>
+      <span class="font-medium text-sm">Wallets</span>
+    </a>
+    <a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:text-primary hover:bg-white/50 rounded-full transition-all" href="#">
+      <span class="material-symbols-outlined">receipt_long</span>
+      <span class="font-medium text-sm">Transactions</span>
+    </a>
+    <a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:text-primary hover:bg-white/50 rounded-full transition-all" href="#">
+      <span class="material-symbols-outlined">trending_up</span>
+      <span class="font-medium text-sm">Markets</span>
+    </a>
+    <a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:text-primary hover:bg-white/50 rounded-full transition-all" href="#">
+      <span class="material-symbols-outlined">analytics</span>
+      <span class="font-medium text-sm">Research</span>
+    </a>
+  </nav>
+
+  <!-- Wallet Summary -->
+  <div class="mt-auto p-4 bg-surface-container rounded-3xl">
+    <div class="flex items-center gap-3 mb-3">
+      <div class="w-10 h-10 rounded-full primary-gradient flex items-center justify-center">
+        <span class="material-symbols-outlined text-on-primary text-sm">account_balance_wallet</span>
+      </div>
+      <div>
+        <p class="text-xs font-bold text-on-surface">Main Wallet</p>
+        <p class="text-xs text-on-surface-variant font-mono">0x71C7...32a1</p>
+      </div>
+    </div>
+    <div class="flex items-center justify-between mb-4 px-1">
+      <p class="text-sm font-black text-on-surface">$42,850.00</p>
+      <p class="text-xs font-bold text-primary">+2.4%</p>
+    </div>
+    <button class="w-full py-3 px-4 primary-gradient text-on-primary rounded-full text-sm font-bold shadow-sm active:scale-[0.98] transition-transform">
+      Buy Crypto
+    </button>
+  </div>
+</aside>
+
+<!-- Main Content -->
+<main class="md:ml-64 min-h-screen pb-24 md:pb-8">
+  <!-- Top Bar -->
+  <header class="flex justify-between items-center w-full px-6 py-4 bg-surface sticky top-0 z-30">
+    <div class="flex items-center gap-2">
+      <span class="material-symbols-outlined text-primary md:hidden" style="font-variation-settings: 'FILL' 1;">hub</span>
+      <h1 class="font-headline font-bold text-xl tracking-tight text-primary md:hidden">SuperApp</h1>
+      <h2 class="hidden md:block font-headline font-bold text-xl tracking-tight text-on-background">Portfolio Overview</h2>
+    </div>
+    <div class="flex items-center gap-3">
+      <!-- Chain Selector -->
+      <div class="hidden lg:flex items-center gap-2 mr-2">
+        <button class="chain-pill px-3 py-1.5 bg-primary-container text-on-primary-container rounded-full text-xs font-bold">All Chains</button>
+        <button class="chain-pill px-3 py-1.5 bg-surface-container text-on-surface-variant rounded-full text-xs font-bold hover:bg-surface-container-high">Ethereum</button>
+        <button class="chain-pill px-3 py-1.5 bg-surface-container text-on-surface-variant rounded-full text-xs font-bold hover:bg-surface-container-high">Arbitrum</button>
+        <button class="chain-pill px-3 py-1.5 bg-surface-container text-on-surface-variant rounded-full text-xs font-bold hover:bg-surface-container-high">Base</button>
+        <button class="chain-pill px-3 py-1.5 bg-surface-container text-on-surface-variant rounded-full text-xs font-bold hover:bg-surface-container-high">+7</button>
+      </div>
+      <button class="p-2 text-on-surface-variant hover:bg-surface-container rounded-full transition-colors relative">
+        <span class="material-symbols-outlined">notifications</span>
+        <span class="absolute top-1.5 right-1.5 w-2 h-2 bg-primary rounded-full"></span>
+      </button>
+      <div class="w-10 h-10 rounded-full primary-gradient flex items-center justify-center text-on-primary text-sm font-bold">
+        SA
+      </div>
+    </div>
+  </header>
+
+  <div class="px-6 lg:px-10 py-6 max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-8">
+
+    <!-- Primary Column -->
+    <div class="lg:col-span-8 space-y-8">
+
+      <!-- Hero Balance -->
+      <section class="relative overflow-hidden p-8 rounded-xl bg-surface-container-lowest shadow-[0_4px_40px_rgba(42,52,52,0.02)]">
+        <div class="relative z-10">
+          <div class="flex items-center gap-3 mb-1">
+            <p class="text-on-surface-variant text-sm font-medium">Total Balance</p>
+            <span class="text-xs font-bold text-primary bg-primary-container px-2 py-0.5 rounded-full">6 chains</span>
+          </div>
+          <h3 class="text-4xl md:text-5xl font-black text-on-background tracking-tighter mb-2">
+            $42,850<span class="text-3xl md:text-4xl">.00</span>
+          </h3>
+          <p class="text-sm text-primary font-bold mb-8">+$1,024.30 (2.4%) today</p>
+          <div class="flex flex-wrap gap-3">
+            <button onclick="window.location.href='swap.html'" class="flex items-center gap-2 px-6 py-3 primary-gradient text-on-primary rounded-full font-bold text-sm active:scale-95 transition-transform">
+              <span class="material-symbols-outlined text-lg">swap_horiz</span>
+              Swap
+            </button>
+            <button onclick="window.location.href='swap.html'" class="flex items-center gap-2 px-6 py-3 bg-primary-container text-on-primary-container rounded-full font-bold text-sm hover:opacity-90 transition-opacity">
+              <span class="material-symbols-outlined text-lg">layers</span>
+              Bridge
+            </button>
+            <button class="flex items-center gap-2 px-6 py-3 bg-surface-container-high text-on-surface rounded-full font-bold text-sm hover:bg-surface-container-highest transition-colors">
+              <span class="material-symbols-outlined text-lg">north_east</span>
+              Send
+            </button>
+            <button class="flex items-center gap-2 px-6 py-3 bg-surface-container-high text-on-surface rounded-full font-bold text-sm hover:bg-surface-container-highest transition-colors">
+              <span class="material-symbols-outlined text-lg">add</span>
+              Buy
+            </button>
+          </div>
+        </div>
+        <div class="absolute -right-16 -top-16 w-64 h-64 bg-primary/5 rounded-full blur-3xl"></div>
+      </section>
+
+      <!-- Active Chains Overview -->
+      <section>
+        <div class="flex justify-between items-end mb-4">
+          <h4 class="text-sm font-bold text-on-surface-variant uppercase tracking-wider">Chain Breakdown</h4>
+        </div>
+        <div class="flex gap-3 overflow-x-auto pb-2 -mx-2 px-2">
+          <div class="flex-shrink-0 px-4 py-3 bg-surface-container-lowest rounded-xl flex items-center gap-3 min-w-[160px]">
+            <div class="w-8 h-8 rounded-full bg-[#627EEA]/10 flex items-center justify-center">
+              <span class="text-xs font-black text-[#627EEA]">E</span>
+            </div>
+            <div>
+              <p class="text-xs text-on-surface-variant">Ethereum</p>
+              <p class="text-sm font-bold">$28,420</p>
+            </div>
+          </div>
+          <div class="flex-shrink-0 px-4 py-3 bg-surface-container-lowest rounded-xl flex items-center gap-3 min-w-[160px]">
+            <div class="w-8 h-8 rounded-full bg-[#28A0F0]/10 flex items-center justify-center">
+              <span class="text-xs font-black text-[#28A0F0]">A</span>
+            </div>
+            <div>
+              <p class="text-xs text-on-surface-variant">Arbitrum</p>
+              <p class="text-sm font-bold">$8,200</p>
+            </div>
+          </div>
+          <div class="flex-shrink-0 px-4 py-3 bg-surface-container-lowest rounded-xl flex items-center gap-3 min-w-[160px]">
+            <div class="w-8 h-8 rounded-full bg-[#0052FF]/10 flex items-center justify-center">
+              <span class="text-xs font-black text-[#0052FF]">B</span>
+            </div>
+            <div>
+              <p class="text-xs text-on-surface-variant">Base</p>
+              <p class="text-sm font-bold">$4,130</p>
+            </div>
+          </div>
+          <div class="flex-shrink-0 px-4 py-3 bg-surface-container-lowest rounded-xl flex items-center gap-3 min-w-[160px]">
+            <div class="w-8 h-8 rounded-full bg-[#FF0420]/10 flex items-center justify-center">
+              <span class="text-xs font-black text-[#FF0420]">O</span>
+            </div>
+            <div>
+              <p class="text-xs text-on-surface-variant">Optimism</p>
+              <p class="text-sm font-bold">$2,100</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Assets Grid -->
+      <section>
+        <div class="flex justify-between items-end mb-6">
+          <h4 class="text-lg font-bold text-on-background">Assets</h4>
+          <button class="text-sm font-bold text-primary hover:underline">View All</button>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <!-- ETH -->
+          <div class="asset-card p-6 bg-surface-container-lowest rounded-xl cursor-pointer">
+            <div class="flex justify-between items-start mb-4">
+              <div class="w-12 h-12 rounded-full bg-[#627EEA]/10 flex items-center justify-center">
+                <span class="text-lg font-black text-[#627EEA]">E</span>
+              </div>
+              <div class="flex items-center gap-2">
+                <span class="text-[10px] font-bold text-on-surface-variant bg-surface-container px-2 py-0.5 rounded-full">3 chains</span>
+                <span class="text-xs text-primary font-bold px-2 py-1 bg-primary-container rounded-full">+4.2%</span>
+              </div>
+            </div>
+            <h5 class="text-on-surface-variant text-xs font-bold uppercase tracking-wider mb-1">Ethereum (ETH)</h5>
+            <p class="text-2xl font-black text-on-background mb-1">$28,421.20</p>
+            <p class="text-sm text-on-surface-variant">10.0 ETH &middot; $2,842.12 / ETH</p>
+          </div>
+
+          <!-- USDC -->
+          <div class="asset-card p-6 bg-surface-container-lowest rounded-xl cursor-pointer">
+            <div class="flex justify-between items-start mb-4">
+              <div class="w-12 h-12 rounded-full bg-[#2775CA]/10 flex items-center justify-center">
+                <span class="text-lg font-black text-[#2775CA]">$</span>
+              </div>
+              <div class="flex items-center gap-2">
+                <span class="text-[10px] font-bold text-on-surface-variant bg-surface-container px-2 py-0.5 rounded-full">4 chains</span>
+                <span class="text-xs text-on-surface-variant font-bold px-2 py-1 bg-surface-container rounded-full">Stable</span>
+              </div>
+            </div>
+            <h5 class="text-on-surface-variant text-xs font-bold uppercase tracking-wider mb-1">USD Coin (USDC)</h5>
+            <p class="text-2xl font-black text-on-background mb-1">$10,000.00</p>
+            <p class="text-sm text-on-surface-variant">10,000 USDC &middot; $1.00 / USDC</p>
+          </div>
+
+          <!-- WBTC -->
+          <div class="asset-card p-6 bg-surface-container-lowest rounded-xl cursor-pointer">
+            <div class="flex justify-between items-start mb-4">
+              <div class="w-12 h-12 rounded-full bg-[#F7931A]/10 flex items-center justify-center">
+                <span class="text-lg font-black text-[#F7931A]">B</span>
+              </div>
+              <div class="flex items-center gap-2">
+                <span class="text-[10px] font-bold text-on-surface-variant bg-surface-container px-2 py-0.5 rounded-full">Ethereum</span>
+                <span class="text-xs text-primary font-bold px-2 py-1 bg-primary-container rounded-full">+1.8%</span>
+              </div>
+            </div>
+            <h5 class="text-on-surface-variant text-xs font-bold uppercase tracking-wider mb-1">Wrapped BTC (WBTC)</h5>
+            <p class="text-2xl font-black text-on-background mb-1">$4,210.62</p>
+            <p class="text-sm text-on-surface-variant">0.0447 WBTC &middot; $94,212.45 / WBTC</p>
+          </div>
+
+          <!-- DAI -->
+          <div class="asset-card p-6 bg-surface-container-lowest rounded-xl cursor-pointer">
+            <div class="flex justify-between items-start mb-4">
+              <div class="w-12 h-12 rounded-full bg-[#F5AC37]/10 flex items-center justify-center">
+                <span class="text-lg font-black text-[#F5AC37]">D</span>
+              </div>
+              <div class="flex items-center gap-2">
+                <span class="text-[10px] font-bold text-on-surface-variant bg-surface-container px-2 py-0.5 rounded-full">Arbitrum</span>
+                <span class="text-xs text-on-surface-variant font-bold px-2 py-1 bg-surface-container rounded-full">Stable</span>
+              </div>
+            </div>
+            <h5 class="text-on-surface-variant text-xs font-bold uppercase tracking-wider mb-1">DAI</h5>
+            <p class="text-2xl font-black text-on-background mb-1">$218.18</p>
+            <p class="text-sm text-on-surface-variant">218.18 DAI &middot; $1.00 / DAI</p>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <!-- Secondary Column -->
+    <div class="lg:col-span-4 space-y-8">
+
+      <!-- Quick Actions -->
+      <section class="bg-surface-container-low rounded-xl p-6">
+        <h4 class="text-lg font-bold text-on-background mb-4">Quick Actions</h4>
+        <div class="grid grid-cols-2 gap-3">
+          <button onclick="window.location.href='swap.html'" class="flex flex-col items-center gap-2 p-4 bg-surface-container-lowest rounded-xl hover:bg-primary-container transition-colors">
+            <span class="material-symbols-outlined text-primary">swap_horiz</span>
+            <span class="text-xs font-bold">Swap</span>
+          </button>
+          <button onclick="window.location.href='swap.html'" class="flex flex-col items-center gap-2 p-4 bg-surface-container-lowest rounded-xl hover:bg-primary-container transition-colors">
+            <span class="material-symbols-outlined text-primary">layers</span>
+            <span class="text-xs font-bold">Bridge</span>
+          </button>
+          <button class="flex flex-col items-center gap-2 p-4 bg-surface-container-lowest rounded-xl hover:bg-primary-container transition-colors">
+            <span class="material-symbols-outlined text-primary">shopping_cart</span>
+            <span class="text-xs font-bold">Buy</span>
+          </button>
+          <button class="flex flex-col items-center gap-2 p-4 bg-surface-container-lowest rounded-xl hover:bg-primary-container transition-colors">
+            <span class="material-symbols-outlined text-primary">sell</span>
+            <span class="text-xs font-bold">Sell</span>
+          </button>
+        </div>
+      </section>
+
+      <!-- Cross-Chain Opportunities -->
+      <section class="bg-surface-container-low rounded-xl p-6">
+        <h4 class="text-lg font-bold text-on-background mb-6">Yield Opportunities</h4>
+        <div class="space-y-4">
+          <div class="p-4 bg-surface-container-lowest rounded-xl flex items-center justify-between cursor-pointer hover:bg-primary-container transition-colors">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-full bg-surface-container flex items-center justify-center">
+                <span class="material-symbols-outlined text-primary">trending_up</span>
+              </div>
+              <div>
+                <p class="text-sm font-bold text-on-background">ETH Staking</p>
+                <p class="text-xs text-on-surface-variant">Lido &middot; Ethereum</p>
+              </div>
+            </div>
+            <p class="text-sm font-black text-primary">3.8% APR</p>
+          </div>
+          <div class="p-4 bg-surface-container-lowest rounded-xl flex items-center justify-between cursor-pointer hover:bg-primary-container transition-colors">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-full bg-surface-container flex items-center justify-center">
+                <span class="material-symbols-outlined text-primary">savings</span>
+              </div>
+              <div>
+                <p class="text-sm font-bold text-on-background">USDC Supply</p>
+                <p class="text-xs text-on-surface-variant">Aave V3 &middot; Arbitrum</p>
+              </div>
+            </div>
+            <p class="text-sm font-black text-primary">5.2% APR</p>
+          </div>
+          <div class="p-4 bg-surface-container-lowest rounded-xl flex items-center justify-between cursor-pointer hover:bg-primary-container transition-colors">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-full bg-surface-container flex items-center justify-center">
+                <span class="material-symbols-outlined text-primary">bolt</span>
+              </div>
+              <div>
+                <p class="text-sm font-bold text-on-background">ETH-USDC LP</p>
+                <p class="text-xs text-on-surface-variant">Uniswap &middot; Base</p>
+              </div>
+            </div>
+            <p class="text-sm font-black text-primary">12.1% APR</p>
+          </div>
+        </div>
+        <button class="w-full mt-6 py-3 border-2 border-primary/20 text-primary font-bold rounded-full text-sm hover:bg-primary/5 transition-colors">
+          Explore Protocols
+        </button>
+      </section>
+
+      <!-- Recent Activity -->
+      <section>
+        <div class="flex justify-between items-center mb-6 px-2">
+          <h4 class="text-lg font-bold text-on-background">Activity</h4>
+          <span class="material-symbols-outlined text-on-surface-variant cursor-pointer">history</span>
+        </div>
+        <div class="space-y-5">
+          <div class="flex items-center gap-4 px-2">
+            <div class="w-10 h-10 rounded-full bg-primary-container flex items-center justify-center flex-shrink-0">
+              <span class="material-symbols-outlined text-primary text-lg">layers</span>
+            </div>
+            <div class="flex-1 border-b border-outline-variant/10 pb-4">
+              <div class="flex justify-between">
+                <p class="text-sm font-bold text-on-background">Bridged USDC</p>
+                <p class="text-sm font-bold text-on-background">2,000 USDC</p>
+              </div>
+              <div class="flex justify-between">
+                <p class="text-xs text-on-surface-variant">Ethereum → Arbitrum</p>
+                <p class="text-xs text-primary font-bold">~2s via Across</p>
+              </div>
+            </div>
+          </div>
+          <div class="flex items-center gap-4 px-2">
+            <div class="w-10 h-10 rounded-full bg-surface-container-high flex items-center justify-center flex-shrink-0">
+              <span class="material-symbols-outlined text-on-surface-variant text-lg">swap_horiz</span>
+            </div>
+            <div class="flex-1 border-b border-outline-variant/10 pb-4">
+              <div class="flex justify-between">
+                <p class="text-sm font-bold text-on-background">Swapped ETH → USDC</p>
+                <p class="text-sm font-bold text-on-background">-1.2 ETH</p>
+              </div>
+              <div class="flex justify-between">
+                <p class="text-xs text-on-surface-variant">Base &middot; MoonPay</p>
+                <p class="text-xs text-on-surface-variant">2h ago</p>
+              </div>
+            </div>
+          </div>
+          <div class="flex items-center gap-4 px-2">
+            <div class="w-10 h-10 rounded-full bg-primary-container flex items-center justify-center flex-shrink-0">
+              <span class="material-symbols-outlined text-primary text-lg">add_circle</span>
+            </div>
+            <div class="flex-1 border-b border-outline-variant/10 pb-4">
+              <div class="flex justify-between">
+                <p class="text-sm font-bold text-on-background">Bought ETH</p>
+                <p class="text-sm font-bold text-primary">+$500.00</p>
+              </div>
+              <div class="flex justify-between">
+                <p class="text-xs text-on-surface-variant">Fiat on-ramp &middot; MoonPay</p>
+                <p class="text-xs text-on-surface-variant">Yesterday</p>
+              </div>
+            </div>
+          </div>
+          <div class="flex items-center gap-4 px-2">
+            <div class="w-10 h-10 rounded-full bg-primary-container flex items-center justify-center flex-shrink-0">
+              <span class="material-symbols-outlined text-primary text-lg">call_received</span>
+            </div>
+            <div class="flex-1">
+              <div class="flex justify-between">
+                <p class="text-sm font-bold text-on-background">Yield Claimed</p>
+                <p class="text-sm font-bold text-primary">+$82.45</p>
+              </div>
+              <div class="flex justify-between">
+                <p class="text-xs text-on-surface-variant">Lido stETH &middot; Ethereum</p>
+                <p class="text-xs text-on-surface-variant">Mar 27</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Powered By -->
+      <div class="p-6 bg-primary text-on-primary rounded-xl relative overflow-hidden">
+        <div class="relative z-10">
+          <span class="material-symbols-outlined mb-3">hub</span>
+          <h5 class="text-lg font-bold mb-2 leading-tight">Powered by Across + MoonPay</h5>
+          <p class="text-sm opacity-80 mb-4">Cross-chain swaps in ~2 seconds. Non-custodial wallets. Fiat on/off ramps. All in one place.</p>
+          <div class="flex gap-2">
+            <span class="bg-white/20 px-3 py-1 rounded-full text-xs font-bold">Across Protocol</span>
+            <span class="bg-white/20 px-3 py-1 rounded-full text-xs font-bold">MoonPay</span>
+          </div>
+        </div>
+        <div class="absolute -bottom-8 -right-8 w-32 h-32 bg-white/10 rounded-full blur-2xl"></div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<!-- Bottom Nav (Mobile) -->
+<nav class="fixed bottom-0 w-full z-50 flex justify-around items-center px-4 pb-6 md:hidden bg-surface/70 backdrop-blur-xl shadow-[0_-4px_40px_rgba(42,52,52,0.04)] rounded-t-3xl">
+  <a class="flex flex-col items-center justify-center bg-primary-container text-primary rounded-full p-3 transition-transform active:scale-90" href="index.html">
+    <span class="material-symbols-outlined">home</span>
+    <span class="font-headline text-[10px] font-bold uppercase mt-1">Home</span>
+  </a>
+  <a class="flex flex-col items-center justify-center text-on-surface-variant p-3 active:scale-90" href="swap.html">
+    <span class="material-symbols-outlined">swap_horiz</span>
+    <span class="font-headline text-[10px] font-bold uppercase mt-1">Swap</span>
+  </a>
+  <a class="flex flex-col items-center justify-center text-on-surface-variant p-3 active:scale-90" href="#">
+    <span class="material-symbols-outlined">account_balance_wallet</span>
+    <span class="font-headline text-[10px] font-bold uppercase mt-1">Wallets</span>
+  </a>
+  <a class="flex flex-col items-center justify-center text-on-surface-variant p-3 active:scale-90" href="#">
+    <span class="material-symbols-outlined">analytics</span>
+    <span class="font-headline text-[10px] font-bold uppercase mt-1">Markets</span>
+  </a>
+</nav>
+
+</body>
+</html>
