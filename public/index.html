@@ -382,21 +382,41 @@ tailwind.config = {
 
 <script>
 // ── Config ──
+const TW = 'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains';
 const CHAINS = {
-  1:     { name:'Ethereum', letter:'E', color:'#627EEA' },
-  42161: { name:'Arbitrum', letter:'A', color:'#28A0F0' },
-  8453:  { name:'Base',     letter:'B', color:'#0052FF' },
-  10:    { name:'Optimism', letter:'O', color:'#FF0420' },
-  137:   { name:'Polygon',  letter:'P', color:'#8247E5' },
+  1:     { name:'Ethereum', slug:'ethereum', color:'#627EEA' },
+  42161: { name:'Arbitrum', slug:'arbitrum', color:'#28A0F0' },
+  8453:  { name:'Base',     slug:'base',     color:'#0052FF' },
+  10:    { name:'Optimism', slug:'optimism', color:'#FF0420' },
+  137:   { name:'Polygon',  slug:'polygon',  color:'#8247E5' },
+};
+function chainIcon(chainId) {
+  const c = CHAINS[chainId];
+  return c ? `${TW}/${c.slug}/info/logo.png` : '';
+}
+function tokenIcon(symbol, chainId) {
+  const addr = TOKEN_ADDRS[symbol]?.[chainId];
+  const slug = CHAINS[chainId]?.slug;
+  if (addr && slug) return `${TW}/${slug}/assets/${addr}/logo.png`;
+  // Fallback: native token icon for the chain
+  if (slug && (symbol === 'ETH' || symbol === 'MATIC')) return `${TW}/${slug}/info/logo.png`;
+  return '';
+}
+const TOKEN_ADDRS = {
+  USDC: { 1:'0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48', 42161:'0xaf88d065e77c8cC2239327C5EDb3A432268e5831', 8453:'0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913', 10:'0x0b2C639c533813f4Aa9D7837CAf62653d097Ff85', 137:'0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359' },
+  WETH: { 1:'0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2', 42161:'0x82aF49447D8a07e3bd95BD0d56f35241523fBab1', 8453:'0x4200000000000000000000000000000000000006', 10:'0x4200000000000000000000000000000000000006' },
+  WBTC: { 1:'0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599', 42161:'0x2f2a2543B76A4166549F7aaB2e75Bef0aefC5B0f' },
+  DAI:  { 1:'0x6B175474E89094C44Da98b954EedeAC495271d0F', 42161:'0xDA10009cBd5D07dd0CeCc66161FC93D7c9000da1' },
+  USDT: { 1:'0xdAC17F958D2ee523a2206206994597C13D831ec7' },
 };
 const TOKEN_META = {
-  ETH:  { label:'Ethereum',     letter:'E', color:'#627EEA', coingecko:'ethereum' },
-  WETH: { label:'Wrapped ETH',  letter:'E', color:'#627EEA', coingecko:'ethereum' },
-  USDC: { label:'USD Coin',     letter:'$', color:'#2775CA', stable:true },
-  USDT: { label:'Tether',       letter:'T', color:'#26A17B', stable:true },
-  DAI:  { label:'Dai',          letter:'D', color:'#F5AC37', stable:true },
-  WBTC: { label:'Wrapped BTC',  letter:'B', color:'#F7931A', coingecko:'bitcoin' },
-  MATIC:{ label:'Polygon',      letter:'P', color:'#8247E5', coingecko:'matic-network' },
+  ETH:  { label:'Ethereum',    stable:false },
+  WETH: { label:'Wrapped ETH', stable:false },
+  USDC: { label:'USD Coin',    stable:true },
+  USDT: { label:'Tether',      stable:true },
+  DAI:  { label:'Dai',         stable:true },
+  WBTC: { label:'Wrapped BTC', stable:false },
+  MATIC:{ label:'Polygon',     stable:false },
 };
 
 let walletAddress = null;
@@ -520,11 +540,10 @@ function renderPortfolio(balancesByChain) {
     chainEl.innerHTML = Object.entries(chainTotals)
       .sort((a,b) => b[1] - a[1])
       .map(([cid, val]) => {
-        const c = CHAINS[cid] || { name:'Chain '+cid, letter:'?', color:'#727d7c' };
+        const c = CHAINS[cid] || { name:'Chain '+cid, color:'#727d7c' };
+        const icon = chainIcon(Number(cid));
         return `<div class="flex-shrink-0 px-4 py-3 bg-surface-container-lowest rounded-xl flex items-center gap-3 min-w-[160px]">
-          <div class="w-8 h-8 rounded-full flex items-center justify-center" style="background:${c.color}1a">
-            <span class="text-xs font-black" style="color:${c.color}">${c.letter}</span>
-          </div>
+          <img src="${icon}" alt="${c.name}" class="w-8 h-8 rounded-full" onerror="this.style.display='none'"/>
           <div>
             <p class="text-xs text-on-surface-variant">${c.name}</p>
             <p class="text-sm font-bold">${usd(val)}</p>
@@ -541,7 +560,7 @@ function renderPortfolio(balancesByChain) {
     return;
   }
   grid.innerHTML = sorted.map(([symbol, info]) => {
-    const meta = TOKEN_META[symbol] || { label:symbol, letter:symbol[0], color:'#727d7c' };
+    const meta = TOKEN_META[symbol] || { label:symbol };
     const price = prices[symbol]?.usd || 0;
     const change = prices[symbol]?.change || 0;
     const isStable = meta.stable;
@@ -551,11 +570,10 @@ function renderPortfolio(balancesByChain) {
     const chainLabel = info.chains.length > 1
       ? info.chains.length + ' chains'
       : (CHAINS[info.chains[0]]?.name || 'Chain ' + info.chains[0]);
+    const icon = tokenIcon(symbol, info.chains[0]);
     return `<div class="asset-card p-6 bg-surface-container-lowest rounded-xl cursor-pointer">
       <div class="flex justify-between items-start mb-4">
-        <div class="w-12 h-12 rounded-full flex items-center justify-center" style="background:${meta.color}1a">
-          <span class="text-lg font-black" style="color:${meta.color}">${meta.letter}</span>
-        </div>
+        <img src="${icon}" alt="${symbol}" class="w-12 h-12 rounded-full bg-surface-container" onerror="this.outerHTML='<div class=\\'w-12 h-12 rounded-full bg-surface-container flex items-center justify-center\\'><span class=\\'text-lg font-black text-on-surface-variant\\'>${symbol[0]}</span></div>'"/>
         <div class="flex items-center gap-2">
           <span class="text-[10px] font-bold text-on-surface-variant bg-surface-container px-2 py-0.5 rounded-full">${chainLabel}</span>
           ${changeBadge}

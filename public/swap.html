@@ -95,9 +95,7 @@ tailwind.config = {
         <div class="flex-1">
           <label class="text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-2 block">From Chain</label>
           <button id="from-chain-btn" class="w-full flex items-center gap-3 bg-surface-container-low px-4 py-3 rounded-xl border border-outline-variant/10 hover:bg-surface-container-high transition-colors">
-            <div class="w-8 h-8 rounded-full bg-[#627EEA]/10 flex items-center justify-center">
-              <span class="text-xs font-black text-[#627EEA]" id="from-chain-icon">E</span>
-            </div>
+            <img id="from-chain-icon" src="" alt="" class="w-8 h-8 rounded-full"/>
             <span class="font-bold text-sm" id="from-chain-name">Ethereum</span>
             <span class="material-symbols-outlined text-sm ml-auto">expand_more</span>
           </button>
@@ -112,9 +110,7 @@ tailwind.config = {
         <div class="flex-1">
           <label class="text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-2 block">To Chain</label>
           <button id="to-chain-btn" class="w-full flex items-center gap-3 bg-surface-container-low px-4 py-3 rounded-xl border border-outline-variant/10 hover:bg-surface-container-high transition-colors">
-            <div class="w-8 h-8 rounded-full bg-[#28A0F0]/10 flex items-center justify-center">
-              <span class="text-xs font-black text-[#28A0F0]" id="to-chain-icon">A</span>
-            </div>
+            <img id="to-chain-icon" src="" alt="" class="w-8 h-8 rounded-full"/>
             <span class="font-bold text-sm" id="to-chain-name">Arbitrum</span>
             <span class="material-symbols-outlined text-sm ml-auto">expand_more</span>
           </button>
@@ -144,9 +140,7 @@ tailwind.config = {
         <div class="space-y-2">
           <p class="text-sm font-medium text-on-surface-variant">You pay</p>
           <button class="inline-flex items-center gap-2 bg-surface-container-low px-4 py-2.5 rounded-full border border-outline-variant/10 cursor-pointer hover:bg-surface-container-high transition-colors">
-            <div class="w-6 h-6 rounded-full bg-[#627EEA]/10 flex items-center justify-center">
-              <span class="text-[10px] font-black text-[#627EEA]">E</span>
-            </div>
+            <img id="from-token-icon" src="" alt="ETH" class="w-6 h-6 rounded-full"/>
             <span class="font-bold uppercase text-sm">ETH</span>
             <span class="material-symbols-outlined text-sm">expand_more</span>
           </button>
@@ -173,9 +167,7 @@ tailwind.config = {
         <div class="space-y-2">
           <p class="text-sm font-medium text-on-surface-variant">You receive</p>
           <button class="inline-flex items-center gap-2 bg-surface-container-low px-4 py-2.5 rounded-full border border-outline-variant/10 cursor-pointer hover:bg-surface-container-high transition-colors">
-            <div class="w-6 h-6 rounded-full bg-[#2775CA]/10 flex items-center justify-center">
-              <span class="text-[10px] font-black text-[#2775CA]">$</span>
-            </div>
+            <img id="to-token-icon" src="" alt="USDC" class="w-6 h-6 rounded-full"/>
             <span class="font-bold uppercase text-sm">USDC</span>
             <span class="material-symbols-outlined text-sm">expand_more</span>
           </button>
@@ -283,15 +275,16 @@ tailwind.config = {
 
 <script>
   // State
+  const TW = 'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains';
   let mode = 'swap';
   const chains = [
-    { id: 1, name: 'Ethereum', letter: 'E', color: '#627EEA' },
-    { id: 42161, name: 'Arbitrum', letter: 'A', color: '#28A0F0' },
-    { id: 8453, name: 'Base', letter: 'B', color: '#0052FF' },
-    { id: 10, name: 'Optimism', letter: 'O', color: '#FF0420' },
-    { id: 137, name: 'Polygon', letter: 'P', color: '#8247E5' },
-    { id: 324, name: 'zkSync Era', letter: 'Z', color: '#4E529A' },
-    { id: 59144, name: 'Linea', letter: 'L', color: '#121212' },
+    { id: 1, name: 'Ethereum', slug: 'ethereum' },
+    { id: 42161, name: 'Arbitrum', slug: 'arbitrum' },
+    { id: 8453, name: 'Base', slug: 'base' },
+    { id: 10, name: 'Optimism', slug: 'optimism' },
+    { id: 137, name: 'Polygon', slug: 'polygon' },
+    { id: 324, name: 'zkSync Era', slug: 'zksync' },
+    { id: 59144, name: 'Linea', slug: 'linea' },
   ];
   let fromChainIdx = 0;
   let toChainIdx = 1;
@@ -333,13 +326,11 @@ tailwind.config = {
   function updateChainDisplay() {
     const fc = chains[fromChainIdx];
     const tc = chains[toChainIdx];
-    document.getElementById('from-chain-icon').textContent = fc.letter;
-    document.getElementById('from-chain-icon').style.color = fc.color;
-    document.getElementById('from-chain-icon').parentElement.style.background = fc.color + '1a';
+    document.getElementById('from-chain-icon').src = `${TW}/${fc.slug}/info/logo.png`;
+    document.getElementById('from-chain-icon').alt = fc.name;
     document.getElementById('from-chain-name').textContent = fc.name;
-    document.getElementById('to-chain-icon').textContent = tc.letter;
-    document.getElementById('to-chain-icon').style.color = tc.color;
-    document.getElementById('to-chain-icon').parentElement.style.background = tc.color + '1a';
+    document.getElementById('to-chain-icon').src = `${TW}/${tc.slug}/info/logo.png`;
+    document.getElementById('to-chain-icon').alt = tc.name;
     document.getElementById('to-chain-name').textContent = tc.name;
 
     if (mode === 'bridge') {
@@ -361,6 +352,11 @@ tailwind.config = {
     const output = (val * rate).toFixed(2);
     document.getElementById('output-amount').value = output;
   });
+
+  // Init icons
+  updateChainDisplay();
+  document.getElementById('from-token-icon').src = `${TW}/ethereum/info/logo.png`;
+  document.getElementById('to-token-icon').src = `${TW}/ethereum/assets/0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48/logo.png`;
 </script>
 
 </body>
