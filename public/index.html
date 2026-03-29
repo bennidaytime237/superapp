@@ -44,7 +44,6 @@ tailwind.config = {
   .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
   body { font-family: 'Outfit', sans-serif; }
   .glass-panel { background: rgba(248,250,249,0.7); backdrop-filter: blur(20px); }
-  .primary-gradient { background: linear-gradient(135deg, #2f3a33 0%, #667b68 100%); }
   .chain-pill { transition: all 0.15s ease; }
   .chain-pill:hover { transform: translateY(-1px); box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
   .asset-card { transition: all 0.2s ease; }
@@ -89,13 +88,13 @@ tailwind.config = {
   <div id="sidebar-wallet" class="mt-auto p-4 bg-surface-container rounded-3xl">
     <div id="sidebar-disconnected">
       <p class="text-xs text-on-surface-variant mb-3 text-center">Connect your wallet to get started</p>
-      <button onclick="connectWallet()" class="w-full py-3 px-4 primary-gradient text-on-primary rounded-full text-sm font-bold shadow-sm active:scale-[0.98] transition-transform">
+      <button onclick="connectWallet()" class="w-full py-3 px-4 bg-primary text-on-primary rounded-full text-sm font-bold shadow-sm active:scale-[0.98] transition-transform">
         Connect Wallet
       </button>
     </div>
     <div id="sidebar-connected" class="hidden">
       <div class="flex items-center gap-3 mb-3">
-        <div class="w-10 h-10 rounded-full primary-gradient flex items-center justify-center">
+        <div class="w-10 h-10 rounded-full bg-primary flex items-center justify-center">
           <span class="material-symbols-outlined text-on-primary text-sm">account_balance_wallet</span>
         </div>
         <div>
@@ -106,7 +105,7 @@ tailwind.config = {
       <div class="flex items-center justify-between mb-4 px-1">
         <p id="sidebar-total" class="text-sm font-black text-on-surface">$0.00</p>
       </div>
-      <button onclick="window.location.href='swap.html'" class="w-full py-3 px-4 primary-gradient text-on-primary rounded-full text-sm font-bold shadow-sm active:scale-[0.98] transition-transform">
+      <button onclick="window.location.href='swap.html'" class="w-full py-3 px-4 bg-primary text-on-primary rounded-full text-sm font-bold shadow-sm active:scale-[0.98] transition-transform">
         Swap & Bridge
       </button>
     </div>
@@ -133,7 +132,7 @@ tailwind.config = {
       <button class="p-2 text-on-surface-variant hover:bg-surface-container rounded-full transition-colors relative">
         <span class="material-symbols-outlined">notifications</span>
       </button>
-      <button id="connect-btn" onclick="connectWallet()" class="flex items-center gap-2 px-4 py-2 primary-gradient text-on-primary rounded-full text-sm font-bold active:scale-95 transition-transform">
+      <button id="connect-btn" onclick="connectWallet()" class="flex items-center gap-2 px-4 py-2 bg-primary text-on-primary rounded-full text-sm font-bold active:scale-95 transition-transform">
         <span class="material-symbols-outlined text-lg">account_balance_wallet</span>
         <span id="connect-label">Connect Wallet</span>
       </button>
@@ -157,7 +156,7 @@ tailwind.config = {
           </h3>
           <p id="hero-change" class="text-sm text-primary font-bold mb-8"></p>
           <div class="flex flex-wrap gap-3">
-            <button onclick="window.location.href='swap.html'" class="flex items-center gap-2 px-6 py-3 primary-gradient text-on-primary rounded-full font-bold text-sm active:scale-95 transition-transform">
+            <button onclick="window.location.href='swap.html'" class="flex items-center gap-2 px-6 py-3 bg-primary text-on-primary rounded-full font-bold text-sm active:scale-95 transition-transform">
               <span class="material-symbols-outlined text-lg">swap_horiz</span>
               Swap
             </button>
@@ -378,7 +377,7 @@ async function onConnected() {
 
   // Update header button
   document.getElementById('connect-label').textContent = short;
-  document.getElementById('connect-btn').classList.remove('primary-gradient');
+  document.getElementById('connect-btn').classList.remove('bg-primary');
   document.getElementById('connect-btn').classList.add('bg-surface-container-high', 'text-on-surface');
 
   // Update sidebar
