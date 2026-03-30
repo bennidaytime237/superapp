@@ -161,42 +161,66 @@ tailwind.config = {
 </main>
 
 <!-- Transaction Screen -->
-<div id="tx-screen" class="fixed inset-0 z-40 bg-background hidden flex-col items-center justify-center px-8">
+<div id="tx-screen" class="fixed inset-0 z-40 bg-background hidden flex-col px-8">
 
-  <!-- Loading state -->
-  <div id="tx-loading" class="flex flex-col items-center gap-6">
-    <div class="relative w-20 h-20">
-      <div class="absolute inset-0 rounded-full border-4 border-surface-container-high"></div>
-      <div class="absolute inset-0 rounded-full border-4 border-primary border-t-transparent animate-spin"></div>
-      <img src="sage-logo.svg" alt="" class="absolute inset-0 m-auto w-8 h-8"/>
-    </div>
-    <div class="text-center">
-      <p id="tx-status" class="text-lg font-bold text-on-background mb-1">Bridging...</p>
-      <p id="tx-detail" class="text-sm text-on-surface-variant">Waiting for confirmation</p>
-      <p id="tx-timer" class="text-2xl font-black text-primary mt-4 tabular-nums">0.0s</p>
-    </div>
+  <!-- Top bar -->
+  <div class="w-full max-w-2xl mx-auto h-14 flex justify-between items-center flex-shrink-0">
+    <a href="index.html" class="p-2 text-on-surface-variant hover:text-primary transition-colors">
+      <span class="material-symbols-outlined">home</span>
+    </a>
+    <button onclick="closeTxScreen()" class="p-2 text-on-surface-variant hover:text-primary transition-colors">
+      <span class="material-symbols-outlined">close</span>
+    </button>
   </div>
 
-  <!-- Success state -->
-  <div id="tx-success" class="hidden flex flex-col items-center gap-6 max-w-sm text-center">
-    <div class="w-20 h-20 rounded-full bg-primary flex items-center justify-center">
-      <span class="material-symbols-outlined text-on-primary text-4xl">check</span>
-    </div>
-    <div>
-      <p class="text-2xl font-black text-on-background mb-1">Complete</p>
-      <p id="tx-summary" class="text-sm text-on-surface-variant mb-2"></p>
-      <p id="tx-time-final" class="text-4xl font-black text-primary tabular-nums"></p>
-    </div>
-    <div class="flex flex-col gap-3 w-full mt-4">
-      <button onclick="closeTxScreen()" class="w-full py-4 bg-primary text-on-primary rounded-full font-bold text-base">
-        New transaction
-      </button>
-      <a id="tx-share-btn" href="" target="_blank" class="hidden w-full py-4 bg-surface-container-low text-on-surface rounded-full font-bold text-base text-center hover:bg-surface-container-high transition-colors">
-        Share on X
-      </a>
-    </div>
-  </div>
+  <!-- Center content -->
+  <div class="flex-1 flex items-center justify-center">
 
+    <!-- Loading state -->
+    <div id="tx-loading" class="flex flex-col items-center gap-6">
+      <div class="relative w-20 h-20">
+        <div class="absolute inset-0 rounded-full border-4 border-surface-container-high"></div>
+        <div class="absolute inset-0 rounded-full border-4 border-primary border-t-transparent animate-spin"></div>
+        <img src="sage-logo.svg" alt="" class="absolute inset-0 m-auto w-8 h-8"/>
+      </div>
+      <div class="text-center">
+        <p id="tx-status" class="text-lg font-bold text-on-background mb-1">Bridging...</p>
+        <p id="tx-detail" class="text-sm text-on-surface-variant">Waiting for confirmation</p>
+        <p id="tx-timer" class="text-2xl font-black text-primary mt-4 tabular-nums">0.0s</p>
+      </div>
+    </div>
+
+    <!-- Success state -->
+    <div id="tx-success" class="hidden flex flex-col items-center gap-6 max-w-sm text-center">
+      <div class="w-20 h-20 rounded-full bg-primary flex items-center justify-center">
+        <span class="material-symbols-outlined text-on-primary text-4xl">check</span>
+      </div>
+      <div>
+        <p class="text-2xl font-black text-on-background mb-1">Complete</p>
+        <p id="tx-summary" class="text-sm text-on-surface-variant mb-2"></p>
+        <p id="tx-time-final" class="text-4xl font-black text-primary tabular-nums"></p>
+      </div>
+      <div class="flex flex-col gap-3 w-full mt-6">
+        <button onclick="closeTxScreen()" class="w-full py-4 bg-primary text-on-primary rounded-full font-bold text-base">
+          New transaction
+        </button>
+        <a id="tx-share-btn" href="" target="_blank" class="hidden w-full py-4 bg-surface-container-low text-on-surface rounded-full font-bold text-base text-center hover:bg-surface-container-high transition-colors">
+          Share on X
+        </a>
+        <a href="index.html" class="w-full py-4 text-on-surface-variant rounded-full font-bold text-base text-center hover:text-primary transition-colors">
+          Return to Dashboard
+        </a>
+      </div>
+      <!-- Auto-redirect countdown -->
+      <div class="w-full mt-2">
+        <div class="h-1 bg-surface-container-high rounded-full overflow-hidden">
+          <div id="tx-countdown-bar" class="h-full bg-primary rounded-full transition-all" style="width:100%"></div>
+        </div>
+        <p id="tx-countdown-text" class="text-xs text-on-surface-variant mt-2">Returning to dashboard in 20s</p>
+      </div>
+    </div>
+
+  </div>
 </div>
 
 <!-- Token Picker Modal -->
@@ -720,6 +744,9 @@ function showTxScreen(statusText, detailText, resetTimer = true) {
   }
 }
 
+let txRedirectTimer = null;
+let txCountdownInterval = null;
+
 function showTxSuccess(summary, elapsedSec) {
   clearInterval(txTimerInterval);
   document.getElementById('tx-loading').classList.add('hidden');
@@ -736,10 +763,45 @@ function showTxSuccess(summary, elapsedSec) {
   } else {
     shareBtn.classList.add('hidden');
   }
+
+  // Auto-redirect countdown (20s)
+  startCountdown(20);
+}
+
+function startCountdown(seconds) {
+  clearTimeout(txRedirectTimer);
+  clearInterval(txCountdownInterval);
+  const bar = document.getElementById('tx-countdown-bar');
+  const text = document.getElementById('tx-countdown-text');
+  let remaining = seconds;
+  bar.style.width = '100%';
+  text.textContent = `Returning to dashboard in ${remaining}s`;
+
+  txCountdownInterval = setInterval(() => {
+    remaining--;
+    const pct = Math.max(0, (remaining / seconds) * 100);
+    bar.style.width = pct + '%';
+    text.textContent = `Returning to dashboard in ${remaining}s`;
+    if (remaining <= 0) clearInterval(txCountdownInterval);
+  }, 1000);
+
+  txRedirectTimer = setTimeout(() => {
+    window.location.href = 'index.html';
+  }, seconds * 1000);
+}
+
+function cancelCountdown() {
+  clearTimeout(txRedirectTimer);
+  clearInterval(txCountdownInterval);
+  const bar = document.getElementById('tx-countdown-bar');
+  const text = document.getElementById('tx-countdown-text');
+  if (bar) bar.style.width = '0%';
+  if (text) text.textContent = '';
 }
 
 function closeTxScreen() {
   clearInterval(txTimerInterval);
+  cancelCountdown();
   document.getElementById('tx-screen').classList.add('hidden');
   document.getElementById('tx-screen').classList.remove('flex');
   lastQuote = null;
