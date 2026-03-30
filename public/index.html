@@ -66,22 +66,6 @@ tailwind.config = {
       <span class="material-symbols-outlined">swap_horiz</span>
       <span class="font-medium text-sm">Swap & Bridge</span>
     </a>
-    <a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:text-primary hover:bg-white/50 rounded-full transition-all" href="#">
-      <span class="material-symbols-outlined">account_balance_wallet</span>
-      <span class="font-medium text-sm">Wallets</span>
-    </a>
-    <a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:text-primary hover:bg-white/50 rounded-full transition-all" href="#">
-      <span class="material-symbols-outlined">receipt_long</span>
-      <span class="font-medium text-sm">Transactions</span>
-    </a>
-    <a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:text-primary hover:bg-white/50 rounded-full transition-all" href="#">
-      <span class="material-symbols-outlined">trending_up</span>
-      <span class="font-medium text-sm">Markets</span>
-    </a>
-    <a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:text-primary hover:bg-white/50 rounded-full transition-all" href="#">
-      <span class="material-symbols-outlined">analytics</span>
-      <span class="font-medium text-sm">Research</span>
-    </a>
   </nav>
 
   <!-- Wallet Summary -->
@@ -121,17 +105,6 @@ tailwind.config = {
       <h2 class="hidden md:block font-headline font-bold text-xl tracking-tight text-on-background">Portfolio Overview</h2>
     </div>
     <div class="flex items-center gap-3">
-      <!-- Chain Selector -->
-      <div class="hidden lg:flex items-center gap-2 mr-2">
-        <button class="chain-pill px-3 py-1.5 bg-primary-container text-on-primary-container rounded-full text-xs font-bold">All Chains</button>
-        <button class="chain-pill px-3 py-1.5 bg-surface-container text-on-surface-variant rounded-full text-xs font-bold hover:bg-surface-container-high">Ethereum</button>
-        <button class="chain-pill px-3 py-1.5 bg-surface-container text-on-surface-variant rounded-full text-xs font-bold hover:bg-surface-container-high">Arbitrum</button>
-        <button class="chain-pill px-3 py-1.5 bg-surface-container text-on-surface-variant rounded-full text-xs font-bold hover:bg-surface-container-high">Base</button>
-        <button class="chain-pill px-3 py-1.5 bg-surface-container text-on-surface-variant rounded-full text-xs font-bold hover:bg-surface-container-high">+7</button>
-      </div>
-      <button class="p-2 text-on-surface-variant hover:bg-surface-container rounded-full transition-colors relative">
-        <span class="material-symbols-outlined">notifications</span>
-      </button>
       <button id="connect-btn" onclick="connectWallet()" class="flex items-center gap-2 px-4 py-2 bg-primary text-on-primary rounded-full text-sm font-bold active:scale-95 transition-transform">
         <span class="material-symbols-outlined text-lg">account_balance_wallet</span>
         <span id="connect-label">Connect Wallet</span>
@@ -164,14 +137,6 @@ tailwind.config = {
               <span class="material-symbols-outlined text-lg">layers</span>
               Bridge
             </button>
-            <button class="flex items-center gap-2 px-6 py-3 bg-surface-container-high text-on-surface rounded-full font-bold text-sm hover:bg-surface-container-highest transition-colors">
-              <span class="material-symbols-outlined text-lg">north_east</span>
-              Send
-            </button>
-            <button class="flex items-center gap-2 px-6 py-3 bg-surface-container-high text-on-surface rounded-full font-bold text-sm hover:bg-surface-container-highest transition-colors">
-              <span class="material-symbols-outlined text-lg">add</span>
-              Buy
-            </button>
           </div>
         </div>
         <div class="absolute -right-16 -top-16 w-64 h-64 bg-primary/5 rounded-full blur-3xl"></div>
@@ -201,30 +166,7 @@ tailwind.config = {
     <!-- Secondary Column -->
     <div class="lg:col-span-4 space-y-8">
 
-      <!-- Quick Actions -->
-      <section class="bg-surface-container-low rounded-xl p-6">
-        <h4 class="text-lg font-bold text-on-background mb-4">Quick Actions</h4>
-        <div class="grid grid-cols-2 gap-3">
-          <button onclick="window.location.href='swap.html'" class="flex flex-col items-center gap-2 p-4 bg-surface-container-lowest rounded-xl hover:bg-primary-container transition-colors">
-            <span class="material-symbols-outlined text-primary">swap_horiz</span>
-            <span class="text-xs font-bold">Swap</span>
-          </button>
-          <button onclick="window.location.href='swap.html'" class="flex flex-col items-center gap-2 p-4 bg-surface-container-lowest rounded-xl hover:bg-primary-container transition-colors">
-            <span class="material-symbols-outlined text-primary">layers</span>
-            <span class="text-xs font-bold">Bridge</span>
-          </button>
-          <button class="flex flex-col items-center gap-2 p-4 bg-surface-container-lowest rounded-xl hover:bg-primary-container transition-colors">
-            <span class="material-symbols-outlined text-primary">shopping_cart</span>
-            <span class="text-xs font-bold">Buy</span>
-          </button>
-          <button class="flex flex-col items-center gap-2 p-4 bg-surface-container-lowest rounded-xl hover:bg-primary-container transition-colors">
-            <span class="material-symbols-outlined text-primary">sell</span>
-            <span class="text-xs font-bold">Sell</span>
-          </button>
-        </div>
-      </section>
-
-      <!-- Crosschain Actions -->
+      <!-- Get Started -->
       <section class="bg-surface-container-low rounded-xl p-6">
         <h4 class="text-lg font-bold text-on-background mb-4">Get Started</h4>
         <div class="space-y-3">
@@ -252,18 +194,6 @@ tailwind.config = {
             </div>
             <span class="material-symbols-outlined text-on-surface-variant">chevron_right</span>
           </a>
-          <div class="p-4 bg-surface-container-lowest rounded-xl flex items-center justify-between cursor-pointer hover:bg-primary-container transition-colors">
-            <div class="flex items-center gap-3">
-              <div class="w-10 h-10 rounded-full bg-surface-container flex items-center justify-center">
-                <span class="material-symbols-outlined text-primary">shopping_cart</span>
-              </div>
-              <div>
-                <p class="text-sm font-bold text-on-background">Buy with fiat</p>
-                <p class="text-xs text-on-surface-variant">On-ramp via card or bank transfer</p>
-              </div>
-            </div>
-            <span class="material-symbols-outlined text-on-surface-variant">chevron_right</span>
-          </div>
         </div>
       </section>
 
@@ -283,11 +213,7 @@ tailwind.config = {
         <div class="relative z-10">
           <img src="sage-logo.svg" alt="Sage" class="w-8 h-8 mb-3 brightness-200"/>
           <h5 class="text-lg font-bold mb-2 leading-tight">Powered by Across + MoonPay</h5>
-          <p class="text-sm opacity-80 mb-4">Crosschain swaps in ~2 seconds. Non-custodial wallets. Fiat on/off ramps. All in one place.</p>
-          <div class="flex gap-2">
-            <span class="bg-white/20 px-3 py-1 rounded-full text-xs font-bold">Across Protocol</span>
-            <span class="bg-white/20 px-3 py-1 rounded-full text-xs font-bold">MoonPay</span>
-          </div>
+          <p class="text-sm opacity-80">Crosschain swaps in ~2 seconds. Non-custodial wallets. Fiat on/off ramps.</p>
         </div>
         <div class="absolute -bottom-8 -right-8 w-32 h-32 bg-white/10 rounded-full blur-2xl"></div>
       </div>
@@ -304,14 +230,6 @@ tailwind.config = {
   <a class="flex flex-col items-center justify-center text-on-surface-variant p-3 active:scale-90" href="swap.html">
     <span class="material-symbols-outlined">swap_horiz</span>
     <span class="font-headline text-[10px] font-bold uppercase mt-1">Swap</span>
-  </a>
-  <a class="flex flex-col items-center justify-center text-on-surface-variant p-3 active:scale-90" href="#">
-    <span class="material-symbols-outlined">account_balance_wallet</span>
-    <span class="font-headline text-[10px] font-bold uppercase mt-1">Wallets</span>
-  </a>
-  <a class="flex flex-col items-center justify-center text-on-surface-variant p-3 active:scale-90" href="#">
-    <span class="material-symbols-outlined">analytics</span>
-    <span class="font-headline text-[10px] font-bold uppercase mt-1">Markets</span>
   </a>
 </nav>
 
