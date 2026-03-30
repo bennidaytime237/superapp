@@ -766,20 +766,22 @@ async function executeSwap() {
 
       // Approvals
       if (lastQuote.approvalTxns?.length) {
-        showTxScreen('Approving...', `Approve ${fromSym} for bridging`);
+        showTxScreen('Approving...', `Approve ${fromSym} for bridging`, false);
+        document.getElementById('tx-timer').textContent = '';
         for (const tx of lastQuote.approvalTxns) {
           await sendTx(tx);
         }
       }
 
       // Main tx
-      showTxScreen('Confirm in wallet...', `${amount} ${fromSym} → ${toSym}`);
+      showTxScreen('Confirm in wallet...', `${amount} ${fromSym} → ${toSym}`, false);
+      document.getElementById('tx-timer').textContent = '';
       const swapTx = lastQuote.swapTx;
       if (!swapTx) throw new Error('No swap transaction in quote');
       const hash = await sendTx(swapTx);
 
-      // Now bridging — keep timer running from tx submit
-      showTxScreen('Bridging...', `${fromChainName} → ${toChainName}`, false);
+      // Tx submitted — NOW start the timer
+      showTxScreen('Bridging...', `${fromChainName} → ${toChainName}`, true);
 
       // Poll for fill — elapsed measured from txStartTime (when tx was submitted)
       await pollFill(CHAINS[fromChainIdx].id, hash);
