@@ -357,11 +357,14 @@ function pct(n) {
   return sign + n.toFixed(2) + '%';
 }
 
+let portfolioData = null;
+let portfolioAgg = null;
+
 function renderPortfolio(balancesByChain) {
-  // Aggregate by token across chains
-  const agg = {}; // symbol → { total, chains: [chainId,...], usdValue }
+  portfolioData = balancesByChain;
+  const agg = {};
   let totalUsd = 0;
-  let chainTotals = {}; // chainId → usd
+  let chainTotals = {};
 
   for (const [chainId, tokens] of Object.entries(balancesByChain)) {
     let chainUsd = 0;
@@ -377,6 +380,7 @@ function renderPortfolio(balancesByChain) {
     }
     if (chainUsd > 0) chainTotals[chainId] = chainUsd;
   }
+  portfolioAgg = agg;
 
   // Hero
   const whole = Math.floor(totalUsd).toLocaleString('en-US');
@@ -400,14 +404,17 @@ function renderPortfolio(balancesByChain) {
     chainEl.innerHTML = Object.entries(chainTotals)
       .sort((a,b) => b[1] - a[1])
       .map(([cid, val]) => {
-        const c = CHAINS[cid] || { name:'Chain '+cid, color:'#727d7c' };
+        const c = CHAINS[cid] || { name:'Chain '+cid };
         const icon = chainIcon(Number(cid));
-        return `<div class="flex-shrink-0 px-4 py-3 bg-surface-container-lowest rounded-xl flex items-center gap-3 min-w-[160px]">
-          <img src="${icon}" alt="${c.name}" class="w-8 h-8 rounded-full" onerror="this.style.display='none'"/>
-          <div>
-            <p class="text-xs text-on-surface-variant">${c.name}</p>
-            <p class="text-sm font-bold">${usd(val)}</p>
-          </div>
+        return `<div class="flex-shrink-0 min-w-[160px]">
+          <button onclick="toggleChainDrop(${cid})" class="w-full px-4 py-3 bg-surface-container-lowest rounded-xl flex items-center gap-3 hover:bg-surface-container transition-colors">
+            <img src="${icon}" alt="${c.name}" class="w-8 h-8 rounded-full" onerror="this.style.display='none'"/>
+            <div>
+              <p class="text-xs text-on-surface-variant">${c.name}</p>
+              <p class="text-sm font-bold">${usd(val)}</p>
+            </div>
+          </button>
+          <div id="chain-drop-${cid}" class="hidden mt-1 bg-surface-container-lowest rounded-xl border border-outline-variant/10 shadow-sm overflow-hidden"></div>
         </div>`;
       }).join('');
   }
@@ -431,22 +438,88 @@ function renderPortfolio(balancesByChain) {
       ? info.chains.length + ' chains'
       : (CHAINS[info.chains[0]]?.name || 'Chain ' + info.chains[0]);
     const icon = tokenIcon(symbol, info.chains[0]);
-    return `<div class="asset-card p-6 bg-surface-container-lowest rounded-xl cursor-pointer">
-      <div class="flex justify-between items-start mb-4">
-        <img src="${icon}" alt="${symbol}" class="w-12 h-12 rounded-full bg-surface-container" onerror="this.outerHTML='<div class=\\'w-12 h-12 rounded-full bg-surface-container flex items-center justify-center\\'><span class=\\'text-lg font-black text-on-surface-variant\\'>${symbol[0]}</span></div>'"/>
-        <div class="flex items-center gap-2">
-          <span class="text-[10px] font-bold text-on-surface-variant bg-surface-container px-2 py-0.5 rounded-full">${chainLabel}</span>
-          ${changeBadge}
+    return `<div class="asset-card bg-surface-container-lowest rounded-xl cursor-pointer" onclick="toggleAssetDrop('${symbol}')">
+      <div class="p-6">
+        <div class="flex justify-between items-start mb-4">
+          <img src="${icon}" alt="${symbol}" class="w-12 h-12 rounded-full bg-surface-container" onerror="this.outerHTML='<div class=\\'w-12 h-12 rounded-full bg-surface-container flex items-center justify-center\\'><span class=\\'text-lg font-black text-on-surface-variant\\'>${symbol[0]}</span></div>'"/>
+          <div class="flex items-center gap-2">
+            <span class="text-[10px] font-bold text-on-surface-variant bg-surface-container px-2 py-0.5 rounded-full">${chainLabel}</span>
+            ${changeBadge}
+          </div>
         </div>
+        <h5 class="text-on-surface-variant text-xs font-bold uppercase tracking-wider mb-1">${meta.label} (${symbol})</h5>
+        <p class="text-2xl font-black text-on-background mb-1">${usd(info.usdValue)}</p>
+        <p class="text-sm text-on-surface-variant">${info.total.toLocaleString('en-US',{maximumFractionDigits:6})} ${symbol}${price ? ' · ' + usd(price) + ' / ' + symbol : ''}</p>
       </div>
-      <h5 class="text-on-surface-variant text-xs font-bold uppercase tracking-wider mb-1">${meta.label} (${symbol})</h5>
-      <p class="text-2xl font-black text-on-background mb-1">${usd(info.usdValue)}</p>
-      <p class="text-sm text-on-surface-variant">${info.total.toLocaleString('en-US',{maximumFractionDigits:6})} ${symbol}${price ? ' · ' + usd(price) + ' / ' + symbol : ''}</p>
+      <div id="asset-drop-${symbol}" class="hidden border-t border-outline-variant/10"></div>
     </div>`;
   }).join('');
 }
 
 // ── Auto-reconnect if already connected ──
+// ── Dropdown toggles ──
+function toggleAssetDrop(symbol) {
+  const el = document.getElementById('asset-drop-' + symbol);
+  if (!el) return;
+  if (!el.classList.contains('hidden')) { el.classList.add('hidden'); return; }
+  // Close others
+  document.querySelectorAll('[id^="asset-drop-"]').forEach(d => d.classList.add('hidden'));
+  // Build content: per-chain breakdown for this token
+  if (!portfolioData) return;
+  let rows = '';
+  for (const [chainId, tokens] of Object.entries(portfolioData)) {
+    const bal = tokens[symbol];
+    if (!bal || bal <= 0) continue;
+    const c = CHAINS[chainId] || { name: 'Chain ' + chainId };
+    const p = prices[symbol]?.usd || 0;
+    rows += `<div class="flex items-center justify-between px-6 py-3">
+      <div class="flex items-center gap-3">
+        <img src="${chainIcon(Number(chainId))}" class="w-6 h-6 rounded-full"/>
+        <span class="text-sm text-on-surface">${c.name}</span>
+      </div>
+      <div class="text-right">
+        <p class="text-sm font-bold text-on-background">${fmtNum(bal)} ${symbol}</p>
+        <p class="text-xs text-on-surface-variant">${usd(bal * p)}</p>
+      </div>
+    </div>`;
+  }
+  el.innerHTML = rows || '<p class="px-6 py-3 text-sm text-on-surface-variant">No balances</p>';
+  el.classList.remove('hidden');
+}
+
+function toggleChainDrop(chainId) {
+  const el = document.getElementById('chain-drop-' + chainId);
+  if (!el) return;
+  if (!el.classList.contains('hidden')) { el.classList.add('hidden'); return; }
+  document.querySelectorAll('[id^="chain-drop-"]').forEach(d => d.classList.add('hidden'));
+  if (!portfolioData) return;
+  const tokens = portfolioData[chainId] || {};
+  let rows = '';
+  for (const [symbol, bal] of Object.entries(tokens)) {
+    if (bal <= 0) continue;
+    const p = prices[symbol]?.usd || 0;
+    const icon = tokenIcon(symbol, Number(chainId));
+    rows += `<div class="flex items-center justify-between px-4 py-2.5">
+      <div class="flex items-center gap-2">
+        <img src="${icon}" class="w-5 h-5 rounded-full"/>
+        <span class="text-sm text-on-surface">${symbol}</span>
+      </div>
+      <div class="text-right">
+        <p class="text-sm font-bold text-on-background">${fmtNum(bal)}</p>
+        <p class="text-xs text-on-surface-variant">${usd(bal * p)}</p>
+      </div>
+    </div>`;
+  }
+  el.innerHTML = rows || '<p class="px-4 py-2 text-sm text-on-surface-variant">Empty</p>';
+  el.classList.remove('hidden');
+}
+
+function fmtNum(n) {
+  if (n >= 1000) return n.toLocaleString('en-US', { maximumFractionDigits: 2 });
+  if (n >= 1) return n.toLocaleString('en-US', { maximumFractionDigits: 4 });
+  return n.toLocaleString('en-US', { maximumFractionDigits: 6 });
+}
+
 function renderActivity() {
   const feed = document.getElementById('activity-feed');
   let history = [];
