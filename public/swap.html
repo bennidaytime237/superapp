@@ -107,9 +107,12 @@ tailwind.config = {
     </div>
     <!-- Balance / warning -->
     <div id="balance-warning" class="flex justify-end mt-3">
-      <div class="inline-flex items-center gap-2 text-sm text-on-surface-variant bg-sage-peach-light px-3 py-1.5 rounded-lg" id="balance-pill">
+      <div id="balance-normal" class="inline-flex items-center gap-2 text-sm text-on-surface-variant">
+        <span>Balance: <button onclick="setMax()" class="font-bold hover:underline underline-offset-2" id="from-balance">--</button></span>
+      </div>
+      <div id="balance-warn" class="hidden inline-flex items-center gap-2 text-sm text-on-surface-variant bg-sage-peach-light px-3 py-1.5 rounded-lg">
         <span class="text-amber-600 text-base">&#9888;</span>
-        <span>You only have <button onclick="setMax()" class="font-bold underline underline-offset-2 decoration-dotted" id="from-balance">--</button> available</span>
+        <span>You only have <button onclick="setMax()" class="font-bold underline underline-offset-2 decoration-dotted" id="from-balance-warn">--</button> available</span>
       </div>
     </div>
   </div>
@@ -294,6 +297,8 @@ async function updateBalance() {
     const bal = chainData[token.symbol] || 0;
     fromBal = bal;
     document.getElementById('from-balance').textContent = `${fmtNum(bal)} ${token.symbol}`;
+    document.getElementById('from-balance-warn').textContent = `${fmtNum(bal)} ${token.symbol}`;
+    updateBalanceWarning();
   } catch { fromBal = null; }
 }
 
@@ -546,8 +551,16 @@ function setHalf() {
 }
 
 // ── Quote / Amount ──
+function updateBalanceWarning() {
+  const val = parseFloat(document.getElementById('input-amount').value) || 0;
+  const overBalance = fromBal != null && val > fromBal && val > 0;
+  document.getElementById('balance-normal').classList.toggle('hidden', overBalance);
+  document.getElementById('balance-warn').classList.toggle('hidden', !overBalance);
+}
+
 function onAmountChange() {
   clearTimeout(quoteTimer);
+  updateBalanceWarning();
   const val = parseFloat(document.getElementById('input-amount').value) || 0;
   if (val <= 0) {
     document.getElementById('output-amount').textContent = '--';
