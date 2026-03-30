@@ -198,15 +198,12 @@ tailwind.config = {
         </div>
       </section>
 
-      <!-- Activity — empty state until wallet connected -->
+      <!-- Activity -->
       <section>
         <div class="flex justify-between items-center mb-4 px-2">
           <h4 class="text-lg font-bold text-on-background">Activity</h4>
         </div>
-        <div class="text-center py-8">
-          <span class="material-symbols-outlined text-4xl text-on-surface-variant/30 mb-2">history</span>
-          <p class="text-sm text-on-surface-variant">Your transaction history will appear here</p>
-        </div>
+        <div id="activity-feed"></div>
       </section>
 
       <!-- Powered By -->
@@ -441,8 +438,52 @@ function renderPortfolio(balancesByChain) {
 }
 
 // ── Auto-reconnect if already connected ──
+function renderActivity() {
+  const feed = document.getElementById('activity-feed');
+  let history = [];
+  try { history = JSON.parse(localStorage.getItem('sage_tx_history') || '[]'); } catch {}
+
+  if (history.length === 0) {
+    feed.innerHTML = `<div class="text-center py-8">
+      <span class="material-symbols-outlined text-4xl text-on-surface-variant/30 mb-2">history</span>
+      <p class="text-sm text-on-surface-variant">No transactions yet</p>
+    </div>`;
+    return;
+  }
+
+  feed.innerHTML = '<div class="space-y-4">' + history.map(tx => {
+    const icon = tx.type === 'bridge' ? 'layers' : 'swap_horiz';
+    const label = tx.type === 'bridge' ? 'Bridged' : 'Swapped';
+    const ago = timeAgo(tx.timestamp);
+    return `<div class="flex items-center gap-4 px-2">
+      <div class="w-10 h-10 rounded-full bg-primary-container flex items-center justify-center flex-shrink-0">
+        <span class="material-symbols-outlined text-primary text-lg">${icon}</span>
+      </div>
+      <div class="flex-1 border-b border-outline-variant/10 pb-3">
+        <div class="flex justify-between gap-2">
+          <p class="text-sm font-bold text-on-background">${label} ${tx.fromToken} → ${tx.toToken}</p>
+          <p class="text-sm font-bold text-on-background">${tx.amount} ${tx.fromToken}</p>
+        </div>
+        <div class="flex justify-between gap-2">
+          <p class="text-xs text-on-surface-variant">${tx.fromChain} → ${tx.toChain}</p>
+          <p class="text-xs text-primary font-bold">${tx.time.toFixed(1)}s &middot; ${ago}</p>
+        </div>
+      </div>
+    </div>`;
+  }).join('') + '</div>';
+}
+
+function timeAgo(ts) {
+  const sec = Math.floor((Date.now() - ts) / 1000);
+  if (sec < 60) return 'Just now';
+  if (sec < 3600) return Math.floor(sec / 60) + 'm ago';
+  if (sec < 86400) return Math.floor(sec / 3600) + 'h ago';
+  return Math.floor(sec / 86400) + 'd ago';
+}
+
 (async function init() {
-  await fetchPrices(); // always get prices
+  renderActivity();
+  await fetchPrices();
   if (window.ethereum) {
     const accounts = await window.ethereum.request({ method: 'eth_accounts' });
     if (accounts.length > 0) {
