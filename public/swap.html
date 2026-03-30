@@ -239,6 +239,7 @@ let walletAddress = null;
 let fromBal = null; // raw number
 let prices = {};
 let quoteTimer = null;
+let lastQuote = null; // stores Across swap/approval response
 
 // ── Icon helpers ──
 function tokenIconUrl(token, chainId) {
@@ -505,12 +506,16 @@ function updateRoute() {
 
 function updateActionBtn() {
   const btn = document.getElementById('action-btn');
+  const val = parseFloat(document.getElementById('input-amount').value) || 0;
   if (!walletAddress) {
     btn.textContent = 'Connect Wallet';
-    btn.className = 'w-full py-4 bg-primary text-on-primary rounded-full font-black text-lg active:scale-[0.98] transition-transform shadow-lg shadow-primary/20';
+    btn.className = 'w-full py-4 bg-primary text-on-primary rounded-full font-black text-lg active:scale-[0.98] transition-transform';
+  } else if (val <= 0) {
+    btn.textContent = 'Enter amount';
+    btn.className = 'w-full py-4 bg-surface-container-high text-on-surface-variant rounded-full font-black text-lg';
   } else {
-    btn.textContent = 'Review';
-    btn.className = 'w-full py-4 bg-surface-container-high text-on-surface-variant rounded-full font-black text-lg hover:bg-primary/10 transition-colors';
+    btn.textContent = mode === 'bridge' ? 'Bridge' : 'Swap';
+    btn.className = 'w-full py-4 bg-primary text-on-primary rounded-full font-black text-lg active:scale-[0.98] transition-transform';
   }
 }
 
@@ -541,7 +546,9 @@ function updateBalanceWarning() {
 
 function onAmountChange() {
   clearTimeout(quoteTimer);
+  lastQuote = null;
   updateBalanceWarning();
+  updateActionBtn();
   const val = parseFloat(document.getElementById('input-amount').value) || 0;
   if (val <= 0) {
     document.getElementById('output-amount').textContent = '--';
@@ -602,6 +609,7 @@ async function fetchQuote(amount) {
     const res = await fetch(`${ACROSS_API}/swap/approval?${params}`);
     if (!res.ok) throw new Error(res.status);
     const data = await res.json();
+    lastQuote = data;
 
     // Parse output
     if (data.expectedOutput) {
@@ -627,8 +635,90 @@ async function fetchQuote(amount) {
 async function executeSwap() {
   if (!walletAddress) { connectWallet(); return; }
   const amount = parseFloat(document.getElementById('input-amount').value) || 0;
-  if (amount <= 0) { alert('Enter an amount'); return; }
-  alert(`Swap execution coming soon!\n\n${amount} ${TOKENS[fromTokenIdx].symbol} → ${TOKENS[toTokenIdx].symbol}\nMode: ${mode}\nRoute: ${mode === 'bridge' ? CHAINS[fromChainIdx].name + ' → ' + CHAINS[toChainIdx].name : 'Same-chain'}`);
+  if (amount <= 0) return;
+
+  const btn = document.getElementById('action-btn');
+  const origText = btn.textContent;
+  btn.textContent = 'Preparing...';
+  btn.disabled = true;
+
+  try {
+    // For bridge mode, fetch a fresh quote if needed
+    if (mode === 'bridge') {
+      if (!lastQuote) await fetchQuote(amount);
+      if (!lastQuote) throw new Error('Could not get quote');
+
+      // Execute approval txns first
+      if (lastQuote.approvalTxns?.length) {
+        for (const tx of lastQuote.approvalTxns) {
+          btn.textContent = 'Approving...';
+          await sendTx(tx);
+        }
+      }
+
+      // Send the main swap/bridge tx
+      btn.textContent = 'Confirm in wallet...';
+      const swapTx = lastQuote.swapTx;
+      if (!swapTx) throw new Error('No swap transaction in quote');
+      const hash = await sendTx(swapTx);
+
+      btn.textContent = 'Bridging...';
+      // Poll for fill (non-blocking for UX)
+      pollFill(CHAINS[fromChainIdx].id, hash);
+      btn.textContent = 'Submitted!';
+      setTimeout(() => { btn.disabled = false; updateActionBtn(); }, 3000);
+
+    } else {
+      // Same-chain swap — not yet implemented via on-chain tx
+      btn.textContent = 'Swap not yet supported';
+      setTimeout(() => { btn.disabled = false; updateActionBtn(); }, 2000);
+    }
+  } catch (e) {
+    console.error('Tx failed:', e);
+    btn.textContent = e.code === 4001 ? 'Rejected' : 'Failed';
+    setTimeout(() => { btn.disabled = false; updateActionBtn(); }, 2000);
+  }
+}
+
+async function sendTx(tx) {
+  // Switch chain if needed
+  const targetChainHex = '0x' + tx.chainId.toString(16);
+  const currentChain = await window.ethereum.request({ method: 'eth_chainId' });
+  if (currentChain !== targetChainHex) {
+    try {
+      await window.ethereum.request({ method: 'wallet_switchEthereumChain', params: [{ chainId: targetChainHex }] });
+    } catch (e) {
+      if (e.code === 4902) throw new Error(`Please add chain ${tx.chainId} to MetaMask`);
+      throw e;
+    }
+  }
+
+  const txHash = await window.ethereum.request({
+    method: 'eth_sendTransaction',
+    params: [{
+      from: walletAddress,
+      to: tx.to,
+      data: tx.data,
+      value: tx.value && tx.value !== '0' ? '0x' + BigInt(tx.value).toString(16) : '0x0',
+      chainId: targetChainHex,
+    }],
+  });
+  return txHash;
+}
+
+async function pollFill(originChainId, txHash) {
+  for (let i = 0; i < 60; i++) {
+    try {
+      const res = await fetch(`${ACROSS_API}/deposit/status?originChainId=${originChainId}&depositTxHash=${txHash}`);
+      const data = await res.json();
+      if (data.status === 'filled') {
+        document.getElementById('action-btn').textContent = 'Bridged!';
+        lastQuote = null;
+        return;
+      }
+    } catch {}
+    await new Promise(r => setTimeout(r, 3000));
+  }
 }
 
 // ── Helpers ──
