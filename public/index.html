@@ -414,7 +414,7 @@ function renderPortfolio(balancesByChain) {
               <p class="text-sm font-bold">${usd(val)}</p>
             </div>
           </button>
-          <div id="chain-drop-${cid}" class="hidden mt-1 bg-surface-container-lowest rounded-xl border border-outline-variant/10 shadow-sm overflow-hidden"></div>
+          <div id="chain-drop-${cid}" class="hidden mt-1 bg-surface-container-lowest rounded-lg border border-outline-variant/10 shadow-sm"></div>
         </div>`;
       }).join('');
   }
@@ -462,8 +462,6 @@ function toggleAssetDrop(symbol) {
   const el = document.getElementById('asset-drop-' + symbol);
   if (!el) return;
   if (!el.classList.contains('hidden')) { el.classList.add('hidden'); return; }
-  // Close others
-  document.querySelectorAll('[id^="asset-drop-"]').forEach(d => d.classList.add('hidden'));
   // Build content: per-chain breakdown for this token
   if (!portfolioData) return;
   let rows = '';
@@ -491,7 +489,6 @@ function toggleChainDrop(chainId) {
   const el = document.getElementById('chain-drop-' + chainId);
   if (!el) return;
   if (!el.classList.contains('hidden')) { el.classList.add('hidden'); return; }
-  document.querySelectorAll('[id^="chain-drop-"]').forEach(d => d.classList.add('hidden'));
   if (!portfolioData) return;
   const tokens = portfolioData[chainId] || {};
   let rows = '';
