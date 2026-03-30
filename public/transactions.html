@@ -133,14 +133,24 @@ function render() {
     return;
   }
 
+  const EXP = {
+    1:'https://etherscan.io/tx/',42161:'https://arbiscan.io/tx/',8453:'https://basescan.org/tx/',
+    10:'https://optimistic.etherscan.io/tx/',137:'https://polygonscan.com/tx/',324:'https://explorer.zksync.io/tx/',
+    59144:'https://lineascan.build/tx/',34443:'https://explorer.mode.network/tx/',81457:'https://blastscan.io/tx/',
+    534352:'https://scrollscan.com/tx/',7777777:'https://explorer.zora.energy/tx/',
+  };
+
   list.innerHTML = history.map(tx => {
     const icon = tx.type === 'bridge' ? 'layers' : 'swap_horiz';
     const label = tx.type === 'bridge' ? 'Bridge' : 'Swap';
     const date = new Date(tx.timestamp);
     const dateStr = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
     const timeStr = date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+    const explorerUrl = tx.txHash && tx.fromChainId ? (EXP[tx.fromChainId] || 'https://etherscan.io/tx/') + tx.txHash : null;
+    const tag = explorerUrl ? 'a' : 'div';
+    const linkAttrs = explorerUrl ? `href="${explorerUrl}" target="_blank" rel="noopener"` : '';
 
-    return `<div class="flex items-center gap-4 px-2 py-4 border-b border-outline-variant/10">
+    return `<${tag} ${linkAttrs} class="flex items-center gap-4 px-2 py-4 border-b border-outline-variant/10 ${explorerUrl ? 'hover:bg-surface-container-low cursor-pointer transition-colors' : ''}">
       <div class="w-11 h-11 rounded-full bg-primary-container flex items-center justify-center flex-shrink-0">
         <span class="material-symbols-outlined text-primary text-lg">${icon}</span>
       </div>
@@ -154,10 +164,11 @@ function render() {
           <p class="text-xs text-on-surface-variant">${dateStr} ${timeStr}</p>
         </div>
       </div>
-      <div class="flex-shrink-0 text-right">
+      <div class="flex-shrink-0 flex items-center gap-2">
         <p class="text-xs font-bold text-primary">${tx.time.toFixed(1)}s</p>
+        ${explorerUrl ? '<span class="material-symbols-outlined text-on-surface-variant text-base">open_in_new</span>' : ''}
       </div>
-    </div>`;
+    </${tag}>`;
   }).join('');
 }
 

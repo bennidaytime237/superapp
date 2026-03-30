@@ -747,7 +747,14 @@ function showTxScreen(statusText, detailText, resetTimer = true) {
 let txRedirectTimer = null;
 let txCountdownInterval = null;
 
-function showTxSuccess(summary, elapsedSec) {
+const EXPLORERS = {
+  1:'https://etherscan.io/tx/',42161:'https://arbiscan.io/tx/',8453:'https://basescan.org/tx/',
+  10:'https://optimistic.etherscan.io/tx/',137:'https://polygonscan.com/tx/',324:'https://explorer.zksync.io/tx/',
+  59144:'https://lineascan.build/tx/',34443:'https://explorer.mode.network/tx/',81457:'https://blastscan.io/tx/',
+  534352:'https://scrollscan.com/tx/',7777777:'https://explorer.zora.energy/tx/',
+};
+
+function showTxSuccess(summary, elapsedSec, txHash, chainId) {
   clearInterval(txTimerInterval);
   document.getElementById('tx-loading').classList.add('hidden');
   document.getElementById('tx-success').classList.remove('hidden');
@@ -763,8 +770,10 @@ function showTxSuccess(summary, elapsedSec) {
       toToken: TOKENS[toTokenIdx].symbol,
       fromChain: CHAINS[fromChainIdx].name,
       toChain: CHAINS[toChainIdx].name,
+      fromChainId: CHAINS[fromChainIdx].id,
       amount: document.getElementById('input-amount').value,
       timestamp: Date.now(),
+      txHash: txHash || null,
     });
     if (history.length > 20) history.length = 20;
     localStorage.setItem('sage_tx_history', JSON.stringify(history));
@@ -869,7 +878,7 @@ async function executeSwap() {
       const elapsed = (Date.now() - txStartTime) / 1000;
       showTxSuccess(
         `${amount} ${fromSym} on ${fromChainName} → ${toSym} on ${toChainName}`,
-        elapsed
+        elapsed, hash, CHAINS[fromChainIdx].id
       );
 
     } else {

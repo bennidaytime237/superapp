@@ -456,11 +456,15 @@ function renderActivity() {
     return;
   }
 
+  const EXP = {1:'https://etherscan.io/tx/',42161:'https://arbiscan.io/tx/',8453:'https://basescan.org/tx/',10:'https://optimistic.etherscan.io/tx/',137:'https://polygonscan.com/tx/',324:'https://explorer.zksync.io/tx/',59144:'https://lineascan.build/tx/'};
   feed.innerHTML = '<div class="space-y-4">' + history.slice(0, 5).map(tx => {
     const icon = tx.type === 'bridge' ? 'layers' : 'swap_horiz';
     const label = tx.type === 'bridge' ? 'Bridged' : 'Swapped';
     const ago = timeAgo(tx.timestamp);
-    return `<div class="flex items-center gap-4 px-2">
+    const url = tx.txHash && tx.fromChainId ? (EXP[tx.fromChainId] || 'https://etherscan.io/tx/') + tx.txHash : null;
+    const tag = url ? 'a' : 'div';
+    const attrs = url ? `href="${url}" target="_blank" rel="noopener"` : '';
+    return `<${tag} ${attrs} class="flex items-center gap-4 px-2 ${url ? 'hover:bg-surface-container-low rounded-lg cursor-pointer transition-colors' : ''}">
       <div class="w-10 h-10 rounded-full bg-primary-container flex items-center justify-center flex-shrink-0">
         <span class="material-symbols-outlined text-primary text-lg">${icon}</span>
       </div>
@@ -474,7 +478,7 @@ function renderActivity() {
           <p class="text-xs text-primary font-bold">${tx.time.toFixed(1)}s &middot; ${ago}</p>
         </div>
       </div>
-    </div>`;
+    </${tag}>`;
   }).join('') + '</div>';
 }
 
