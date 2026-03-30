@@ -451,7 +451,7 @@ function renderPortfolio(balancesByChain) {
         <p class="text-2xl font-black text-on-background mb-1">${usd(info.usdValue)}</p>
         <p class="text-sm text-on-surface-variant">${info.total.toLocaleString('en-US',{maximumFractionDigits:6})} ${symbol}${price ? ' · ' + usd(price) + ' / ' + symbol : ''}</p>
       </div>
-      <div id="asset-drop-${symbol}" class="hidden border-t border-outline-variant/10"></div>
+      <div id="asset-drop-${symbol}" class="hidden"></div>
     </div>`;
   }).join('');
 }
@@ -481,7 +481,7 @@ function toggleAssetDrop(symbol) {
       </div>
     </div>`;
   }
-  el.innerHTML = rows || '<p class="px-6 py-3 text-sm text-on-surface-variant">No balances</p>';
+  el.innerHTML = '<div class="border-t border-outline-variant/10">' + (rows || '<p class="px-6 py-3 text-sm text-on-surface-variant">No balances</p>') + '</div>';
   el.classList.remove('hidden');
 }
 
