@@ -130,26 +130,26 @@ tailwind.config = {
     </div>
   </div>
 
-  <!-- Separator -->
-  <div class="h-px bg-outline-variant/10 w-full my-4"></div>
-
-  <!-- ═══ ACTIONS ═══ -->
-  <div class="space-y-4 mb-4">
-
-    <!-- Fees row -->
-    <button class="w-full flex items-center gap-5 text-left group">
-      <div class="w-12 h-12 bg-surface-container-low rounded-full flex items-center justify-center flex-shrink-0">
-        <span class="material-symbols-outlined text-on-surface-variant text-xl">receipt_long</span>
+  <!-- ═══ FEE BREAKDOWN ═══ -->
+  <div class="mt-4 mb-4">
+    <button onclick="toggleFeeBreakdown()" class="w-full flex items-center justify-between py-3 text-left">
+      <div class="flex items-center gap-2">
+        <span id="fee-display" class="text-sm font-bold text-on-surface">--</span>
+        <span id="fee-label" class="text-sm text-on-surface-variant">total fee</span>
       </div>
-      <div class="flex-1">
-        <p class="text-sm text-on-surface-variant">Total fees</p>
-        <p class="font-bold text-on-surface text-[15px]" id="fee-card-label">Included in amount</p>
-      </div>
-      <div class="flex items-center gap-1 font-bold text-on-surface text-[15px] underline underline-offset-4 flex-shrink-0">
-        <span id="fee-display">--</span>
-        <span class="material-symbols-outlined text-base">chevron_right</span>
+      <div class="flex items-center gap-1">
+        <span id="fee-route" class="text-xs text-on-surface-variant"></span>
+        <span id="fee-chevron" class="material-symbols-outlined text-on-surface-variant text-base transition-transform">expand_more</span>
       </div>
     </button>
+    <div id="fee-breakdown" class="hidden space-y-2 pb-3 text-sm">
+      <div class="flex justify-between"><span class="text-on-surface-variant">Route</span><span id="bd-route" class="text-on-surface font-medium">--</span></div>
+      <div class="flex justify-between"><span class="text-on-surface-variant">Relay fee</span><span id="bd-relay" class="text-on-surface font-medium">--</span></div>
+      <div class="flex justify-between"><span class="text-on-surface-variant">LP fee</span><span id="bd-lp" class="text-on-surface font-medium">--</span></div>
+      <div class="flex justify-between"><span class="text-on-surface-variant">Gas fee</span><span id="bd-gas" class="text-on-surface font-medium">--</span></div>
+      <div class="flex justify-between"><span class="text-on-surface-variant">Estimated time</span><span id="bd-time" class="text-on-surface font-medium">--</span></div>
+      <div class="flex justify-between"><span class="text-on-surface-variant">Slippage</span><span id="bd-slip" class="text-on-surface font-medium">Auto</span></div>
+    </div>
   </div>
 
   <!-- ═══ REVIEW BUTTON ═══ -->
@@ -498,11 +498,10 @@ function updateRate() {
 }
 
 function updateRoute() {
-  const el = document.getElementById('fee-card-label');
   if (mode === 'bridge') {
-    el.textContent = `${CHAINS[fromChainIdx].name} → ${CHAINS[toChainIdx].name} via Across`;
+    document.getElementById('fee-route').textContent = `${CHAINS[fromChainIdx].name} → ${CHAINS[toChainIdx].name}`;
   } else {
-    el.textContent = 'Included in amount';
+    document.getElementById('fee-route').textContent = 'Same chain';
   }
 }
 
@@ -523,6 +522,13 @@ function updateActionBtn() {
 
 function setSlippage(val) {
   slippage = val;
+}
+
+function toggleFeeBreakdown() {
+  const bd = document.getElementById('fee-breakdown');
+  const chev = document.getElementById('fee-chevron');
+  bd.classList.toggle('hidden');
+  chev.style.transform = bd.classList.contains('hidden') ? '' : 'rotate(180deg)';
 }
 
 function setMax() {
@@ -556,6 +562,7 @@ function onAmountChange() {
     document.getElementById('output-amount').textContent = '--';
     document.getElementById('output-usd').textContent = '';
     document.getElementById('fee-display').textContent = '--';
+    document.getElementById('fee-route').textContent = '';
     return;
   }
   // Instant estimate from prices
@@ -566,11 +573,14 @@ function onAmountChange() {
     document.getElementById('output-amount').textContent = fmtNum(est);
     document.getElementById('output-usd').textContent = `≈ $${fmtNum(val * fp)}`;
   }
-  // Debounced real quote for bridge mode
+  // Fetch real quote
   if (mode === 'bridge') {
-    quoteTimer = setTimeout(() => fetchQuote(val), 600);
+    document.getElementById('fee-display').textContent = '...';
+    document.getElementById('fee-route').textContent = `${CHAINS[fromChainIdx].name} → ${CHAINS[toChainIdx].name}`;
+    quoteTimer = setTimeout(() => fetchQuote(val), 300);
   } else {
     document.getElementById('fee-display').textContent = '< $0.50';
+    document.getElementById('fee-route').textContent = 'Same chain';
   }
 }
 
@@ -606,30 +616,45 @@ async function fetchQuote(amount) {
     slippage: slippage,
   });
 
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 8000);
+
   try {
-    document.getElementById('fee-display').textContent = 'Fetching...';
-    const res = await fetch(`${ACROSS_API}/swap/approval?${params}`);
+    const res = await fetch(`${ACROSS_API}/swap/approval?${params}`, { signal: controller.signal });
+    clearTimeout(timeout);
     if (!res.ok) throw new Error(res.status);
     const data = await res.json();
     lastQuote = data;
+    const fp = prices[fromToken.symbol] || 0;
+    const tp = prices[toToken.symbol] || 0;
 
-    // Parse output
+    // Output
     if (data.expectedOutput) {
       const outNum = Number(BigInt(data.expectedOutput)) / 10 ** toToken.decimals;
       document.getElementById('output-amount').textContent = fmtNum(outNum);
-      const tp = prices[toToken.symbol] || 0;
       document.getElementById('output-usd').textContent = `≈ $${fmtNum(outNum * tp)}`;
     }
 
-    // Parse fees
-    if (data.fees?.totalRelayFee?.total) {
-      const feeRaw = Number(BigInt(data.fees.totalRelayFee.total)) / 10 ** fromToken.decimals;
-      const fp = prices[fromToken.symbol] || 0;
-      document.getElementById('fee-display').textContent = `~$${fmtNum(feeRaw * fp)}`;
-    }
+    // Total fee
+    const totalFeeRaw = data.fees?.totalRelayFee?.total ? Number(BigInt(data.fees.totalRelayFee.total)) / 10 ** fromToken.decimals : 0;
+    document.getElementById('fee-display').textContent = `~$${fmtNum(totalFeeRaw * fp)}`;
+
+    // Breakdown
+    const relayFee = data.fees?.relayerCapitalFee?.total ? Number(BigInt(data.fees.relayerCapitalFee.total)) / 10 ** fromToken.decimals : 0;
+    const gasFee = data.fees?.relayerGasFee?.total ? Number(BigInt(data.fees.relayerGasFee.total)) / 10 ** fromToken.decimals : 0;
+    const lpFee = data.fees?.lpFee?.total ? Number(BigInt(data.fees.lpFee.total)) / 10 ** fromToken.decimals : 0;
+
+    document.getElementById('bd-route').textContent = `${CHAINS[fromChainIdx].name} → ${CHAINS[toChainIdx].name}`;
+    document.getElementById('bd-relay').textContent = `$${fmtNum(relayFee * fp)}`;
+    document.getElementById('bd-lp').textContent = `$${fmtNum(lpFee * fp)}`;
+    document.getElementById('bd-gas').textContent = `$${fmtNum(gasFee * fp)}`;
+    document.getElementById('bd-time').textContent = '~2 seconds';
+    document.getElementById('bd-slip').textContent = slippage === 'auto' ? 'Auto' : (parseFloat(slippage) * 100) + '%';
+
   } catch (e) {
+    clearTimeout(timeout);
     console.warn('Quote failed:', e);
-    document.getElementById('fee-display').textContent = 'Quote unavailable';
+    document.getElementById('fee-display').textContent = e.name === 'AbortError' ? 'Timed out' : 'Unavailable';
   }
 }
 
