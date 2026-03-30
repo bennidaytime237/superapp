@@ -457,7 +457,9 @@ function swapChains() {
 
 function swapTokens() {
   [fromTokenIdx, toTokenIdx] = [toTokenIdx, fromTokenIdx];
+  [fromChainIdx, toChainIdx] = [toChainIdx, fromChainIdx];
   updateTokenDisplay();
+  updateRoute();
   updateBalance();
   // swap amounts
   const inp = document.getElementById('input-amount');
