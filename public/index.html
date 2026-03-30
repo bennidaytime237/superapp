@@ -438,8 +438,8 @@ function renderPortfolio(balancesByChain) {
       ? info.chains.length + ' chains'
       : (CHAINS[info.chains[0]]?.name || 'Chain ' + info.chains[0]);
     const icon = tokenIcon(symbol, info.chains[0]);
-    return `<div class="asset-card bg-surface-container-lowest rounded-xl cursor-pointer" onclick="toggleAssetDrop('${symbol}')">
-      <div class="p-6">
+    return `<div class="asset-card bg-surface-container-lowest rounded-xl">
+      <div class="p-6 cursor-pointer" onclick="toggleAssetDrop('${symbol}')">
         <div class="flex justify-between items-start mb-4">
           <img src="${icon}" alt="${symbol}" class="w-12 h-12 rounded-full bg-surface-container" onerror="this.outerHTML='<div class=\\'w-12 h-12 rounded-full bg-surface-container flex items-center justify-center\\'><span class=\\'text-lg font-black text-on-surface-variant\\'>${symbol[0]}</span></div>'"/>
           <div class="flex items-center gap-2">
