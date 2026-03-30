@@ -478,6 +478,7 @@ function renderActivity() {
           <p class="text-xs text-primary font-bold">${tx.time.toFixed(1)}s &middot; ${ago}</p>
         </div>
       </div>
+      ${url ? '<span class="material-symbols-outlined text-on-surface-variant text-base flex-shrink-0">open_in_new</span>' : ''}
     </${tag}>`;
   }).join('') + '</div>';
 }
