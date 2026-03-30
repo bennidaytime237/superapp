@@ -701,7 +701,7 @@ async function fetchQuote(amount) {
 let txStartTime = 0;
 let txTimerInterval = null;
 
-function showTxScreen(statusText, detailText) {
+function showTxScreen(statusText, detailText, resetTimer = true) {
   const screen = document.getElementById('tx-screen');
   screen.classList.remove('hidden');
   screen.classList.add('flex');
@@ -709,13 +709,14 @@ function showTxScreen(statusText, detailText) {
   document.getElementById('tx-success').classList.add('hidden');
   document.getElementById('tx-status').textContent = statusText;
   document.getElementById('tx-detail').textContent = detailText;
-  // Start timer
-  txStartTime = Date.now();
-  clearInterval(txTimerInterval);
-  txTimerInterval = setInterval(() => {
-    const elapsed = ((Date.now() - txStartTime) / 1000).toFixed(1);
-    document.getElementById('tx-timer').textContent = elapsed + 's';
-  }, 100);
+  if (resetTimer) {
+    txStartTime = Date.now();
+    clearInterval(txTimerInterval);
+    txTimerInterval = setInterval(() => {
+      const elapsed = ((Date.now() - txStartTime) / 1000).toFixed(1);
+      document.getElementById('tx-timer').textContent = elapsed + 's';
+    }, 100);
+  }
 }
 
 function showTxSuccess(summary, elapsedSec) {
@@ -777,11 +778,12 @@ async function executeSwap() {
       if (!swapTx) throw new Error('No swap transaction in quote');
       const hash = await sendTx(swapTx);
 
-      // Now bridging — start the real timer from here
-      showTxScreen('Bridging...', `${fromChainName} → ${toChainName}`);
+      // Now bridging — keep timer running from tx submit
+      showTxScreen('Bridging...', `${fromChainName} → ${toChainName}`, false);
 
-      // Poll for fill
-      const elapsed = await pollFill(CHAINS[fromChainIdx].id, hash);
+      // Poll for fill — elapsed measured from txStartTime (when tx was submitted)
+      await pollFill(CHAINS[fromChainIdx].id, hash);
+      const elapsed = (Date.now() - txStartTime) / 1000;
       showTxSuccess(
         `${amount} ${fromSym} on ${fromChainName} → ${toSym} on ${toChainName}`,
         elapsed
@@ -827,18 +829,14 @@ async function sendTx(tx) {
 }
 
 async function pollFill(originChainId, txHash) {
-  const start = Date.now();
   for (let i = 0; i < 120; i++) {
     try {
       const res = await fetch(`${ACROSS_API}/deposit/status?originChainId=${originChainId}&depositTxHash=${txHash}`);
       const data = await res.json();
-      if (data.status === 'filled') {
-        return (Date.now() - start) / 1000;
-      }
+      if (data.status === 'filled') return;
     } catch {}
     await new Promise(r => setTimeout(r, 2000));
   }
-  return (Date.now() - start) / 1000; // return time even if not filled
 }
 
 // ── Helpers ──
