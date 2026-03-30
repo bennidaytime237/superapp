@@ -85,8 +85,8 @@ tailwind.config = {
     <div class="flex items-end justify-between gap-6">
       <button onclick="cycleToken('from')" class="inline-flex items-center gap-2 bg-surface-container-low pl-1.5 pr-4 py-1.5 rounded-full border border-outline-variant/10 hover:bg-surface-container-high transition-colors">
         <div class="relative">
-          <img id="from-chain-icon" src="" alt="" class="w-8 h-8 rounded-full"/>
-          <img id="from-token-icon" src="" alt="" class="w-5 h-5 rounded-full absolute -right-1 -bottom-0.5 border-2 border-white bg-white"/>
+          <img id="from-token-icon" src="" alt="" class="w-8 h-8 rounded-full"/>
+          <img id="from-chain-icon" src="" alt="" class="w-5 h-5 rounded-full absolute -right-1 -bottom-0.5 border-2 border-white bg-white"/>
         </div>
         <span id="from-token-label" class="font-bold text-base ml-1">ETH</span>
         <span class="material-symbols-outlined text-base text-on-surface-variant">expand_more</span>
@@ -118,8 +118,8 @@ tailwind.config = {
     <div class="flex items-end justify-between gap-6">
       <button onclick="cycleToken('to')" class="inline-flex items-center gap-2 bg-surface-container-low pl-1.5 pr-4 py-1.5 rounded-full border border-outline-variant/10 hover:bg-surface-container-high transition-colors">
         <div class="relative">
-          <img id="to-chain-icon" src="" alt="" class="w-8 h-8 rounded-full"/>
-          <img id="to-token-icon" src="" alt="" class="w-5 h-5 rounded-full absolute -right-1 -bottom-0.5 border-2 border-white bg-white"/>
+          <img id="to-token-icon" src="" alt="" class="w-8 h-8 rounded-full"/>
+          <img id="to-chain-icon" src="" alt="" class="w-5 h-5 rounded-full absolute -right-1 -bottom-0.5 border-2 border-white bg-white"/>
         </div>
         <span id="to-token-label" class="font-bold text-base ml-1">USDC</span>
         <span class="material-symbols-outlined text-base text-on-surface-variant">expand_more</span>
@@ -307,14 +307,21 @@ let lastQuote = null; // stores Across swap/approval response
 
 // ── Icon helpers ──
 function tokenIconUrl(token, chainId) {
-  if (token.native) return `${TW}/${CHAINS.find(c=>c.id===chainId)?.slug || 'ethereum'}/info/logo.png`;
+  if (token.native) {
+    // Use WETH address for the ETH icon, not the chain logo
+    const wethAddr = token.wrapAddresses?.[1] || '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2';
+    return `${TW}/ethereum/assets/${wethAddr}/logo.png`;
+  }
   const addr = token.addresses[chainId];
   const slug = CHAINS.find(c=>c.id===chainId)?.slug;
   if (addr && slug) return `${TW}/${slug}/assets/${addr}/logo.png`;
-  // fallback to ethereum address
   const ethAddr = token.addresses[1];
   if (ethAddr) return `${TW}/ethereum/assets/${ethAddr}/logo.png`;
   return '';
+}
+function chainLogoUrl(chainId) {
+  const c = CHAINS.find(c=>c.id===chainId);
+  return c ? `${TW}/${c.slug}/info/logo.png` : '';
 }
 
 // ── Wallet ──
@@ -542,8 +549,8 @@ function updateTokenDisplay() {
   const fromChain = CHAINS.find(c => c.id === fromChainId);
   const toChain = CHAINS.find(c => c.id === toChainId);
   // Chain icons (big, background)
-  document.getElementById('from-chain-icon').src = `${TW}/${fromChain?.slug || 'ethereum'}/info/logo.png`;
-  document.getElementById('to-chain-icon').src = `${TW}/${toChain?.slug || 'ethereum'}/info/logo.png`;
+  document.getElementById('from-chain-icon').src = chainLogoUrl(fromChainId);
+  document.getElementById('to-chain-icon').src = chainLogoUrl(toChainId);
   // Token icons (small, overlay)
   document.getElementById('from-token-icon').src = tokenIconUrl(ft, fromChainId);
   document.getElementById('from-token-label').textContent = ft.symbol;
