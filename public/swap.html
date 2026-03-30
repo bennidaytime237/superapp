@@ -62,27 +62,11 @@ tailwind.config = {
 <!-- Main -->
 <main class="w-full max-w-[640px] mx-auto px-8 py-6 flex-1 flex flex-col justify-center min-h-0">
 
-  <!-- Mode Tabs + Chain selectors (bridge) -->
-  <div class="flex items-center justify-between mb-5">
+  <!-- Mode Tabs -->
+  <div class="flex items-center mb-5">
     <div class="inline-flex bg-surface-container-low rounded-full p-1 gap-1">
       <button id="tab-swap" onclick="setMode('swap')" class="tab-active px-6 py-2 rounded-full text-sm font-bold transition-all">Swap</button>
       <button id="tab-bridge" onclick="setMode('bridge')" class="px-6 py-2 rounded-full text-sm font-bold text-on-surface-variant transition-all">Bridge</button>
-    </div>
-    <!-- Chain selectors inline (bridge mode) -->
-    <div id="chain-selectors" class="hidden flex items-center gap-2">
-      <button id="from-chain-btn" onclick="cycleChain('from')" class="flex items-center gap-1.5 bg-surface-container-low px-3 py-1.5 rounded-full border border-outline-variant/10 hover:bg-surface-container-high transition-colors">
-        <img id="from-chain-icon" src="" alt="" class="w-5 h-5 rounded-full"/>
-        <span class="font-bold text-xs" id="from-chain-name">Ethereum</span>
-        <span class="material-symbols-outlined text-xs">expand_more</span>
-      </button>
-      <button onclick="swapChains()" class="text-on-surface-variant hover:text-primary transition-colors">
-        <span class="material-symbols-outlined text-sm">swap_horiz</span>
-      </button>
-      <button id="to-chain-btn" onclick="cycleChain('to')" class="flex items-center gap-1.5 bg-surface-container-low px-3 py-1.5 rounded-full border border-outline-variant/10 hover:bg-surface-container-high transition-colors">
-        <img id="to-chain-icon" src="" alt="" class="w-5 h-5 rounded-full"/>
-        <span class="font-bold text-xs" id="to-chain-name">Arbitrum</span>
-        <span class="material-symbols-outlined text-xs">expand_more</span>
-      </button>
     </div>
   </div>
 
@@ -98,9 +82,12 @@ tailwind.config = {
   <div class="mb-3">
     <p class="text-base text-on-surface-variant mb-3">From <span class="font-bold text-on-surface">Wallet</span></p>
     <div class="flex items-end justify-between gap-6">
-      <button onclick="cycleToken('from')" class="inline-flex items-center gap-2.5 bg-surface-container-low pl-2 pr-4 py-2 rounded-full border border-outline-variant/10 hover:bg-surface-container-high transition-colors">
-        <img id="from-token-icon" src="" alt="" class="w-7 h-7 rounded-full"/>
-        <span id="from-token-label" class="font-bold text-base">ETH</span>
+      <button onclick="cycleToken('from')" class="inline-flex items-center gap-2 bg-surface-container-low pl-1.5 pr-4 py-1.5 rounded-full border border-outline-variant/10 hover:bg-surface-container-high transition-colors">
+        <div class="relative">
+          <img id="from-chain-icon" src="" alt="" class="w-8 h-8 rounded-full"/>
+          <img id="from-token-icon" src="" alt="" class="w-5 h-5 rounded-full absolute -right-1 -bottom-0.5 border-2 border-white bg-white"/>
+        </div>
+        <span id="from-token-label" class="font-bold text-base ml-1">ETH</span>
         <span class="material-symbols-outlined text-base text-on-surface-variant">expand_more</span>
       </button>
       <input id="input-amount" class="flex-1 text-right text-5xl md:text-6xl font-black text-on-background border-none focus:ring-0 p-0 bg-transparent placeholder:text-on-surface-variant/15 min-w-0 leading-none" placeholder="0" type="number" oninput="onAmountChange()"/>
@@ -128,9 +115,12 @@ tailwind.config = {
   <div class="mb-3">
     <p class="text-base text-on-surface-variant mb-3">To <span class="font-bold text-on-surface">Wallet</span></p>
     <div class="flex items-end justify-between gap-6">
-      <button onclick="cycleToken('to')" class="inline-flex items-center gap-2.5 bg-surface-container-low pl-2 pr-4 py-2 rounded-full border border-outline-variant/10 hover:bg-surface-container-high transition-colors">
-        <img id="to-token-icon" src="" alt="" class="w-7 h-7 rounded-full"/>
-        <span id="to-token-label" class="font-bold text-base">USDC</span>
+      <button onclick="cycleToken('to')" class="inline-flex items-center gap-2 bg-surface-container-low pl-1.5 pr-4 py-1.5 rounded-full border border-outline-variant/10 hover:bg-surface-container-high transition-colors">
+        <div class="relative">
+          <img id="to-chain-icon" src="" alt="" class="w-8 h-8 rounded-full"/>
+          <img id="to-token-icon" src="" alt="" class="w-5 h-5 rounded-full absolute -right-1 -bottom-0.5 border-2 border-white bg-white"/>
+        </div>
+        <span id="to-token-label" class="font-bold text-base ml-1">USDC</span>
         <span class="material-symbols-outlined text-base text-on-surface-variant">expand_more</span>
       </button>
       <span id="output-amount" class="flex-1 text-right text-5xl md:text-6xl font-black text-on-background leading-none min-w-0 select-text">--</span>
@@ -182,10 +172,14 @@ tailwind.config = {
         <span class="material-symbols-outlined text-on-surface-variant">close</span>
       </button>
     </div>
+    <!-- Chain filter grid -->
+    <div id="chain-grid" class="flex flex-wrap gap-2 mb-4">
+      <!-- Populated by JS -->
+    </div>
     <!-- Search -->
-    <input id="token-search" type="text" placeholder="Search token or chain..." class="w-full px-4 py-3 rounded-xl border border-outline-variant/15 text-sm mb-4 focus:outline-none focus:ring-2 focus:ring-primary/30" oninput="filterTokenList()"/>
+    <input id="token-search" type="text" placeholder="Search token or chain..." class="w-full px-4 py-3 rounded-xl border border-outline-variant/15 text-sm mb-3 focus:outline-none focus:ring-2 focus:ring-primary/30" oninput="filterTokenList()"/>
     <!-- Token list -->
-    <div id="token-list" class="overflow-y-auto max-h-[55vh] space-y-1">
+    <div id="token-list" class="overflow-y-auto max-h-[45vh] space-y-1">
       <!-- Populated by JS -->
     </div>
   </div>
@@ -247,7 +241,6 @@ let prices = {};
 let quoteTimer = null;
 
 // ── Icon helpers ──
-function chainIconUrl(idx) { return `${TW}/${CHAINS[idx].slug}/info/logo.png`; }
 function tokenIconUrl(token, chainId) {
   if (token.native) return `${TW}/${CHAINS.find(c=>c.id===chainId)?.slug || 'ethereum'}/info/logo.png`;
   const addr = token.addresses[chainId];
@@ -313,7 +306,6 @@ function setMode(m) {
   document.getElementById('tab-bridge').className = m === 'bridge'
     ? 'tab-active px-6 py-2 rounded-full text-sm font-bold transition-all'
     : 'px-6 py-2 rounded-full text-sm font-bold text-on-surface-variant transition-all';
-  document.getElementById('chain-selectors').classList.toggle('hidden', m === 'swap');
   updateRoute();
   updateBalance();
   onAmountChange();
@@ -322,31 +314,44 @@ function setMode(m) {
 // ── Token picker modal ──
 let pickerSide = 'from';
 let cachedBalances = null;
-let allModalRows = []; // cached for filtering
+let allModalRows = [];
+let modalChainFilter = null; // null = all chains
 
 function cycleToken(side) { openTokenModal(side); }
 
 function openTokenModal(side) {
   pickerSide = side;
+  modalChainFilter = null;
   document.getElementById('token-search').value = '';
+  buildChainGrid();
   buildTokenList();
   document.getElementById('token-modal').classList.remove('hidden');
   document.body.style.overflow = 'hidden';
   document.getElementById('token-search').focus();
 }
 
-function buildTokenList() {
-  const list = document.getElementById('token-list');
-  const currentFromToken = TOKENS[fromTokenIdx];
-  const currentToToken = TOKENS[toTokenIdx];
-  const currentFromChain = CHAINS[mode === 'bridge' ? fromChainIdx : 0];
-  const currentToChain = CHAINS[mode === 'bridge' ? toChainIdx : 0];
+function buildChainGrid() {
+  const grid = document.getElementById('chain-grid');
+  grid.innerHTML = `<button onclick="setChainFilter(null)" class="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition-colors ${modalChainFilter === null ? 'bg-primary text-on-primary' : 'bg-surface-container-low text-on-surface-variant hover:bg-surface-container-high'}">All</button>` +
+    CHAINS.map(c => {
+      const active = modalChainFilter === c.id;
+      return `<button onclick="setChainFilter(${c.id})" class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-full text-xs font-bold transition-colors ${active ? 'bg-primary text-on-primary' : 'bg-surface-container-low text-on-surface-variant hover:bg-surface-container-high'}">
+        <img src="${TW}/${c.slug}/info/logo.png" class="w-4 h-4 rounded-full" onerror="this.style.display='none'"/>
+        ${c.name}
+      </button>`;
+    }).join('');
+}
 
-  // Build flat list: each entry is a { chainId, tokenIdx } pair
+function setChainFilter(chainId) {
+  modalChainFilter = chainId;
+  buildChainGrid();
+  filterTokenList();
+}
+
+function buildTokenList() {
   allModalRows = [];
   CHAINS.forEach((chain) => {
     TOKENS.forEach((token, tIdx) => {
-      // token must exist on this chain
       const hasAddr = token.native
         ? (token.addresses.hasOwnProperty(chain.id))
         : (token.addresses[chain.id]);
@@ -355,7 +360,6 @@ function buildTokenList() {
     });
   });
 
-  // Sort: tokens with balance first, then alphabetically
   allModalRows.sort((a, b) => {
     const balA = cachedBalances?.[a.chain.id]?.[a.token.symbol] || 0;
     const balB = cachedBalances?.[b.chain.id]?.[b.token.symbol] || 0;
@@ -366,7 +370,7 @@ function buildTokenList() {
     return a.chain.name.localeCompare(b.chain.name);
   });
 
-  renderModalRows(allModalRows);
+  filterTokenList();
 }
 
 function renderModalRows(rows) {
@@ -402,13 +406,18 @@ function renderModalRows(rows) {
 
 function filterTokenList() {
   const q = document.getElementById('token-search').value.toLowerCase().trim();
-  if (!q) { renderModalRows(allModalRows); return; }
-  const filtered = allModalRows.filter(({ chain, token }) =>
-    token.symbol.toLowerCase().includes(q) ||
-    token.name.toLowerCase().includes(q) ||
-    chain.name.toLowerCase().includes(q)
-  );
-  renderModalRows(filtered);
+  let rows = allModalRows;
+  if (modalChainFilter !== null) {
+    rows = rows.filter(({ chain }) => chain.id === modalChainFilter);
+  }
+  if (q) {
+    rows = rows.filter(({ chain, token }) =>
+      token.symbol.toLowerCase().includes(q) ||
+      token.name.toLowerCase().includes(q) ||
+      chain.name.toLowerCase().includes(q)
+    );
+  }
+  renderModalRows(rows);
 }
 
 function closeTokenModal() {
@@ -439,22 +448,9 @@ function selectToken(tokenIdx, chainId) {
   onAmountChange();
 }
 
-function cycleChain(side) {
-  if (side === 'from') {
-    fromChainIdx = (fromChainIdx + 1) % CHAINS.length;
-    if (fromChainIdx === toChainIdx) fromChainIdx = (fromChainIdx + 1) % CHAINS.length;
-  } else {
-    toChainIdx = (toChainIdx + 1) % CHAINS.length;
-    if (toChainIdx === fromChainIdx) toChainIdx = (toChainIdx + 1) % CHAINS.length;
-  }
-  updateChainDisplay();
-  updateBalance();
-  onAmountChange();
-}
-
 function swapChains() {
   [fromChainIdx, toChainIdx] = [toChainIdx, fromChainIdx];
-  updateChainDisplay();
+  updateTokenDisplay();
   updateBalance();
   onAmountChange();
 }
@@ -473,18 +469,16 @@ function swapTokens() {
 }
 
 // ── Display updates ──
-function updateChainDisplay() {
-  document.getElementById('from-chain-icon').src = chainIconUrl(fromChainIdx);
-  document.getElementById('from-chain-name').textContent = CHAINS[fromChainIdx].name;
-  document.getElementById('to-chain-icon').src = chainIconUrl(toChainIdx);
-  document.getElementById('to-chain-name').textContent = CHAINS[toChainIdx].name;
-  updateRoute();
-}
-
 function updateTokenDisplay() {
   const ft = TOKENS[fromTokenIdx], tt = TOKENS[toTokenIdx];
   const fromChainId = CHAINS[mode === 'bridge' ? fromChainIdx : 0].id;
   const toChainId = CHAINS[mode === 'bridge' ? toChainIdx : 0].id;
+  const fromChain = CHAINS.find(c => c.id === fromChainId);
+  const toChain = CHAINS.find(c => c.id === toChainId);
+  // Chain icons (big, background)
+  document.getElementById('from-chain-icon').src = `${TW}/${fromChain?.slug || 'ethereum'}/info/logo.png`;
+  document.getElementById('to-chain-icon').src = `${TW}/${toChain?.slug || 'ethereum'}/info/logo.png`;
+  // Token icons (small, overlay)
   document.getElementById('from-token-icon').src = tokenIconUrl(ft, fromChainId);
   document.getElementById('from-token-label').textContent = ft.symbol;
   document.getElementById('to-token-icon').src = tokenIconUrl(tt, toChainId);
@@ -695,7 +689,6 @@ async function loadRoutes() {
 
 // ── Init ──
 (async function init() {
-  updateChainDisplay();
   updateTokenDisplay();
   updateActionBtn();
   await Promise.all([fetchPrices(), loadRoutes()]);
