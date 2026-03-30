@@ -159,6 +159,45 @@ tailwind.config = {
 
 </main>
 
+<!-- Transaction Screen -->
+<div id="tx-screen" class="fixed inset-0 z-40 bg-background hidden flex-col items-center justify-center px-8">
+
+  <!-- Loading state -->
+  <div id="tx-loading" class="flex flex-col items-center gap-6">
+    <div class="relative w-20 h-20">
+      <div class="absolute inset-0 rounded-full border-4 border-surface-container-high"></div>
+      <div class="absolute inset-0 rounded-full border-4 border-primary border-t-transparent animate-spin"></div>
+      <img src="sage-logo.svg" alt="" class="absolute inset-0 m-auto w-8 h-8"/>
+    </div>
+    <div class="text-center">
+      <p id="tx-status" class="text-lg font-bold text-on-background mb-1">Bridging...</p>
+      <p id="tx-detail" class="text-sm text-on-surface-variant">Waiting for confirmation</p>
+      <p id="tx-timer" class="text-2xl font-black text-primary mt-4 tabular-nums">0.0s</p>
+    </div>
+  </div>
+
+  <!-- Success state -->
+  <div id="tx-success" class="hidden flex flex-col items-center gap-6 max-w-sm text-center">
+    <div class="w-20 h-20 rounded-full bg-primary flex items-center justify-center">
+      <span class="material-symbols-outlined text-on-primary text-4xl">check</span>
+    </div>
+    <div>
+      <p class="text-2xl font-black text-on-background mb-1">Complete</p>
+      <p id="tx-summary" class="text-sm text-on-surface-variant mb-2"></p>
+      <p id="tx-time-final" class="text-4xl font-black text-primary tabular-nums"></p>
+    </div>
+    <div class="flex flex-col gap-3 w-full mt-4">
+      <button onclick="closeTxScreen()" class="w-full py-4 bg-primary text-on-primary rounded-full font-bold text-base">
+        New transaction
+      </button>
+      <a id="tx-share-btn" href="" target="_blank" class="hidden w-full py-4 bg-surface-container-low text-on-surface rounded-full font-bold text-base text-center hover:bg-surface-container-high transition-colors">
+        Share on X
+      </a>
+    </div>
+  </div>
+
+</div>
+
 <!-- Token Picker Modal -->
 <div id="token-modal" class="fixed inset-0 z-50 hidden">
   <!-- Backdrop -->
@@ -659,51 +698,105 @@ async function fetchQuote(amount) {
 }
 
 // ── Execute ──
+let txStartTime = 0;
+let txTimerInterval = null;
+
+function showTxScreen(statusText, detailText) {
+  const screen = document.getElementById('tx-screen');
+  screen.classList.remove('hidden');
+  screen.classList.add('flex');
+  document.getElementById('tx-loading').classList.remove('hidden');
+  document.getElementById('tx-success').classList.add('hidden');
+  document.getElementById('tx-status').textContent = statusText;
+  document.getElementById('tx-detail').textContent = detailText;
+  // Start timer
+  txStartTime = Date.now();
+  clearInterval(txTimerInterval);
+  txTimerInterval = setInterval(() => {
+    const elapsed = ((Date.now() - txStartTime) / 1000).toFixed(1);
+    document.getElementById('tx-timer').textContent = elapsed + 's';
+  }, 100);
+}
+
+function showTxSuccess(summary, elapsedSec) {
+  clearInterval(txTimerInterval);
+  document.getElementById('tx-loading').classList.add('hidden');
+  document.getElementById('tx-success').classList.remove('hidden');
+  document.getElementById('tx-summary').textContent = summary;
+  document.getElementById('tx-time-final').textContent = elapsedSec.toFixed(1) + 's';
+
+  // Show share button if under 5 seconds
+  const shareBtn = document.getElementById('tx-share-btn');
+  if (elapsedSec < 5) {
+    const text = encodeURIComponent('I just moved money onchain with Sage. Cents. Seconds. Sage. \u{1F33F}');
+    shareBtn.href = `https://x.com/intent/tweet?text=${text}`;
+    shareBtn.classList.remove('hidden');
+  } else {
+    shareBtn.classList.add('hidden');
+  }
+}
+
+function closeTxScreen() {
+  clearInterval(txTimerInterval);
+  document.getElementById('tx-screen').classList.add('hidden');
+  document.getElementById('tx-screen').classList.remove('flex');
+  lastQuote = null;
+  document.getElementById('input-amount').value = '';
+  document.getElementById('output-amount').textContent = '--';
+  document.getElementById('output-usd').textContent = '';
+  updateActionBtn();
+  updateBalance();
+}
+
 async function executeSwap() {
   if (!walletAddress) { connectWallet(); return; }
   const amount = parseFloat(document.getElementById('input-amount').value) || 0;
   if (amount <= 0) return;
 
-  const btn = document.getElementById('action-btn');
-  const origText = btn.textContent;
-  btn.textContent = 'Preparing...';
-  btn.disabled = true;
+  const fromSym = TOKENS[fromTokenIdx].symbol;
+  const toSym = TOKENS[toTokenIdx].symbol;
+  const fromChainName = CHAINS[fromChainIdx].name;
+  const toChainName = CHAINS[toChainIdx].name;
 
   try {
-    // For bridge mode, fetch a fresh quote if needed
     if (mode === 'bridge') {
       if (!lastQuote) await fetchQuote(amount);
       if (!lastQuote) throw new Error('Could not get quote');
 
-      // Execute approval txns first
+      // Approvals
       if (lastQuote.approvalTxns?.length) {
+        showTxScreen('Approving...', `Approve ${fromSym} for bridging`);
         for (const tx of lastQuote.approvalTxns) {
-          btn.textContent = 'Approving...';
           await sendTx(tx);
         }
       }
 
-      // Send the main swap/bridge tx
-      btn.textContent = 'Confirm in wallet...';
+      // Main tx
+      showTxScreen('Confirm in wallet...', `${amount} ${fromSym} → ${toSym}`);
       const swapTx = lastQuote.swapTx;
       if (!swapTx) throw new Error('No swap transaction in quote');
       const hash = await sendTx(swapTx);
 
-      btn.textContent = 'Bridging...';
-      // Poll for fill (non-blocking for UX)
-      pollFill(CHAINS[fromChainIdx].id, hash);
-      btn.textContent = 'Submitted!';
-      setTimeout(() => { btn.disabled = false; updateActionBtn(); }, 3000);
+      // Now bridging — start the real timer from here
+      showTxScreen('Bridging...', `${fromChainName} → ${toChainName}`);
+
+      // Poll for fill
+      const elapsed = await pollFill(CHAINS[fromChainIdx].id, hash);
+      showTxSuccess(
+        `${amount} ${fromSym} on ${fromChainName} → ${toSym} on ${toChainName}`,
+        elapsed
+      );
 
     } else {
-      // Same-chain swap — not yet implemented via on-chain tx
-      btn.textContent = 'Swap not yet supported';
-      setTimeout(() => { btn.disabled = false; updateActionBtn(); }, 2000);
+      showTxScreen('Swap not yet supported', 'Coming soon');
+      setTimeout(closeTxScreen, 2000);
     }
   } catch (e) {
     console.error('Tx failed:', e);
+    closeTxScreen();
+    const btn = document.getElementById('action-btn');
     btn.textContent = e.code === 4001 ? 'Rejected' : 'Failed';
-    setTimeout(() => { btn.disabled = false; updateActionBtn(); }, 2000);
+    setTimeout(() => updateActionBtn(), 2000);
   }
 }
 
@@ -734,18 +827,18 @@ async function sendTx(tx) {
 }
 
 async function pollFill(originChainId, txHash) {
-  for (let i = 0; i < 60; i++) {
+  const start = Date.now();
+  for (let i = 0; i < 120; i++) {
     try {
       const res = await fetch(`${ACROSS_API}/deposit/status?originChainId=${originChainId}&depositTxHash=${txHash}`);
       const data = await res.json();
       if (data.status === 'filled') {
-        document.getElementById('action-btn').textContent = 'Bridged!';
-        lastQuote = null;
-        return;
+        return (Date.now() - start) / 1000;
       }
     } catch {}
-    await new Promise(r => setTimeout(r, 3000));
+    await new Promise(r => setTimeout(r, 2000));
   }
+  return (Date.now() - start) / 1000; // return time even if not filled
 }
 
 // ── Helpers ──
