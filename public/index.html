@@ -251,11 +251,15 @@ function chainIcon(chainId) {
   return c ? `${TW}/${c.slug}/info/logo.png` : '';
 }
 function tokenIcon(symbol, chainId) {
+  // ETH: always use WETH address on Ethereum for the icon
+  if (symbol === 'ETH') return `${TW}/ethereum/assets/0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2/logo.png`;
+  if (symbol === 'MATIC') return `${TW}/polygon/info/logo.png`;
   const addr = TOKEN_ADDRS[symbol]?.[chainId];
   const slug = CHAINS[chainId]?.slug;
   if (addr && slug) return `${TW}/${slug}/assets/${addr}/logo.png`;
-  // Fallback: native token icon for the chain
-  if (slug && (symbol === 'ETH' || symbol === 'MATIC')) return `${TW}/${slug}/info/logo.png`;
+  // Fallback to Ethereum address
+  const ethAddr = TOKEN_ADDRS[symbol]?.[1];
+  if (ethAddr) return `${TW}/ethereum/assets/${ethAddr}/logo.png`;
   return '';
 }
 const TOKEN_ADDRS = {
