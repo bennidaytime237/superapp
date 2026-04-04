@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html class="light" lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Gas - Sage</title>
+<link rel="icon" type="image/svg+xml" href="favicon.svg"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<script>
+tailwind.config = {
+  darkMode: "class",
+  theme: {
+    extend: {
+      colors: {
+        "outline-variant":"#a3b899","on-surface":"#2f3a33","background":"#faf7f5",
+        "on-primary-container":"#2f3a33","on-primary":"#faf7f5","primary":"#667b68",
+        "surface-container-lowest":"#ffffff","surface-container-high":"#dde6d5",
+        "surface-bright":"#faf7f5","on-background":"#1f2622","on-error":"#faf7f5",
+        "outline":"#667b68","error":"#9e422c","surface":"#faf7f5",
+        "surface-dim":"#dde6d5","on-surface-variant":"#667b68",
+        "surface-container":"#eaefe5","surface-container-low":"#f2f5ef",
+        "primary-fixed":"#dde6d5","primary-container":"#dde6d5",
+        "error-container":"#f8d3c5","surface-variant":"#dde6d5",
+        "surface-container-highest":"#d3deca",
+        "sage-peach-light":"#fceee9",
+      },
+      fontFamily: { "headline":["Outfit"],"body":["Outfit"],"label":["Outfit"] },
+      borderRadius: { "DEFAULT":"1rem","lg":"2rem","xl":"3rem","full":"9999px" },
+    },
+  },
+}
+</script>
+<style>
+  body { font-family: 'Outfit', sans-serif; }
+  .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+  input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+  input[type=number] { -moz-appearance: textfield; }
+</style>
+</head>
+<body class="bg-background text-on-surface antialiased h-screen flex flex-col overflow-hidden">
+
+<!-- Header -->
+<header class="w-full max-w-2xl mx-auto h-14 flex justify-between items-center px-6 flex-shrink-0">
+  <a href="index.html" class="flex items-center gap-2">
+    <img src="sage-wordmark.svg" alt="Sage" class="h-6"/>
+  </a>
+  <div class="flex items-center gap-3">
+    <a href="index.html" class="text-xs font-medium text-on-surface-variant hover:text-primary transition-colors flex items-center gap-1">
+      <span class="material-symbols-outlined text-sm">arrow_back</span>
+      Dashboard
+    </a>
+    <button id="connect-btn" onclick="connectWallet()" class="flex items-center gap-2 px-3 py-1.5 bg-primary text-on-primary rounded-full text-xs font-bold active:scale-95 transition-transform">
+      <span class="material-symbols-outlined text-sm">account_balance_wallet</span>
+      <span id="connect-label">Connect</span>
+    </button>
+  </div>
+</header>
+
+<!-- Main -->
+<main class="w-full max-w-[640px] mx-auto px-8 flex-1 flex flex-col justify-center min-h-0">
+
+  <!-- Title -->
+  <div class="mb-6">
+    <h2 class="text-2xl font-black text-on-background">Top up gas</h2>
+    <p class="text-sm text-on-surface-variant mt-1">Distribute ETH across chains in one go</p>
+  </div>
+
+  <!-- Source -->
+  <div class="mb-5">
+    <p class="text-sm text-on-surface-variant mb-2">From</p>
+    <div class="flex items-center justify-between gap-4">
+      <button onclick="cycleSource()" class="flex items-center gap-2 bg-surface-container-low pl-1.5 pr-4 py-1.5 rounded-full border border-outline-variant/10 hover:bg-surface-container-high transition-colors">
+        <img id="source-icon" src="" alt="" class="w-8 h-8 rounded-full"/>
+        <span class="font-bold text-sm" id="source-label">ETH on Base</span>
+        <span class="material-symbols-outlined text-sm text-on-surface-variant">expand_more</span>
+      </button>
+      <div class="text-right">
+        <input id="total-amount" class="text-right text-4xl font-black text-on-background border-none focus:ring-0 p-0 bg-transparent placeholder:text-on-surface-variant/15 w-40" placeholder="0" type="number" oninput="onAmountChange()"/>
+        <p id="source-balance" class="text-xs text-on-surface-variant mt-1">Balance: --</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="h-px bg-outline-variant/15 w-full mb-5"></div>
+
+  <!-- Destination chains -->
+  <div class="mb-4">
+    <div class="flex justify-between items-center mb-3">
+      <p class="text-sm text-on-surface-variant">Distribute to</p>
+      <div class="flex gap-2">
+        <button onclick="selectAll()" class="text-xs font-bold text-primary hover:underline">All</button>
+        <button onclick="selectNone()" class="text-xs font-bold text-on-surface-variant hover:underline">None</button>
+      </div>
+    </div>
+    <div id="chain-list" class="space-y-2 max-h-[35vh] overflow-y-auto"></div>
+  </div>
+
+  <!-- Summary -->
+  <div class="flex items-center justify-between py-3 border-t border-outline-variant/10">
+    <div>
+      <p class="text-sm text-on-surface-variant">Total</p>
+      <p id="summary-total" class="text-lg font-black text-on-background">0 ETH</p>
+    </div>
+    <div class="text-right">
+      <p class="text-sm text-on-surface-variant">Per chain</p>
+      <p id="summary-per" class="text-lg font-black text-primary">--</p>
+    </div>
+  </div>
+
+  <!-- Action -->
+  <button id="action-btn" onclick="executeGas()" class="w-full py-4 bg-primary text-on-primary rounded-full font-black text-lg active:scale-[0.98] transition-transform mt-4">
+    Connect Wallet
+  </button>
+
+</main>
+
+<script>
+const TW = 'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains';
+const ACROSS_API = 'https://app.across.to/api';
+
+const SOURCES = [
+  { chainId:8453, name:'Base', slug:'base' },
+  { chainId:42161, name:'Arbitrum', slug:'arbitrum' },
+  { chainId:10, name:'Optimism', slug:'optimism' },
+  { chainId:1, name:'Ethereum', slug:'ethereum' },
+];
+
+const DEST_CHAINS = [
+  { chainId:1, name:'Ethereum', slug:'ethereum', selected:true },
+  { chainId:42161, name:'Arbitrum', slug:'arbitrum', selected:true },
+  { chainId:8453, name:'Base', slug:'base', selected:true },
+  { chainId:10, name:'Optimism', slug:'optimism', selected:true },
+  { chainId:137, name:'Polygon', slug:'polygon', selected:false },
+  { chainId:324, name:'zkSync Era', slug:'zksync', selected:false },
+  { chainId:59144, name:'Linea', slug:'linea', selected:false },
+];
+
+// WETH addresses per chain
+const WETH = {
+  1:'0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2',
+  42161:'0x82aF49447D8a07e3bd95BD0d56f35241523fBab1',
+  8453:'0x4200000000000000000000000000000000000006',
+  10:'0x4200000000000000000000000000000000000006',
+  137:'0x7ceB23fD6bC0adD59E62ac25578270cFf1b9f619',
+  324:'0x5AEa5775959fBC2557Cc8789bC1bf90A239D9a91',
+  59144:'0xe5D7C2a44FfDDf6b295A15c148167daaAf5Cf34f',
+};
+
+let sourceIdx = 0;
+let walletAddress = null;
+let ethBalance = null;
+let ethPrice = 0;
+
+async function connectWallet() {
+  if (!window.ethereum) { alert('Install MetaMask'); return; }
+  try {
+    const accs = await window.ethereum.request({ method:'eth_requestAccounts' });
+    walletAddress = accs[0];
+    document.getElementById('connect-label').textContent = walletAddress.slice(0,6)+'...'+walletAddress.slice(-4);
+    fetchBalance();
+    updateBtn();
+  } catch {}
+}
+
+async function fetchBalance() {
+  if (!walletAddress) return;
+  try {
+    const res = await fetch(`/api/balances?address=${walletAddress}`);
+    const data = await res.json();
+    const chainId = SOURCES[sourceIdx].chainId;
+    ethBalance = data[chainId]?.ETH || 0;
+    document.getElementById('source-balance').textContent = `Balance: ${fmt(ethBalance)} ETH`;
+  } catch { ethBalance = null; }
+}
+
+async function fetchPrice() {
+  try {
+    const res = await fetch('/api/prices');
+    const data = await res.json();
+    ethPrice = data.ethereum?.usd || 0;
+  } catch { ethPrice = 2000; }
+}
+
+function cycleSource() {
+  sourceIdx = (sourceIdx + 1) % SOURCES.length;
+  updateSourceDisplay();
+  fetchBalance();
+  onAmountChange();
+}
+
+function updateSourceDisplay() {
+  const s = SOURCES[sourceIdx];
+  document.getElementById('source-icon').src = `${TW}/${s.slug}/info/logo.png`;
+  document.getElementById('source-label').textContent = `ETH on ${s.name}`;
+}
+
+function getSelected() {
+  return DEST_CHAINS.filter(c => c.selected && c.chainId !== SOURCES[sourceIdx].chainId);
+}
+
+function selectAll() { DEST_CHAINS.forEach(c => c.selected = true); renderChains(); onAmountChange(); }
+function selectNone() { DEST_CHAINS.forEach(c => c.selected = false); renderChains(); onAmountChange(); }
+
+function toggleChain(chainId) {
+  const c = DEST_CHAINS.find(c => c.chainId === chainId);
+  if (c) c.selected = !c.selected;
+  renderChains();
+  onAmountChange();
+}
+
+function renderChains() {
+  const list = document.getElementById('chain-list');
+  const total = parseFloat(document.getElementById('total-amount').value) || 0;
+  const selected = getSelected();
+  const perChain = selected.length > 0 ? total / selected.length : 0;
+  const sourceChainId = SOURCES[sourceIdx].chainId;
+
+  list.innerHTML = DEST_CHAINS.map(c => {
+    const isSelf = c.chainId === sourceChainId;
+    const active = c.selected && !isSelf;
+    const perUsd = active ? perChain * ethPrice : 0;
+    return `<button onclick="toggleChain(${c.chainId})" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-colors ${isSelf ? 'opacity-30 pointer-events-none' : active ? 'bg-surface-container-lowest border border-primary/20' : 'bg-surface-container-low border border-transparent hover:border-outline-variant/20'}">
+      <img src="${TW}/${c.slug}/info/logo.png" class="w-8 h-8 rounded-full"/>
+      <div class="flex-1 text-left">
+        <p class="text-sm font-bold ${active ? 'text-on-background' : 'text-on-surface-variant'}">${c.name}</p>
+        ${isSelf ? '<p class="text-xs text-on-surface-variant">Source chain</p>' : ''}
+      </div>
+      <div class="text-right">
+        ${active ? `<p class="text-sm font-bold text-on-background">${fmt(perChain)} ETH</p><p class="text-xs text-on-surface-variant">≈ $${fmt(perUsd)}</p>` : ''}
+      </div>
+      <div class="w-6 h-6 rounded-md border-2 flex items-center justify-center flex-shrink-0 ${active ? 'border-primary bg-primary' : 'border-outline-variant/30'}">
+        ${active ? '<span class="material-symbols-outlined text-on-primary text-sm">check</span>' : ''}
+      </div>
+    </button>`;
+  }).join('');
+}
+
+function onAmountChange() {
+  const total = parseFloat(document.getElementById('total-amount').value) || 0;
+  const selected = getSelected();
+  const perChain = selected.length > 0 ? total / selected.length : 0;
+
+  document.getElementById('summary-total').textContent = `${fmt(total)} ETH ≈ $${fmt(total * ethPrice)}`;
+  document.getElementById('summary-per').textContent = selected.length > 0
+    ? `${fmt(perChain)} ETH × ${selected.length} chains`
+    : 'Select chains';
+
+  renderChains();
+  updateBtn();
+}
+
+function updateBtn() {
+  const btn = document.getElementById('action-btn');
+  const total = parseFloat(document.getElementById('total-amount').value) || 0;
+  const selected = getSelected();
+  if (!walletAddress) btn.textContent = 'Connect Wallet';
+  else if (total <= 0) btn.textContent = 'Enter amount';
+  else if (selected.length === 0) btn.textContent = 'Select chains';
+  else btn.textContent = `Bridge to ${selected.length} chain${selected.length > 1 ? 's' : ''}`;
+}
+
+async function executeGas() {
+  if (!walletAddress) { connectWallet(); return; }
+  const total = parseFloat(document.getElementById('total-amount').value) || 0;
+  const selected = getSelected();
+  if (total <= 0 || selected.length === 0) return;
+
+  const perChain = total / selected.length;
+  const sourceChain = SOURCES[sourceIdx].chainId;
+  const btn = document.getElementById('action-btn');
+  btn.disabled = true;
+
+  let completed = 0;
+  for (const dest of selected) {
+    completed++;
+    btn.textContent = `Bridging ${completed}/${selected.length}...`;
+
+    try {
+      const amountWei = BigInt(Math.floor(perChain * 1e18)).toString();
+      const inputAddr = WETH[sourceChain];
+      const outputAddr = WETH[dest.chainId];
+      if (!inputAddr || !outputAddr) continue;
+
+      const params = new URLSearchParams({
+        tradeType:'exactInput', amount:amountWei,
+        inputToken:inputAddr, outputToken:outputAddr,
+        originChainId:sourceChain, destinationChainId:dest.chainId,
+        depositor:walletAddress, slippage:'auto',
+      });
+
+      const res = await fetch(`${ACROSS_API}/swap/approval?${params}`);
+      if (!res.ok) { console.warn(`Quote failed for ${dest.name}`); continue; }
+      const quote = await res.json();
+
+      // Approvals
+      if (quote.approvalTxns?.length) {
+        for (const tx of quote.approvalTxns) await sendTx(tx);
+      }
+      // Bridge tx
+      if (quote.swapTx) await sendTx(quote.swapTx);
+    } catch (e) {
+      if (e.code === 4001) { btn.textContent = 'Rejected'; btn.disabled = false; setTimeout(updateBtn, 2000); return; }
+      console.warn(`Failed for ${dest.name}:`, e);
+    }
+  }
+
+  btn.textContent = `Sent to ${selected.length} chains!`;
+  btn.disabled = false;
+  setTimeout(updateBtn, 3000);
+
+  // Save to history
+  try {
+    const history = JSON.parse(localStorage.getItem('sage_tx_history') || '[]');
+    history.unshift({
+      type: 'bridge', summary: `Gas top-up to ${selected.length} chains`,
+      time: 0, fromToken: 'ETH', toToken: 'ETH',
+      fromChain: SOURCES[sourceIdx].name, toChain: `${selected.length} chains`,
+      fromChainId: sourceChain, amount: total.toFixed(6), timestamp: Date.now(), txHash: null,
+    });
+    if (history.length > 20) history.length = 20;
+    localStorage.setItem('sage_tx_history', JSON.stringify(history));
+  } catch {}
+}
+
+async function sendTx(tx) {
+  const chainHex = '0x' + tx.chainId.toString(16);
+  const current = await window.ethereum.request({ method:'eth_chainId' });
+  if (current !== chainHex) {
+    try { await window.ethereum.request({ method:'wallet_switchEthereumChain', params:[{chainId:chainHex}] }); }
+    catch (e) { if (e.code === 4902) throw new Error('Add chain to wallet'); throw e; }
+  }
+  return window.ethereum.request({
+    method:'eth_sendTransaction',
+    params:[{ from:walletAddress, to:tx.to, data:tx.data,
+      value: tx.value && tx.value !== '0' ? '0x'+BigInt(tx.value).toString(16) : '0x0',
+      chainId:chainHex }],
+  });
+}
+
+function fmt(n) {
+  if (n >= 1000) return n.toLocaleString('en-US',{maximumFractionDigits:2});
+  if (n >= 1) return n.toLocaleString('en-US',{maximumFractionDigits:4});
+  return n.toLocaleString('en-US',{maximumFractionDigits:6});
+}
+
+// Init
+(async function() {
+  updateSourceDisplay();
+  renderChains();
+  updateBtn();
+  await fetchPrice();
+  onAmountChange();
+  if (window.ethereum) {
+    const accs = await window.ethereum.request({ method:'eth_accounts' });
+    if (accs.length > 0) { walletAddress = accs[0]; document.getElementById('connect-label').textContent = walletAddress.slice(0,6)+'...'+walletAddress.slice(-4); fetchBalance(); updateBtn(); }
+    window.ethereum.on('accountsChanged', a => { walletAddress = a[0]||null; document.getElementById('connect-label').textContent = walletAddress?walletAddress.slice(0,6)+'...'+walletAddress.slice(-4):'Connect'; fetchBalance(); updateBtn(); });
+  }
+})();
+</script>
+</body>
+</html>
