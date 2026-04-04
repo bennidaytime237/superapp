@@ -127,25 +127,36 @@ const SOURCES = [
   { chainId:1, name:'Ethereum', slug:'ethereum' },
 ];
 
+// All chains that use ETH as the native gas token
 const DEST_CHAINS = [
-  { chainId:1, name:'Ethereum', slug:'ethereum', selected:true },
-  { chainId:42161, name:'Arbitrum', slug:'arbitrum', selected:true },
-  { chainId:8453, name:'Base', slug:'base', selected:true },
-  { chainId:10, name:'Optimism', slug:'optimism', selected:true },
-  { chainId:137, name:'Polygon', slug:'polygon', selected:false },
-  { chainId:324, name:'zkSync Era', slug:'zksync', selected:false },
-  { chainId:59144, name:'Linea', slug:'linea', selected:false },
+  { chainId:1,       name:'Ethereum',   slug:'ethereum',  selected:true },
+  { chainId:42161,   name:'Arbitrum',    slug:'arbitrum',  selected:true },
+  { chainId:8453,    name:'Base',        slug:'base',      selected:true },
+  { chainId:10,      name:'Optimism',    slug:'optimism',  selected:true },
+  { chainId:324,     name:'zkSync Era',  slug:'zksync',    selected:false },
+  { chainId:59144,   name:'Linea',       slug:'linea',     selected:false },
+  { chainId:34443,   name:'Mode',        slug:'mode',      selected:false },
+  { chainId:534352,  name:'Scroll',      slug:'scroll',    selected:false },
+  { chainId:81457,   name:'Blast',       slug:'blast',     selected:false },
+  { chainId:7777777, name:'Zora',        slug:'zora',      selected:false },
+  { chainId:480,     name:'World Chain', slug:'worldchain', selected:false },
+  { chainId:1135,    name:'Lisk',        slug:'lisk',      selected:false },
 ];
 
-// WETH addresses per chain
+// WETH addresses per chain (used by Across for bridging)
 const WETH = {
   1:'0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2',
   42161:'0x82aF49447D8a07e3bd95BD0d56f35241523fBab1',
   8453:'0x4200000000000000000000000000000000000006',
   10:'0x4200000000000000000000000000000000000006',
-  137:'0x7ceB23fD6bC0adD59E62ac25578270cFf1b9f619',
   324:'0x5AEa5775959fBC2557Cc8789bC1bf90A239D9a91',
   59144:'0xe5D7C2a44FfDDf6b295A15c148167daaAf5Cf34f',
+  34443:'0x4200000000000000000000000000000000000006',
+  534352:'0x5300000000000000000000000000000000000004',
+  81457:'0x4300000000000000000000000000000000000004',
+  7777777:'0x4200000000000000000000000000000000000006',
+  480:'0x4200000000000000000000000000000000000006',
+  1135:'0x4200000000000000000000000000000000000006',
 };
 
 let sourceIdx = 0;
