@@ -444,14 +444,14 @@ async function updateBalance() {
     const res = await fetch(`/api/balances?address=${walletAddress}`);
     const data = await res.json();
     cachedBalances = data;
-    // find balance for this token on this chain
-    const chainData = data[chainId] || {};
+    // find balance for this token on this chain (API may return string or number keys)
+    const chainData = data[chainId] || data[String(chainId)] || {};
     const bal = chainData[token.symbol] || 0;
     fromBal = bal;
     document.getElementById('from-balance').textContent = `${fmtNum(bal)} ${token.symbol}`;
     document.getElementById('from-balance-warn').textContent = `${fmtNum(bal)} ${token.symbol}`;
     updateBalanceWarning();
-  } catch { fromBal = null; }
+  } catch (e) { console.error('Balance fetch failed:', e); fromBal = null; }
 }
 
 // ── Prices ──
@@ -828,6 +828,7 @@ function onAmountChange() {
 
 // ── Unified quote fetcher: Uniswap + Across ──
 async function fetchBestQuote(amount) {
+  try {
   const fromToken = TOKENS[fromTokenIdx];
   const toToken = TOKENS[toTokenIdx];
   const originChain = CHAINS[fromChainIdx].id;
@@ -894,6 +895,11 @@ async function fetchBestQuote(amount) {
   document.getElementById('bd-fee').textContent = best.feeDisplay;
   document.getElementById('bd-time').textContent = best.time;
   document.getElementById('bd-slip').textContent = slippage === 'auto' ? 'Auto' : (parseFloat(slippage) * 100) + '%';
+  } catch (e) {
+    console.error('fetchBestQuote error:', e);
+    document.getElementById('fee-display').textContent = 'Quote error';
+    document.getElementById('fee-route').textContent = '';
+  }
 }
 
 // ── Uniswap on-chain quote ──
@@ -968,10 +974,13 @@ async function fetchAcrossQuote(originChain, destChain, fromToken, toToken, amou
   if (!res.ok) return null;
   const data = await res.json();
 
-  console.log('Across response:', JSON.stringify(data, null, 2));
-  const rawOutput = data.steps?.bridge?.outputAmount ?? data.expectedOutput ?? data.outputAmount ?? '0';
+  console.log('Across response keys:', Object.keys(data), 'steps:', data.steps, 'expectedOutput:', data.expectedOutput);
+  // Try multiple possible field paths for the output amount
+  const rawOutput = data.steps?.bridge?.outputAmount ?? data.expectedOutput ?? data.outputAmount ?? data.minExpectedInputTokenAmount ?? null;
+  if (!rawOutput) { console.warn('Across: no output field found in response'); return null; }
   let outputNum = 0;
   try { outputNum = Number(BigInt(rawOutput)) / 10 ** toToken.decimals; } catch { outputNum = parseFloat(rawOutput) / 10 ** toToken.decimals || 0; }
+  if (!outputNum || outputNum <= 0) return null;
   const fp = prices[fromToken.symbol] || 0;
   const rawFee = data.fees?.total ?? data.fees?.totalRelayFee?.total ?? '0';
   let totalFee = 0;
