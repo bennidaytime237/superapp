@@ -669,18 +669,27 @@ function updateRoute() {
     : `${CHAINS[fromChainIdx].name} → ${CHAINS[toChainIdx].name}`;
 }
 
+let routeAvailable = false;
+
 function updateActionBtn() {
   const btn = document.getElementById('action-btn');
   const val = parseFloat(document.getElementById('input-amount').value) || 0;
   if (!walletAddress) {
     btn.textContent = 'Connect Wallet';
     btn.className = 'w-full py-4 bg-primary text-on-primary rounded-full font-black text-lg active:scale-[0.98] transition-transform';
+    btn.disabled = false;
   } else if (val <= 0) {
     btn.textContent = 'Enter amount';
     btn.className = 'w-full py-4 bg-surface-container-high text-on-surface-variant rounded-full font-black text-lg';
+    btn.disabled = false;
+  } else if (!routeAvailable && lastQuote === null) {
+    btn.textContent = 'Route unavailable';
+    btn.className = 'w-full py-4 bg-surface-container-high text-on-surface-variant/50 rounded-full font-black text-lg cursor-not-allowed';
+    btn.disabled = true;
   } else {
     btn.textContent = isHyperliquidDest() ? 'Deposit to Hyperliquid' : isSameChain() ? 'Swap' : 'Bridge';
     btn.className = 'w-full py-4 bg-primary text-on-primary rounded-full font-black text-lg active:scale-[0.98] transition-transform';
+    btn.disabled = false;
   }
 }
 
@@ -719,6 +728,7 @@ function updateBalanceWarning() {
 function onAmountChange() {
   clearTimeout(quoteTimer);
   lastQuote = null;
+  routeAvailable = true; // assume available until quote returns
   updateBalanceWarning();
   updateActionBtn();
   const val = parseFloat(document.getElementById('input-amount').value) || 0;
@@ -780,14 +790,19 @@ async function fetchBestQuote(amount) {
 
 
   if (candidates.length === 0) {
+    routeAvailable = false;
     document.getElementById('fee-display').textContent = 'No route found';
     document.getElementById('fee-route').textContent = '';
+    document.getElementById('output-amount').textContent = '--';
+    document.getElementById('output-usd').textContent = '';
+    updateActionBtn();
     return;
   }
 
   // Pick best output
   candidates.sort((a, b) => b.outputNum - a.outputNum);
   const best = candidates[0];
+  routeAvailable = true;
   lastQuote = best.quote;
   lastQuote._routeType = best.type;
   lastQuote._provider = best.provider;
