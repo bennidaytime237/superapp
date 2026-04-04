@@ -290,11 +290,22 @@ const UNI_RPCS = {
   1:'https://eth.drpc.org', 42161:'https://arb1.arbitrum.io/rpc',
   8453:'https://mainnet.base.org', 10:'https://mainnet.optimism.io', 137:'https://polygon-rpc.com',
 };
-// quoteExactInputSingle((address tokenIn, address tokenOut, uint256 amountIn, uint24 fee, uint160 sqrtPriceLimitX96))
-// selector: 0xc6a5026a — params is a tuple at offset 0x20
+// QuoterV2.quoteExactInputSingle(QuoteExactInputSingleParams)
+// struct: (address tokenIn, address tokenOut, uint256 amountIn, uint24 fee, uint160 sqrtPriceLimitX96)
+// This is a struct param so ABI-encoded with an offset pointer
 function encodeQuoteExactInputSingle(tokenIn, tokenOut, amountIn, fee) {
-  const p = (v) => typeof v === 'string' ? v.replace('0x','').padStart(64,'0') : BigInt(v).toString(16).padStart(64,'0');
-  return '0xc6a5026a' + p(tokenIn) + p(tokenOut) + p(amountIn) + p(fee) + p(0);
+  const p64 = (v) => {
+    if (typeof v === 'string' && v.startsWith('0x')) return v.slice(2).padStart(64,'0');
+    return BigInt(v).toString(16).padStart(64,'0');
+  };
+  // selector + offset to tuple (0x20) + 5 fields
+  return '0xc6a5026a'
+    + '0000000000000000000000000000000000000000000000000000000000000020' // offset
+    + p64(tokenIn)    // tokenIn
+    + p64(tokenOut)   // tokenOut
+    + p64(amountIn)   // amountIn
+    + p64(fee)        // fee (uint24, still padded to 32 bytes)
+    + p64(0);         // sqrtPriceLimitX96 = 0
 }
 async function uniRpcCall(chainId, to, data) {
   const url = UNI_RPCS[chainId];
