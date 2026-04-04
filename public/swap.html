@@ -115,7 +115,7 @@ tailwind.config = {
 
   <!-- ═══ TO ═══ -->
   <div class="mb-3">
-    <p class="text-base text-on-surface-variant mb-3">To <span class="font-bold text-on-surface">Wallet</span></p>
+    <p class="text-base text-on-surface-variant mb-3">To <span class="font-bold text-on-surface" id="to-label">Wallet</span></p>
     <div class="flex items-end justify-between gap-6">
       <button onclick="cycleToken('to')" class="inline-flex items-center gap-2 bg-surface-container-low pl-1.5 pr-4 py-1.5 rounded-full border border-outline-variant/10 hover:bg-surface-container-high transition-colors">
         <div class="relative">
@@ -129,6 +129,17 @@ tailwind.config = {
     </div>
     <div class="flex justify-end mt-1">
       <span id="output-usd" class="text-sm text-on-surface-variant"></span>
+    </div>
+    <!-- Custom recipient (bridge only) -->
+    <div id="recipient-row" class="hidden mt-3">
+      <button onclick="toggleRecipient()" class="text-xs font-bold text-primary hover:underline flex items-center gap-1">
+        <span class="material-symbols-outlined text-sm" id="recipient-toggle-icon">add</span>
+        <span id="recipient-toggle-text">Send to a different address</span>
+      </button>
+      <div id="recipient-input-wrap" class="hidden mt-2">
+        <input id="recipient-address" type="text" placeholder="0x..." class="w-full px-4 py-3 rounded-xl border border-outline-variant/15 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-primary/30" oninput="validateRecipient()"/>
+        <p id="recipient-error" class="hidden text-xs text-error mt-1">Invalid Ethereum address</p>
+      </div>
     </div>
   </div>
 
@@ -731,6 +742,7 @@ function setMode(m) {
   }
   updateTokenDisplay();
   updateRoute();
+  updateRecipientVisibility();
   updateBalance();
   onAmountChange();
 }
@@ -776,6 +788,47 @@ function toggleFeeBreakdown() {
   const chev = document.getElementById('fee-chevron');
   bd.classList.toggle('hidden');
   chev.style.transform = bd.classList.contains('hidden') ? '' : 'rotate(180deg)';
+}
+
+// ── Custom recipient ──
+function getRecipient() {
+  const inp = document.getElementById('recipient-address');
+  const val = (inp?.value || '').trim();
+  if (val && /^0x[0-9a-fA-F]{40}$/.test(val)) return val;
+  return walletAddress;
+}
+
+function toggleRecipient() {
+  const wrap = document.getElementById('recipient-input-wrap');
+  const icon = document.getElementById('recipient-toggle-icon');
+  const text = document.getElementById('recipient-toggle-text');
+  const showing = !wrap.classList.contains('hidden');
+  wrap.classList.toggle('hidden');
+  icon.textContent = showing ? 'add' : 'close';
+  text.textContent = showing ? 'Send to a different address' : 'Cancel';
+  if (showing) {
+    document.getElementById('recipient-address').value = '';
+    document.getElementById('recipient-error').classList.add('hidden');
+    document.getElementById('to-label').textContent = 'Wallet';
+  }
+}
+
+function validateRecipient() {
+  const val = document.getElementById('recipient-address').value.trim();
+  const err = document.getElementById('recipient-error');
+  const label = document.getElementById('to-label');
+  if (!val) { err.classList.add('hidden'); label.textContent = 'Wallet'; return; }
+  if (/^0x[0-9a-fA-F]{40}$/.test(val)) {
+    err.classList.add('hidden');
+    label.textContent = val.slice(0,6) + '...' + val.slice(-4);
+  } else {
+    err.classList.remove('hidden');
+    label.textContent = 'Wallet';
+  }
+}
+
+function updateRecipientVisibility() {
+  document.getElementById('recipient-row').classList.toggle('hidden', mode === 'swap');
 }
 
 function setMax() {
@@ -962,10 +1015,13 @@ async function fetchAcrossQuote(originChain, destChain, fromToken, toToken, amou
   const outputAddr = toToken.native ? toToken.wrapAddresses?.[destChain] : toToken.addresses[destChain];
   if (!inputAddr || !outputAddr) return null;
 
+  const recipient = getRecipient();
   const params = new URLSearchParams({
     tradeType: 'exactInput', amount: amountWei, inputToken: inputAddr, outputToken: outputAddr,
     originChainId: originChain, destinationChainId: destChain,
-    depositor: walletAddress || '0x0000000000000000000000000000000000000000', slippage: slippage,
+    depositor: walletAddress || '0x0000000000000000000000000000000000000000',
+    recipient: recipient || walletAddress || '0x0000000000000000000000000000000000000000',
+    slippage: slippage,
   });
 
   const ctrl = new AbortController();
@@ -1494,6 +1550,7 @@ async function loadRoutes() {
   // Restore tab from URL hash
   if (window.location.hash === '#bridge') setMode('bridge');
   updateTokenDisplay();
+  updateRecipientVisibility();
   updateActionBtn();
   await Promise.all([fetchPrices(), loadRoutes()]);
   onAmountChange();
