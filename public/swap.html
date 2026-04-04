@@ -284,14 +284,27 @@ let TOKENS = [
     addresses: { 1:'0xC011a73ee8576Fb46F5E1c5751cA3B9Fe0af2a6F', 10:'0x8700dAec35aF8Ff88c16BdF0418774CB3D7599B4' }},
 ];
 
-// ── Uniswap Quoter V2 (same address on all chains) ──
+// ── Uniswap Quoter V2 (same address on all major chains) ──
 const UNI_QUOTER = '0x61fFE014bA17989E743c5F6cB21bF9697530B21e';
-const UNI_ROUTER = '0x3fC91A3afd70395Cd496C647d5a6CC9D4B2b7FAD';
-// quoteExactInputSingle selector: 0xc6a5026a
+const UNI_RPCS = {
+  1:'https://eth.drpc.org', 42161:'https://arb1.arbitrum.io/rpc',
+  8453:'https://mainnet.base.org', 10:'https://mainnet.optimism.io', 137:'https://polygon-rpc.com',
+};
+// quoteExactInputSingle((address tokenIn, address tokenOut, uint256 amountIn, uint24 fee, uint160 sqrtPriceLimitX96))
+// selector: 0xc6a5026a — params is a tuple at offset 0x20
 function encodeQuoteExactInputSingle(tokenIn, tokenOut, amountIn, fee) {
-  const sel = '0xc6a5026a';
-  const p = (v) => v.replace('0x','').padStart(64,'0');
-  return sel + p(tokenIn) + p(tokenOut) + p(BigInt(amountIn).toString(16)) + p(BigInt(fee).toString(16)) + p('0');
+  const p = (v) => typeof v === 'string' ? v.replace('0x','').padStart(64,'0') : BigInt(v).toString(16).padStart(64,'0');
+  return '0xc6a5026a' + p(tokenIn) + p(tokenOut) + p(amountIn) + p(fee) + p(0);
+}
+async function uniRpcCall(chainId, to, data) {
+  const url = UNI_RPCS[chainId];
+  if (!url) return null;
+  const res = await fetch(url, {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ jsonrpc:'2.0', id:1, method:'eth_call', params:[{ to, data }, 'latest'] }),
+  });
+  const json = await res.json();
+  return json.result;
 }
 
 // ── State ──
@@ -712,40 +725,41 @@ async function fetchBestQuote(amount) {
 async function fetchUniswapQuote(chainId, fromToken, toToken, amountWei) {
   const tokenIn = fromToken.native ? fromToken.wrapAddresses?.[chainId] : fromToken.addresses[chainId];
   const tokenOut = toToken.native ? toToken.wrapAddresses?.[chainId] : toToken.addresses[chainId];
-  if (!tokenIn || !tokenOut) return null;
+  if (!tokenIn || !tokenOut || !UNI_RPCS[chainId]) return null;
 
-  const chainHex = '0x' + chainId.toString(16);
-  const fees = [3000, 500, 10000]; // try different pool fees
+  const fees = [500, 3000, 10000]; // 0.05%, 0.3%, 1%
   let bestOutput = null;
   let bestFee = 0;
 
-  for (const fee of fees) {
-    try {
-      const calldata = encodeQuoteExactInputSingle(tokenIn, tokenOut, amountWei, fee);
-      const result = await window.ethereum.request({
-        method: 'eth_call',
-        params: [{ to: UNI_QUOTER, data: calldata }, 'latest'],
-      });
-      if (result && result !== '0x') {
-        const outputWei = BigInt(result.slice(0, 66));
-        if (!bestOutput || outputWei > bestOutput) {
-          bestOutput = outputWei;
-          bestFee = fee;
-        }
+  // Query all fee tiers in parallel
+  const results = await Promise.allSettled(fees.map(async (fee) => {
+    const calldata = encodeQuoteExactInputSingle(tokenIn, tokenOut, amountWei, fee);
+    const result = await uniRpcCall(chainId, UNI_QUOTER, calldata);
+    if (result && result !== '0x' && result.length >= 66) {
+      // First 32 bytes = amountOut
+      return { fee, output: BigInt('0x' + result.slice(2, 66)) };
+    }
+    return null;
+  }));
+
+  for (const r of results) {
+    if (r.status === 'fulfilled' && r.value) {
+      if (!bestOutput || r.value.output > bestOutput) {
+        bestOutput = r.value.output;
+        bestFee = r.value.fee;
       }
-    } catch {}
+    }
   }
 
-  if (!bestOutput) return null;
+  if (!bestOutput || bestOutput === 0n) return null;
   const outputNum = Number(bestOutput) / 10 ** toToken.decimals;
-  const inputNum = Number(BigInt(amountWei)) / 10 ** fromToken.decimals;
-  const fp = prices[fromToken.symbol] || 0;
   const feePercent = bestFee / 10000;
+  const chainName = CHAINS.find(c => c.id === chainId)?.name || chainId;
 
   return {
     outputNum,
     provider: 'Uniswap',
-    route: `${fromToken.symbol} → ${toToken.symbol} on ${CHAINS[fromChainIdx].name}`,
+    route: `${fromToken.symbol} → ${toToken.symbol} on ${chainName}`,
     feeDisplay: `${feePercent}% pool fee`,
     time: '~15 seconds',
     type: 'uniswap',
