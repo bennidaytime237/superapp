@@ -264,6 +264,9 @@ let CHAINS = [
   { id: 1868, name: 'Soneium', slug: 'soneium' },
   { id: 999, name: 'HyperEVM', slug: 'hyperliquid' },
   { id: 232, name: 'Lens', slug: 'lens' },
+  // Virtual destinations — Hyperliquid deposits via Arbitrum
+  { id: 'hl-spot', name: 'Hyperliquid Spot', slug: 'hyperliquid', virtual: true },
+  { id: 'hl-perp', name: 'Hyperliquid Perp', slug: 'hyperliquid', virtual: true },
 ];
 
 let TOKENS = [
@@ -289,6 +292,16 @@ let TOKENS = [
   { symbol: 'SNX', name: 'Synthetix', decimals: 18, native: false,
     addresses: { 1:'0xC011a73ee8576Fb46F5E1c5751cA3B9Fe0af2a6F', 10:'0x8700dAec35aF8Ff88c16BdF0418774CB3D7599B4' }},
 ];
+
+// ── Hyperliquid deposit via Across embedded actions ──
+const HL_BRIDGE2 = '0x2Df1c51E09aECF9cacB7bc98cB1742757f163dF7';
+const USDC_ARB = '0xaf88d065e77c8cC2239327C5EDb3A432268e5831';
+const HL_MIN_DEPOSIT = 5_000_000; // 5 USDC in 6 decimals
+
+function isHyperliquidDest() {
+  const dest = CHAINS[toChainIdx];
+  return dest?.virtual && (dest.id === 'hl-spot' || dest.id === 'hl-perp');
+}
 
 // ── Uniswap Quoter V2 (same address on all major chains) ──
 const UNI_QUOTER = '0x61fFE014bA17989E743c5F6cB21bF9697530B21e';
@@ -587,7 +600,7 @@ function updateRate() {
   }
 }
 
-function isSameChain() { return fromChainIdx === toChainIdx; }
+function isSameChain() { return !CHAINS[toChainIdx]?.virtual && fromChainIdx === toChainIdx; }
 
 function updateRoute() {
   document.getElementById('fee-route').textContent = isSameChain()
@@ -605,7 +618,7 @@ function updateActionBtn() {
     btn.textContent = 'Enter amount';
     btn.className = 'w-full py-4 bg-surface-container-high text-on-surface-variant rounded-full font-black text-lg';
   } else {
-    btn.textContent = isSameChain() ? 'Swap' : 'Bridge';
+    btn.textContent = isHyperliquidDest() ? 'Deposit to Hyperliquid' : isSameChain() ? 'Swap' : 'Bridge';
     btn.className = 'w-full py-4 bg-primary text-on-primary rounded-full font-black text-lg active:scale-[0.98] transition-transform';
   }
 }
@@ -680,18 +693,24 @@ async function fetchBestQuote(amount) {
   const amountWei = BigInt(Math.floor(amount * 10 ** fromToken.decimals)).toString();
   const sameChain = originChain === destChain;
 
-  const candidates = []; // { outputNum, provider, route, quote, type }
+  const candidates = [];
 
+  // Hyperliquid deposit — route via Across to Arbitrum with embedded action
+  if (isHyperliquidDest()) {
+    try {
+      const hlResult = await fetchHyperliquidQuote(originChain, fromToken, amountWei);
+      if (hlResult) candidates.push(hlResult);
+    } catch (e) { console.warn('Hyperliquid quote failed:', e); }
+  }
   // 1) Uniswap (same-chain only)
-  if (sameChain && fromToken.symbol !== toToken.symbol) {
+  else if (sameChain && fromToken.symbol !== toToken.symbol) {
     try {
       const uniResult = await fetchUniswapQuote(originChain, fromToken, toToken, amountWei);
       if (uniResult) candidates.push(uniResult);
     } catch (e) { console.warn('Uniswap quote failed:', e); }
   }
-
   // 2) Across (crosschain only)
-  if (!sameChain) {
+  else if (!sameChain) {
     try {
       const acrossResult = await fetchAcrossQuote(originChain, destChain, fromToken, toToken, amountWei);
       if (acrossResult) candidates.push(acrossResult);
@@ -812,6 +831,56 @@ async function fetchAcrossQuote(originChain, destChain, fromToken, toToken, amou
 }
 
 
+// ── Hyperliquid deposit quote ──
+// Routes: any token on any chain → USDC on Arbitrum → Bridge2 deposit → Hyperliquid
+async function fetchHyperliquidQuote(originChain, fromToken, amountWei) {
+  const inputAddr = fromToken.native ? fromToken.wrapAddresses?.[originChain] : fromToken.addresses[originChain];
+  if (!inputAddr) return null;
+
+  // Output is always USDC on Arbitrum
+  const outputAddr = USDC_ARB;
+  const destChain = 42161; // Arbitrum
+
+  // Use Across POST /swap/approval with embedded action to deposit to Bridge2
+  // The action: transfer USDC to Bridge2 contract (simple ERC20 transfer triggers deposit)
+  const params = new URLSearchParams({
+    tradeType: 'exactInput', amount: amountWei,
+    inputToken: inputAddr, outputToken: outputAddr,
+    originChainId: originChain, destinationChainId: destChain,
+    depositor: walletAddress || '0x0000000000000000000000000000000000000000',
+    recipient: HL_BRIDGE2, // USDC goes directly to Bridge2 — triggers deposit for depositor
+    slippage: 'auto',
+  });
+
+  const ctrl = new AbortController();
+  const t = setTimeout(() => ctrl.abort(), 8000);
+  const res = await fetch(`${ACROSS_API}/swap/approval?${params}`, { signal: ctrl.signal });
+  clearTimeout(t);
+  if (!res.ok) return null;
+  const data = await res.json();
+
+  const fp = prices[fromToken.symbol] || 0;
+  const outputNum = data.expectedOutput ? Number(BigInt(data.expectedOutput)) / 1e6 : 0; // USDC 6 decimals
+  const totalFee = data.fees?.totalRelayFee?.total ? Number(BigInt(data.fees.totalRelayFee.total)) / 10 ** fromToken.decimals : 0;
+
+  if (outputNum < 5) {
+    return { outputNum, provider: 'Hyperliquid', route: 'Below 5 USDC minimum', feeDisplay: '--', time: '--', type: 'error', quote: null };
+  }
+
+  const dest = CHAINS[toChainIdx];
+  const destLabel = dest.id === 'hl-spot' ? 'Spot' : 'Perp';
+
+  return {
+    outputNum,
+    provider: 'Across → Hyperliquid',
+    route: `${fromToken.symbol} → USDC → Hyperliquid ${destLabel}`,
+    feeDisplay: `~$${fmtNum(totalFee * fp)}`,
+    time: '~2 min',
+    type: 'hyperliquid',
+    quote: data,
+  };
+}
+
 // ── Execute ──
 let txStartTime = 0;
 let txTimerInterval = null;
@@ -853,7 +922,7 @@ function showTxSuccess(summary, elapsedSec, txHash, chainId) {
   try {
     const history = JSON.parse(localStorage.getItem('sage_tx_history') || '[]');
     history.unshift({
-      type: lastQuote?._routeType === 'across' ? 'bridge' : 'swap',
+      type: lastQuote?._routeType === 'across' || lastQuote?._routeType === 'hyperliquid' ? 'bridge' : 'swap',
       summary,
       time: elapsedSec,
       fromToken: TOKENS[fromTokenIdx].symbol,
@@ -983,6 +1052,22 @@ async function executeSwap() {
       const elapsed = (Date.now() - txStartTime) / 1000;
       showTxSuccess(`${amount} ${fromSym} on ${fromChainName} → ${toSym} on ${toChainName}`, elapsed, hash, CHAINS[fromChainIdx].id);
 
+    } else if (routeType === 'hyperliquid') {
+      // Same as Across bridge — USDC lands on Bridge2 and Hyperliquid credits the user
+      if (lastQuote.approvalTxns?.length) {
+        showTxScreen('Approving...', `Approve ${fromSym}`, false);
+        document.getElementById('tx-timer').textContent = '';
+        for (const tx of lastQuote.approvalTxns) { await sendTx(tx); }
+      }
+      showTxScreen('Confirm in wallet...', `${amount} ${fromSym} → Hyperliquid`, false);
+      document.getElementById('tx-timer').textContent = '';
+      const hash = await sendTx(lastQuote.swapTx);
+      const dest = CHAINS[toChainIdx];
+      const destLabel = dest.id === 'hl-spot' ? 'Spot' : 'Perp';
+      showTxScreen('Depositing...', `→ Hyperliquid ${destLabel}`, true);
+      await pollFill(CHAINS[fromChainIdx].id, hash);
+      const elapsed = (Date.now() - txStartTime) / 1000;
+      showTxSuccess(`${amount} ${fromSym} → USDC on Hyperliquid ${destLabel}`, elapsed, hash, CHAINS[fromChainIdx].id);
     }
   } catch (e) {
     console.error('Tx failed:', e);
