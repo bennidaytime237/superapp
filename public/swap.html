@@ -441,9 +441,10 @@ async function updateBalance() {
   const token = TOKENS[fromTokenIdx];
   const chainId = CHAINS[fromChainIdx].id;
   try {
-    const res = await fetch(`/api/balances?address=${walletAddress}`);
+    const res = await fetch(`/api/balances?address=${walletAddress}&_t=${Date.now()}`);
     const data = await res.json();
     cachedBalances = data;
+    console.log('Balances response:', JSON.stringify(data), 'Looking for:', chainId, token.symbol);
     // find balance for this token on this chain (API may return string or number keys)
     const chainData = data[chainId] || data[String(chainId)] || {};
     const bal = chainData[token.symbol] || 0;

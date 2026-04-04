@@ -10,7 +10,7 @@ const RPC_LIST = {
   42161: ['https://arb1.arbitrum.io/rpc', 'https://rpc.ankr.com/arbitrum'],
   8453:  ['https://mainnet.base.org', 'https://base.drpc.org'],
   10:    ['https://mainnet.optimism.io', 'https://rpc.ankr.com/optimism'],
-  137:   ['https://polygon-rpc.com', 'https://rpc.ankr.com/polygon'],
+  137:   ['https://polygon-rpc.com', 'https://rpc.ankr.com/polygon', 'https://polygon.drpc.org', 'https://polygon-bor-rpc.publicnode.com'],
   56:    ['https://bsc-dataseed.binance.org', 'https://rpc.ankr.com/bsc'],
   324:   ['https://mainnet.era.zksync.io'],
   59144: ['https://rpc.linea.build'],
@@ -122,7 +122,10 @@ async function rpc(urls, method, params) {
       clearTimeout(timeout);
       const json = await res.json();
       if (json.result !== undefined) return json.result;
-    } catch {}
+      if (json.error) console.warn(`RPC error from ${url}:`, json.error.message);
+    } catch (e) {
+      console.warn(`RPC failed ${url}:`, e.message);
+    }
   }
   return null;
 }
@@ -164,8 +167,8 @@ export default async function handler(req, res) {
           }
           const amount = fromHex(raw, token.decimals);
           if (amount > 0) chainBalances[token.symbol] = amount;
-        } catch {
-          // skip failed token
+        } catch (e) {
+          console.warn(`Balance check failed for ${token.symbol} on chain ${chainId}:`, e.message);
         }
       }));
 
