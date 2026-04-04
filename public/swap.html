@@ -37,7 +37,6 @@ tailwind.config = {
   .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
   input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
   input[type=number] { -moz-appearance: textfield; }
-  .tab-active { background: white; color: #2f3a33; box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
   html { height: 100%; }
 </style>
 </head>
@@ -62,14 +61,6 @@ tailwind.config = {
 
 <!-- Main -->
 <main class="w-full max-w-[640px] mx-auto px-8 py-6 flex-1 flex flex-col justify-center min-h-0">
-
-  <!-- Mode Tabs -->
-  <div class="flex items-center mb-5">
-    <div class="inline-flex bg-surface-container-low rounded-full p-1 gap-1">
-      <button id="tab-swap" onclick="setMode('swap')" class="tab-active px-6 py-2 rounded-full text-sm font-bold transition-all">Swap</button>
-      <button id="tab-bridge" onclick="setMode('bridge')" class="px-6 py-2 rounded-full text-sm font-bold text-on-surface-variant transition-all">Bridge</button>
-    </div>
-  </div>
 
   <!-- Rate pill — right aligned -->
   <div class="flex justify-end mb-5">
@@ -145,9 +136,8 @@ tailwind.config = {
     </button>
     <div id="fee-breakdown" class="hidden space-y-2 pb-3 text-sm">
       <div class="flex justify-between"><span class="text-on-surface-variant">Route</span><span id="bd-route" class="text-on-surface font-medium">--</span></div>
-      <div class="flex justify-between"><span class="text-on-surface-variant">Relay fee</span><span id="bd-relay" class="text-on-surface font-medium">--</span></div>
-      <div class="flex justify-between"><span class="text-on-surface-variant">LP fee</span><span id="bd-lp" class="text-on-surface font-medium">--</span></div>
-      <div class="flex justify-between"><span class="text-on-surface-variant">Gas fee</span><span id="bd-gas" class="text-on-surface font-medium">--</span></div>
+      <div class="flex justify-between"><span class="text-on-surface-variant">Provider</span><span id="bd-provider" class="text-on-surface font-medium">--</span></div>
+      <div class="flex justify-between"><span class="text-on-surface-variant">Fee</span><span id="bd-fee" class="text-on-surface font-medium">--</span></div>
       <div class="flex justify-between"><span class="text-on-surface-variant">Estimated time</span><span id="bd-time" class="text-on-surface font-medium">--</span></div>
       <div class="flex justify-between"><span class="text-on-surface-variant">Slippage</span><span id="bd-slip" class="text-on-surface font-medium">Auto</span></div>
     </div>
@@ -294,8 +284,17 @@ let TOKENS = [
     addresses: { 1:'0xC011a73ee8576Fb46F5E1c5751cA3B9Fe0af2a6F', 10:'0x8700dAec35aF8Ff88c16BdF0418774CB3D7599B4' }},
 ];
 
+// ── Uniswap Quoter V2 (same address on all chains) ──
+const UNI_QUOTER = '0x61fFE014bA17989E743c5F6cB21bF9697530B21e';
+const UNI_ROUTER = '0x3fC91A3afd70395Cd496C647d5a6CC9D4B2b7FAD';
+// quoteExactInputSingle selector: 0xc6a5026a
+function encodeQuoteExactInputSingle(tokenIn, tokenOut, amountIn, fee) {
+  const sel = '0xc6a5026a';
+  const p = (v) => v.replace('0x','').padStart(64,'0');
+  return sel + p(tokenIn) + p(tokenOut) + p(BigInt(amountIn).toString(16)) + p(BigInt(fee).toString(16)) + p('0');
+}
+
 // ── State ──
-let mode = 'swap';
 let fromChainIdx = 0, toChainIdx = 1;
 let fromTokenIdx = 0, toTokenIdx = 1;
 let slippage = 'auto';
@@ -340,7 +339,7 @@ async function connectWallet() {
 async function updateBalance() {
   if (!walletAddress) return;
   const token = TOKENS[fromTokenIdx];
-  const chainId = CHAINS[mode === 'bridge' ? fromChainIdx : 0].id;
+  const chainId = CHAINS[fromChainIdx].id;
   try {
     const res = await fetch(`/api/balances?address=${walletAddress}`);
     const data = await res.json();
@@ -370,18 +369,6 @@ async function fetchPrices() {
 }
 
 // ── Mode ──
-function setMode(m) {
-  mode = m;
-  document.getElementById('tab-swap').className = m === 'swap'
-    ? 'tab-active px-6 py-2 rounded-full text-sm font-bold transition-all'
-    : 'px-6 py-2 rounded-full text-sm font-bold text-on-surface-variant transition-all';
-  document.getElementById('tab-bridge').className = m === 'bridge'
-    ? 'tab-active px-6 py-2 rounded-full text-sm font-bold transition-all'
-    : 'px-6 py-2 rounded-full text-sm font-bold text-on-surface-variant transition-all';
-  updateRoute();
-  updateBalance();
-  onAmountChange();
-}
 
 // ── Token picker modal ──
 let pickerSide = 'from';
@@ -449,8 +436,8 @@ function renderModalRows(rows) {
   const list = document.getElementById('token-list');
   const selToken = pickerSide === 'from' ? TOKENS[fromTokenIdx] : TOKENS[toTokenIdx];
   const selChain = pickerSide === 'from'
-    ? CHAINS[mode === 'bridge' ? fromChainIdx : 0]
-    : CHAINS[mode === 'bridge' ? toChainIdx : 0];
+    ? CHAINS[fromChainIdx]
+    : CHAINS[toChainIdx];
 
   list.innerHTML = rows.map(({ chain, token, tIdx }) => {
     const bal = cachedBalances?.[chain.id]?.[token.symbol] || 0;
@@ -544,8 +531,8 @@ function swapTokens() {
 // ── Display updates ──
 function updateTokenDisplay() {
   const ft = TOKENS[fromTokenIdx], tt = TOKENS[toTokenIdx];
-  const fromChainId = CHAINS[mode === 'bridge' ? fromChainIdx : 0].id;
-  const toChainId = CHAINS[mode === 'bridge' ? toChainIdx : 0].id;
+  const fromChainId = CHAINS[fromChainIdx].id;
+  const toChainId = CHAINS[toChainIdx].id;
   const fromChain = CHAINS.find(c => c.id === fromChainId);
   const toChain = CHAINS.find(c => c.id === toChainId);
   // Chain icons (big, background)
@@ -568,12 +555,12 @@ function updateRate() {
   }
 }
 
+function isSameChain() { return fromChainIdx === toChainIdx; }
+
 function updateRoute() {
-  if (mode === 'bridge') {
-    document.getElementById('fee-route').textContent = `${CHAINS[fromChainIdx].name} → ${CHAINS[toChainIdx].name}`;
-  } else {
-    document.getElementById('fee-route').textContent = 'Same chain';
-  }
+  document.getElementById('fee-route').textContent = isSameChain()
+    ? CHAINS[fromChainIdx].name
+    : `${CHAINS[fromChainIdx].name} → ${CHAINS[toChainIdx].name}`;
 }
 
 function updateActionBtn() {
@@ -586,7 +573,7 @@ function updateActionBtn() {
     btn.textContent = 'Enter amount';
     btn.className = 'w-full py-4 bg-surface-container-high text-on-surface-variant rounded-full font-black text-lg';
   } else {
-    btn.textContent = mode === 'bridge' ? 'Bridge' : 'Swap';
+    btn.textContent = isSameChain() ? 'Swap' : 'Bridge';
     btn.className = 'w-full py-4 bg-primary text-on-primary rounded-full font-black text-lg active:scale-[0.98] transition-transform';
   }
 }
@@ -644,86 +631,222 @@ function onAmountChange() {
     document.getElementById('output-amount').textContent = fmtNum(est);
     document.getElementById('output-usd').textContent = `≈ $${fmtNum(val * fp)}`;
   }
-  // Always fetch real quote via Across (swap mode = find cheapest route)
+  // Fetch best route
   document.getElementById('fee-display').textContent = '...';
-  document.getElementById('fee-route').textContent = mode === 'bridge'
-    ? `${CHAINS[fromChainIdx].name} → ${CHAINS[toChainIdx].name}`
-    : 'Finding best route...';
-  quoteTimer = setTimeout(() => fetchQuote(val), 300);
+  document.getElementById('fee-route').textContent = 'Finding best route...';
+  quoteTimer = setTimeout(() => fetchBestQuote(val), 300);
 }
 
-async function fetchQuote(amount) {
+// ── Unified quote fetcher: Uniswap, Across, double-bridge ──
+async function fetchBestQuote(amount) {
   const fromToken = TOKENS[fromTokenIdx];
   const toToken = TOKENS[toTokenIdx];
   const originChain = CHAINS[fromChainIdx].id;
   const destChain = CHAINS[toChainIdx].id;
+  const fp = prices[fromToken.symbol] || 0;
+  const tp = prices[toToken.symbol] || 0;
+  const amountWei = BigInt(Math.floor(amount * 10 ** fromToken.decimals)).toString();
+  const sameChain = originChain === destChain;
 
-  // Across needs token addresses — use wrap address for native ETH
-  const inputAddr = fromToken.native
-    ? fromToken.wrapAddresses?.[originChain]
-    : fromToken.addresses[originChain];
-  const outputAddr = toToken.native
-    ? toToken.wrapAddresses?.[destChain]
-    : toToken.addresses[destChain];
+  const candidates = []; // { outputNum, provider, route, quote, type }
 
-  if (!inputAddr || !outputAddr) {
-    document.getElementById('fee-display').textContent = 'Route unavailable';
+  // 1) Uniswap (same-chain only)
+  if (sameChain && fromToken.symbol !== toToken.symbol) {
+    try {
+      const uniResult = await fetchUniswapQuote(originChain, fromToken, toToken, amountWei);
+      if (uniResult) candidates.push(uniResult);
+    } catch (e) { console.warn('Uniswap quote failed:', e); }
+  }
+
+  // 2) Across (crosschain only)
+  if (!sameChain) {
+    try {
+      const acrossResult = await fetchAcrossQuote(originChain, destChain, fromToken, toToken, amountWei);
+      if (acrossResult) candidates.push(acrossResult);
+    } catch (e) { console.warn('Across quote failed:', e); }
+  }
+
+  // 3) Double-bridge (same-chain swap via intermediary)
+  if (sameChain && fromToken.symbol !== toToken.symbol) {
+    const intermediaries = CHAINS.filter(c => c.id !== originChain).slice(0, 3);
+    const dbPromises = intermediaries.map(async (mid) => {
+      try {
+        return await fetchDoubleBridgeQuote(originChain, mid.id, fromToken, toToken, amountWei, mid.name);
+      } catch { return null; }
+    });
+    const dbResults = (await Promise.allSettled(dbPromises))
+      .filter(r => r.status === 'fulfilled' && r.value)
+      .map(r => r.value);
+    candidates.push(...dbResults);
+  }
+
+  if (candidates.length === 0) {
+    document.getElementById('fee-display').textContent = 'No route found';
+    document.getElementById('fee-route').textContent = '';
     return;
   }
 
-  const amountWei = BigInt(Math.floor(amount * 10 ** fromToken.decimals)).toString();
+  // Pick best output
+  candidates.sort((a, b) => b.outputNum - a.outputNum);
+  const best = candidates[0];
+  lastQuote = best.quote;
+  lastQuote._routeType = best.type;
+  lastQuote._provider = best.provider;
+  lastQuote._route = best.route;
+
+  // Update UI
+  document.getElementById('output-amount').textContent = fmtNum(best.outputNum);
+  document.getElementById('output-usd').textContent = `≈ $${fmtNum(best.outputNum * tp)}`;
+  document.getElementById('fee-display').textContent = best.feeDisplay;
+  document.getElementById('fee-route').textContent = `via ${best.provider}`;
+
+  // Breakdown
+  document.getElementById('bd-route').textContent = best.route;
+  document.getElementById('bd-provider').textContent = best.provider;
+  document.getElementById('bd-fee').textContent = best.feeDisplay;
+  document.getElementById('bd-time').textContent = best.time;
+  document.getElementById('bd-slip').textContent = slippage === 'auto' ? 'Auto' : (parseFloat(slippage) * 100) + '%';
+}
+
+// ── Uniswap on-chain quote ──
+async function fetchUniswapQuote(chainId, fromToken, toToken, amountWei) {
+  const tokenIn = fromToken.native ? fromToken.wrapAddresses?.[chainId] : fromToken.addresses[chainId];
+  const tokenOut = toToken.native ? toToken.wrapAddresses?.[chainId] : toToken.addresses[chainId];
+  if (!tokenIn || !tokenOut) return null;
+
+  const chainHex = '0x' + chainId.toString(16);
+  const fees = [3000, 500, 10000]; // try different pool fees
+  let bestOutput = null;
+  let bestFee = 0;
+
+  for (const fee of fees) {
+    try {
+      const calldata = encodeQuoteExactInputSingle(tokenIn, tokenOut, amountWei, fee);
+      const result = await window.ethereum.request({
+        method: 'eth_call',
+        params: [{ to: UNI_QUOTER, data: calldata }, 'latest'],
+      });
+      if (result && result !== '0x') {
+        const outputWei = BigInt(result.slice(0, 66));
+        if (!bestOutput || outputWei > bestOutput) {
+          bestOutput = outputWei;
+          bestFee = fee;
+        }
+      }
+    } catch {}
+  }
+
+  if (!bestOutput) return null;
+  const outputNum = Number(bestOutput) / 10 ** toToken.decimals;
+  const inputNum = Number(BigInt(amountWei)) / 10 ** fromToken.decimals;
+  const fp = prices[fromToken.symbol] || 0;
+  const feePercent = bestFee / 10000;
+
+  return {
+    outputNum,
+    provider: 'Uniswap',
+    route: `${fromToken.symbol} → ${toToken.symbol} on ${CHAINS[fromChainIdx].name}`,
+    feeDisplay: `${feePercent}% pool fee`,
+    time: '~15 seconds',
+    type: 'uniswap',
+    quote: {
+      tokenIn, tokenOut, amountWei, fee: bestFee, chainId, outputWei: bestOutput.toString(),
+    },
+  };
+}
+
+// ── Across crosschain quote ──
+async function fetchAcrossQuote(originChain, destChain, fromToken, toToken, amountWei) {
+  const inputAddr = fromToken.native ? fromToken.wrapAddresses?.[originChain] : fromToken.addresses[originChain];
+  const outputAddr = toToken.native ? toToken.wrapAddresses?.[destChain] : toToken.addresses[destChain];
+  if (!inputAddr || !outputAddr) return null;
 
   const params = new URLSearchParams({
-    tradeType: 'exactInput',
-    amount: amountWei,
-    inputToken: inputAddr,
-    outputToken: outputAddr,
-    originChainId: originChain,
-    destinationChainId: destChain,
-    depositor: walletAddress || '0x0000000000000000000000000000000000000000',
-    slippage: slippage,
+    tradeType: 'exactInput', amount: amountWei, inputToken: inputAddr, outputToken: outputAddr,
+    originChainId: originChain, destinationChainId: destChain,
+    depositor: walletAddress || '0x0000000000000000000000000000000000000000', slippage: slippage,
   });
 
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 8000);
+  const ctrl = new AbortController();
+  const t = setTimeout(() => ctrl.abort(), 8000);
+  const res = await fetch(`${ACROSS_API}/swap/approval?${params}`, { signal: ctrl.signal });
+  clearTimeout(t);
+  if (!res.ok) return null;
+  const data = await res.json();
 
-  try {
-    const res = await fetch(`${ACROSS_API}/swap/approval?${params}`, { signal: controller.signal });
-    clearTimeout(timeout);
-    if (!res.ok) throw new Error(res.status);
-    const data = await res.json();
-    lastQuote = data;
-    const fp = prices[fromToken.symbol] || 0;
-    const tp = prices[toToken.symbol] || 0;
+  const outputNum = data.expectedOutput ? Number(BigInt(data.expectedOutput)) / 10 ** toToken.decimals : 0;
+  const fp = prices[fromToken.symbol] || 0;
+  const totalFee = data.fees?.totalRelayFee?.total ? Number(BigInt(data.fees.totalRelayFee.total)) / 10 ** fromToken.decimals : 0;
+  const fromChainName = CHAINS.find(c => c.id === originChain)?.name || originChain;
+  const toChainName = CHAINS.find(c => c.id === destChain)?.name || destChain;
 
-    // Output
-    if (data.expectedOutput) {
-      const outNum = Number(BigInt(data.expectedOutput)) / 10 ** toToken.decimals;
-      document.getElementById('output-amount').textContent = fmtNum(outNum);
-      document.getElementById('output-usd').textContent = `≈ $${fmtNum(outNum * tp)}`;
-    }
+  return {
+    outputNum,
+    provider: 'Across Protocol',
+    route: `${fromToken.symbol}(${fromChainName}) → ${toToken.symbol}(${toChainName})`,
+    feeDisplay: `~$${fmtNum(totalFee * fp)}`,
+    time: '~2 seconds',
+    type: 'across',
+    quote: data,
+  };
+}
 
-    // Total fee
-    const totalFeeRaw = data.fees?.totalRelayFee?.total ? Number(BigInt(data.fees.totalRelayFee.total)) / 10 ** fromToken.decimals : 0;
-    document.getElementById('fee-display').textContent = `~$${fmtNum(totalFeeRaw * fp)}`;
+// ── Double-bridge quote (same-chain swap via intermediary) ──
+async function fetchDoubleBridgeQuote(chainId, midChainId, fromToken, toToken, amountWei, midName) {
+  // Leg 1: fromToken on chainId → toToken on midChain
+  const leg1Input = fromToken.native ? fromToken.wrapAddresses?.[chainId] : fromToken.addresses[chainId];
+  const leg1Output = toToken.native ? toToken.wrapAddresses?.[midChainId] : toToken.addresses[midChainId];
+  if (!leg1Input || !leg1Output) return null;
 
-    // Breakdown
-    const relayFee = data.fees?.relayerCapitalFee?.total ? Number(BigInt(data.fees.relayerCapitalFee.total)) / 10 ** fromToken.decimals : 0;
-    const gasFee = data.fees?.relayerGasFee?.total ? Number(BigInt(data.fees.relayerGasFee.total)) / 10 ** fromToken.decimals : 0;
-    const lpFee = data.fees?.lpFee?.total ? Number(BigInt(data.fees.lpFee.total)) / 10 ** fromToken.decimals : 0;
+  const params1 = new URLSearchParams({
+    tradeType: 'exactInput', amount: amountWei, inputToken: leg1Input, outputToken: leg1Output,
+    originChainId: chainId, destinationChainId: midChainId,
+    depositor: walletAddress || '0x0000000000000000000000000000000000000000', slippage: slippage,
+  });
+  const ctrl1 = new AbortController();
+  const t1 = setTimeout(() => ctrl1.abort(), 6000);
+  const res1 = await fetch(`${ACROSS_API}/swap/approval?${params1}`, { signal: ctrl1.signal });
+  clearTimeout(t1);
+  if (!res1.ok) return null;
+  const data1 = await res1.json();
 
-    document.getElementById('bd-route').textContent = `${CHAINS[fromChainIdx].name} → ${CHAINS[toChainIdx].name}`;
-    document.getElementById('bd-relay').textContent = `$${fmtNum(relayFee * fp)}`;
-    document.getElementById('bd-lp').textContent = `$${fmtNum(lpFee * fp)}`;
-    document.getElementById('bd-gas').textContent = `$${fmtNum(gasFee * fp)}`;
-    document.getElementById('bd-time').textContent = '~2 seconds';
-    document.getElementById('bd-slip').textContent = slippage === 'auto' ? 'Auto' : (parseFloat(slippage) * 100) + '%';
+  const midAmount = data1.expectedOutput;
+  if (!midAmount) return null;
 
-  } catch (e) {
-    clearTimeout(timeout);
-    console.warn('Quote failed:', e);
-    document.getElementById('fee-display').textContent = e.name === 'AbortError' ? 'Timed out' : 'Unavailable';
-  }
+  // Leg 2: toToken on midChain → toToken on chainId (same token, just bridge back)
+  const leg2Input = toToken.native ? toToken.wrapAddresses?.[midChainId] : toToken.addresses[midChainId];
+  const leg2Output = toToken.native ? toToken.wrapAddresses?.[chainId] : toToken.addresses[chainId];
+  if (!leg2Input || !leg2Output) return null;
+
+  const params2 = new URLSearchParams({
+    tradeType: 'exactInput', amount: midAmount, inputToken: leg2Input, outputToken: leg2Output,
+    originChainId: midChainId, destinationChainId: chainId,
+    depositor: walletAddress || '0x0000000000000000000000000000000000000000', slippage: slippage,
+  });
+  const ctrl2 = new AbortController();
+  const t2 = setTimeout(() => ctrl2.abort(), 6000);
+  const res2 = await fetch(`${ACROSS_API}/swap/approval?${params2}`, { signal: ctrl2.signal });
+  clearTimeout(t2);
+  if (!res2.ok) return null;
+  const data2 = await res2.json();
+
+  const outputNum = data2.expectedOutput ? Number(BigInt(data2.expectedOutput)) / 10 ** toToken.decimals : 0;
+  const fp = prices[fromToken.symbol] || 0;
+  const fee1 = data1.fees?.totalRelayFee?.total ? Number(BigInt(data1.fees.totalRelayFee.total)) / 10 ** fromToken.decimals : 0;
+  const fee2 = data2.fees?.totalRelayFee?.total ? Number(BigInt(data2.fees.totalRelayFee.total)) / 10 ** toToken.decimals : 0;
+  const tp = prices[toToken.symbol] || 0;
+  const totalFeeUsd = fee1 * fp + fee2 * tp;
+  const chainName = CHAINS.find(c => c.id === chainId)?.name || chainId;
+
+  return {
+    outputNum,
+    provider: `Across via ${midName}`,
+    route: `${fromToken.symbol}(${chainName}) → ${midName} → ${toToken.symbol}(${chainName})`,
+    feeDisplay: `~$${fmtNum(totalFeeUsd)}`,
+    time: '~4 seconds',
+    type: 'double-bridge',
+    quote: { leg1: data1, leg2: data2, midChainId },
+  };
 }
 
 // ── Execute ──
@@ -767,7 +890,7 @@ function showTxSuccess(summary, elapsedSec, txHash, chainId) {
   try {
     const history = JSON.parse(localStorage.getItem('sage_tx_history') || '[]');
     history.unshift({
-      type: mode,
+      type: lastQuote?._routeType === 'across' || lastQuote?._routeType === 'double-bridge' ? 'bridge' : 'swap',
       summary,
       time: elapsedSec,
       fromToken: TOKENS[fromTokenIdx].symbol,
@@ -854,40 +977,74 @@ async function executeSwap() {
   const toChainName = CHAINS[toChainIdx].name;
 
   try {
-    if (mode === 'bridge') {
-      if (!lastQuote) await fetchQuote(amount);
-      if (!lastQuote) throw new Error('Could not get quote');
+    if (!lastQuote) await fetchBestQuote(amount);
+    if (!lastQuote) throw new Error('Could not get quote');
+    const routeType = lastQuote._routeType;
+    const provider = lastQuote._provider;
 
-      // Approvals
+    if (routeType === 'uniswap') {
+      // Uniswap same-chain swap
+      showTxScreen('Confirm in wallet...', `${amount} ${fromSym} → ${toSym} via Uniswap`, false);
+      document.getElementById('tx-timer').textContent = '';
+      const q = lastQuote;
+      // Build swap tx via Universal Router
+      // For native ETH input, send value; for ERC20, need approval first
+      const fromToken = TOKENS[fromTokenIdx];
+      if (!fromToken.native) {
+        // Check allowance and approve if needed
+        showTxScreen('Approving...', `Approve ${fromSym}`, false);
+        document.getElementById('tx-timer').textContent = '';
+        await ensureApproval(q.tokenIn, UNI_ROUTER, q.amountWei, q.chainId);
+      }
+      showTxScreen('Confirm in wallet...', `${amount} ${fromSym} → ${toSym}`, false);
+      document.getElementById('tx-timer').textContent = '';
+      const hash = await executeUniswapSwap(q);
+      showTxScreen('Swapping...', `via Uniswap on ${fromChainName}`, true);
+      // Wait for tx confirmation
+      await waitForTx(hash, q.chainId);
+      const elapsed = (Date.now() - txStartTime) / 1000;
+      showTxSuccess(`${amount} ${fromSym} → ${toSym} on ${fromChainName}`, elapsed, hash, q.chainId);
+
+    } else if (routeType === 'across') {
+      // Standard Across bridge
       if (lastQuote.approvalTxns?.length) {
         showTxScreen('Approving...', `Approve ${fromSym} for bridging`, false);
         document.getElementById('tx-timer').textContent = '';
-        for (const tx of lastQuote.approvalTxns) {
-          await sendTx(tx);
-        }
+        for (const tx of lastQuote.approvalTxns) { await sendTx(tx); }
       }
-
-      // Main tx
       showTxScreen('Confirm in wallet...', `${amount} ${fromSym} → ${toSym}`, false);
       document.getElementById('tx-timer').textContent = '';
-      const swapTx = lastQuote.swapTx;
-      if (!swapTx) throw new Error('No swap transaction in quote');
-      const hash = await sendTx(swapTx);
-
-      // Tx submitted — NOW start the timer
-      showTxScreen('Bridging...', `${fromChainName} → ${toChainName}`, true);
-
-      // Poll for fill — elapsed measured from txStartTime (when tx was submitted)
+      const hash = await sendTx(lastQuote.swapTx);
+      showTxScreen('Bridging...', `${fromChainName} → ${toChainName} via Across`, true);
       await pollFill(CHAINS[fromChainIdx].id, hash);
       const elapsed = (Date.now() - txStartTime) / 1000;
-      showTxSuccess(
-        `${amount} ${fromSym} on ${fromChainName} → ${toSym} on ${toChainName}`,
-        elapsed, hash, CHAINS[fromChainIdx].id
-      );
+      showTxSuccess(`${amount} ${fromSym} on ${fromChainName} → ${toSym} on ${toChainName}`, elapsed, hash, CHAINS[fromChainIdx].id);
 
-    } else {
-      showTxScreen('Swap not yet supported', 'Coming soon');
-      setTimeout(closeTxScreen, 2000);
+    } else if (routeType === 'double-bridge') {
+      const { leg1, leg2, midChainId } = lastQuote;
+      const midName = CHAINS.find(c => c.id === midChainId)?.name || midChainId;
+      // Leg 1 approvals
+      if (leg1.approvalTxns?.length) {
+        showTxScreen('Approving...', `Approve ${fromSym} (leg 1)`, false);
+        document.getElementById('tx-timer').textContent = '';
+        for (const tx of leg1.approvalTxns) { await sendTx(tx); }
+      }
+      showTxScreen('Confirm in wallet...', `Leg 1: ${fromChainName} → ${midName}`, false);
+      document.getElementById('tx-timer').textContent = '';
+      const hash1 = await sendTx(leg1.swapTx);
+      showTxScreen('Bridging leg 1...', `${fromChainName} → ${midName}`, true);
+      await pollFill(CHAINS[fromChainIdx].id, hash1);
+      // Leg 2
+      if (leg2.approvalTxns?.length) {
+        showTxScreen('Approving...', `Approve for leg 2`, false);
+        for (const tx of leg2.approvalTxns) { await sendTx(tx); }
+      }
+      showTxScreen('Confirm in wallet...', `Leg 2: ${midName} → ${toChainName}`, false);
+      const hash2 = await sendTx(leg2.swapTx);
+      showTxScreen('Bridging leg 2...', `${midName} → ${toChainName}`, false);
+      await pollFill(midChainId, hash2);
+      const elapsed = (Date.now() - txStartTime) / 1000;
+      showTxSuccess(`${amount} ${fromSym} → ${toSym} on ${toChainName} via ${midName}`, elapsed, hash1, CHAINS[fromChainIdx].id);
     }
   } catch (e) {
     console.error('Tx failed:', e);
@@ -922,6 +1079,61 @@ async function sendTx(tx) {
     }],
   });
   return txHash;
+}
+
+async function ensureApproval(tokenAddr, spender, amountWei, chainId) {
+  // Check current allowance
+  const owner = walletAddress;
+  const allowanceData = '0xdd62ed3e' + owner.slice(2).padStart(64,'0') + spender.slice(2).padStart(64,'0');
+  const chainHex = '0x' + chainId.toString(16);
+  const allowance = await window.ethereum.request({
+    method: 'eth_call', params: [{ to: tokenAddr, data: allowanceData }, 'latest'],
+  });
+  if (BigInt(allowance || '0x0') >= BigInt(amountWei)) return; // already approved
+  // Send approval tx
+  const approveData = '0x095ea7b3' + spender.slice(2).padStart(64,'0') + BigInt(amountWei).toString(16).padStart(64,'0');
+  await window.ethereum.request({
+    method: 'eth_sendTransaction',
+    params: [{ from: owner, to: tokenAddr, data: approveData, chainId: chainHex }],
+  });
+}
+
+async function executeUniswapSwap(q) {
+  // Use exactInputSingle on SwapRouter02: 0x414bf389
+  const sel = '0x414bf389';
+  const pad = (v) => v.replace('0x','').padStart(64,'0');
+  const deadline = Math.floor(Date.now() / 1000) + 1800;
+  const fromToken = TOKENS[fromTokenIdx];
+  // Encode params tuple: tokenIn, tokenOut, fee, recipient, deadline, amountIn, amountOutMin, sqrtPriceLimitX96
+  const amountOutMin = BigInt(BigInt(q.outputWei) * 95n / 100n); // 5% slippage guard
+  const data = sel
+    + pad(q.tokenIn) + pad(q.tokenOut)
+    + pad(BigInt(q.fee).toString(16))
+    + pad(walletAddress)
+    + pad(BigInt(deadline).toString(16))
+    + pad(BigInt(q.amountWei).toString(16))
+    + pad(amountOutMin.toString(16))
+    + pad('0');
+
+  const chainHex = '0x' + q.chainId.toString(16);
+  const SWAP_ROUTER = '0xE592427A0AEce92De3Edee1F18E0157C05861564'; // SwapRouter (deployed everywhere)
+  const value = fromToken.native ? '0x' + BigInt(q.amountWei).toString(16) : '0x0';
+
+  return window.ethereum.request({
+    method: 'eth_sendTransaction',
+    params: [{ from: walletAddress, to: SWAP_ROUTER, data, value, chainId: chainHex }],
+  });
+}
+
+async function waitForTx(hash, chainId) {
+  const chainHex = '0x' + chainId.toString(16);
+  for (let i = 0; i < 60; i++) {
+    const receipt = await window.ethereum.request({
+      method: 'eth_getTransactionReceipt', params: [hash],
+    });
+    if (receipt && receipt.status) return receipt;
+    await new Promise(r => setTimeout(r, 2000));
+  }
 }
 
 async function pollFill(originChainId, txHash) {
