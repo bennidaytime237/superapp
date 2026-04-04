@@ -967,9 +967,11 @@ async function fetchAcrossQuote(originChain, destChain, fromToken, toToken, amou
   if (!res.ok) return null;
   const data = await res.json();
 
-  const outputNum = data.expectedOutput ? Number(BigInt(data.expectedOutput)) / 10 ** toToken.decimals : 0;
+  const rawOutput = data.steps?.bridge?.outputAmount || data.expectedOutput || '0';
+  const outputNum = Number(BigInt(rawOutput)) / 10 ** toToken.decimals;
   const fp = prices[fromToken.symbol] || 0;
-  const totalFee = data.fees?.totalRelayFee?.total ? Number(BigInt(data.fees.totalRelayFee.total)) / 10 ** fromToken.decimals : 0;
+  const rawFee = data.fees?.total || data.fees?.totalRelayFee?.total || '0';
+  const totalFee = Number(BigInt(rawFee)) / 10 ** fromToken.decimals;
   const fromChainName = CHAINS.find(c => c.id === originChain)?.name || originChain;
   const toChainName = CHAINS.find(c => c.id === destChain)?.name || destChain;
 
@@ -1014,8 +1016,10 @@ async function fetchHyperliquidQuote(originChain, fromToken, amountWei) {
   const data = await res.json();
 
   const fp = prices[fromToken.symbol] || 0;
-  const outputNum = data.expectedOutput ? Number(BigInt(data.expectedOutput)) / 1e6 : 0; // USDC 6 decimals
-  const totalFee = data.fees?.totalRelayFee?.total ? Number(BigInt(data.fees.totalRelayFee.total)) / 10 ** fromToken.decimals : 0;
+  const rawOutput = data.steps?.bridge?.outputAmount || data.expectedOutput || '0';
+  const outputNum = Number(BigInt(rawOutput)) / 1e6; // USDC 6 decimals
+  const rawFee = data.fees?.total || data.fees?.totalRelayFee?.total || '0';
+  const totalFee = Number(BigInt(rawFee)) / 10 ** fromToken.decimals;
 
   if (outputNum < 5) {
     return { outputNum, provider: 'Hyperliquid', route: 'Below 5 USDC minimum', feeDisplay: '--', time: '--', type: 'error', quote: null };
