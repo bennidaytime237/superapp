@@ -353,16 +353,26 @@ let quoteTimer = null;
 let lastQuote = null; // stores Across swap/approval response
 
 // ── Icon helpers ──
-function tokenIconUrl(token, chainId) {
-  if (token.native) {
-    // Use WETH address for the ETH icon, not the chain logo
-    const wethAddr = token.wrapAddresses?.[1] || '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2';
-    return `${TW}/ethereum/assets/${wethAddr}/logo.png`;
-  }
-  const addr = token.addresses[chainId];
-  const slug = CHAINS.find(c=>c.id===chainId)?.slug;
-  if (addr && slug) return `${TW}/${slug}/assets/${addr}/logo.png`;
-  const ethAddr = token.addresses[1];
+// Token icon: always prefer Ethereum mainnet address (best Trust Wallet coverage)
+const TOKEN_ICONS = {
+  'ETH':'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2/logo.png',
+  'USDC':'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48/logo.png',
+  'USDT':'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0xdAC17F958D2ee523a2206206994597C13D831ec7/logo.png',
+  'DAI':'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0x6B175474E89094C44Da98b954EedeAC495271d0F/logo.png',
+  'WBTC':'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599/logo.png',
+  'WETH':'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2/logo.png',
+  'UMA':'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0x04Fa0d235C4abf4BcF4787aF4CF447DE572eF828/logo.png',
+  'ACX':'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0x44108f0223A3C3028F5Fe7AEC7f9bb2E66beF82F/logo.png',
+  'POOL':'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0x0cEC1A9154Ff802e7934Fc916Ed7Ca50bDE6844e/logo.png',
+  'SNX':'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0xC011a73ee8576Fb46F5E1c5751cA3B9Fe0af2a6F/logo.png',
+  'MATIC':'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/polygon/info/logo.png',
+  'BNB':'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/binance/info/logo.png',
+  'POL':'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/polygon/info/logo.png',
+};
+function tokenIconUrl(token) {
+  if (TOKEN_ICONS[token.symbol]) return TOKEN_ICONS[token.symbol];
+  // Fallback: try Ethereum mainnet address on Trust Wallet
+  const ethAddr = token.addresses?.[1];
   if (ethAddr) return `${TW}/ethereum/assets/${ethAddr}/logo.png`;
   return '';
 }
@@ -386,7 +396,9 @@ const CHAIN_ICONS = {
   57073:'https://icons.llamao.fi/icons/chains/rsz_ink.jpg',
   1868:'https://icons.llamao.fi/icons/chains/rsz_soneium.jpg',
   999:'https://icons.llamao.fi/icons/chains/rsz_hyperliquid.jpg',
-  232:'https://icons.llamao.fi/icons/chains/rsz_lens%20network.jpg',
+  232:'https://icons.llamao.fi/icons/chains/rsz_lens.jpg',
+  'hl-spot':'https://icons.llamao.fi/icons/chains/rsz_hyperliquid.jpg',
+  'hl-perp':'https://icons.llamao.fi/icons/chains/rsz_hyperliquid.jpg',
 };
 function chainLogoUrl(chainId) {
   if (CHAIN_ICONS[chainId]) return CHAIN_ICONS[chainId];
@@ -538,7 +550,7 @@ function renderModalRows(rows) {
     const usdVal = bal * price;
     const isSelected = selToken.symbol === token.symbol && selChain.id === chain.id;
     const highlight = isSelected ? 'bg-primary-container/20' : 'hover:bg-surface-container-low';
-    const tIcon = tokenIconUrl(token, chain.id);
+    const tIcon = tokenIconUrl(token);
     const cIcon = `https://icons.llamao.fi/icons/chains/rsz_${chain.slug}.jpg`;
 
     return `<button onclick="selectToken(${tIdx}, ${chain.id})" class="w-full flex items-center gap-3 px-4 py-3 ${highlight} rounded-xl transition-colors text-left" data-search="${token.symbol} ${token.name} ${chain.name}">
@@ -631,9 +643,9 @@ function updateTokenDisplay() {
   document.getElementById('from-chain-icon').src = chainLogoUrl(fromChainId);
   document.getElementById('to-chain-icon').src = chainLogoUrl(toChainId);
   // Token icons (small, overlay)
-  document.getElementById('from-token-icon').src = tokenIconUrl(ft, fromChainId);
+  document.getElementById('from-token-icon').src = tokenIconUrl(ft);
   document.getElementById('from-token-label').textContent = ft.symbol;
-  document.getElementById('to-token-icon').src = tokenIconUrl(tt, toChainId);
+  document.getElementById('to-token-icon').src = tokenIconUrl(tt);
   document.getElementById('to-token-label').textContent = tt.symbol;
   updateRate();
 }
