@@ -55,9 +55,9 @@ tailwind.config = {
 
 <!-- Sidebar Navigation (Desktop) -->
 <aside class="hidden md:flex flex-col fixed left-0 top-0 h-full w-64 p-4 bg-surface-container-low z-40">
-  <div class="mb-10 px-4 py-2 flex items-center gap-2">
+  <a href="index.html" class="mb-10 px-4 py-2 flex items-center gap-2">
     <img src="sage-wordmark.svg" alt="Sage" class="h-7"/>
-  </div>
+  </a>
   <nav class="flex-1 space-y-1">
     <a class="flex items-center gap-3 px-4 py-3 bg-surface-container-lowest text-primary rounded-full shadow-sm" href="index.html">
       <span class="material-symbols-outlined">grid_view</span>
@@ -70,6 +70,10 @@ tailwind.config = {
     <a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:text-primary hover:bg-white/50 rounded-full transition-all" href="transactions.html">
       <span class="material-symbols-outlined">receipt_long</span>
       <span class="font-medium text-sm">Transactions</span>
+    </a>
+    <a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:text-primary hover:bg-white/50 rounded-full transition-all" href="buysell.html">
+      <span class="material-symbols-outlined">paid</span>
+      <span class="font-medium text-sm">Buy & Sell</span>
     </a>
   </nav>
 
@@ -106,7 +110,7 @@ tailwind.config = {
   <!-- Top Bar -->
   <header class="flex justify-between items-center w-full px-6 py-4 bg-surface sticky top-0 z-30">
     <div class="flex items-center gap-2">
-      <img src="sage-wordmark.svg" alt="Sage" class="h-6 md:hidden"/>
+      <a href="index.html"><img src="sage-wordmark.svg" alt="Sage" class="h-6 md:hidden"/></a>
       <h2 class="hidden md:block font-headline font-bold text-xl tracking-tight text-on-background">Portfolio Overview</h2>
     </div>
     <div class="flex items-center gap-3">

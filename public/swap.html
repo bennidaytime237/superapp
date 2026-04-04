@@ -644,15 +644,12 @@ function onAmountChange() {
     document.getElementById('output-amount').textContent = fmtNum(est);
     document.getElementById('output-usd').textContent = `≈ $${fmtNum(val * fp)}`;
   }
-  // Fetch real quote
-  if (mode === 'bridge') {
-    document.getElementById('fee-display').textContent = '...';
-    document.getElementById('fee-route').textContent = `${CHAINS[fromChainIdx].name} → ${CHAINS[toChainIdx].name}`;
-    quoteTimer = setTimeout(() => fetchQuote(val), 300);
-  } else {
-    document.getElementById('fee-display').textContent = '< $0.50';
-    document.getElementById('fee-route').textContent = 'Same chain';
-  }
+  // Always fetch real quote via Across (swap mode = find cheapest route)
+  document.getElementById('fee-display').textContent = '...';
+  document.getElementById('fee-route').textContent = mode === 'bridge'
+    ? `${CHAINS[fromChainIdx].name} → ${CHAINS[toChainIdx].name}`
+    : 'Finding best route...';
+  quoteTimer = setTimeout(() => fetchQuote(val), 300);
 }
 
 async function fetchQuote(amount) {
