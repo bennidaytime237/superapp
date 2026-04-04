@@ -227,8 +227,8 @@ tailwind.config = {
       <div class="p-6 bg-primary text-on-primary rounded-xl relative overflow-hidden">
         <div class="relative z-10">
           <img src="sage-logo.svg" alt="Sage" class="w-8 h-8 mb-3 brightness-200"/>
-          <h5 class="text-lg font-bold mb-2 leading-tight">Powered by Across + MoonPay</h5>
-          <p class="text-sm opacity-80">Crosschain swaps in ~2 seconds. Non-custodial wallets. Fiat on/off ramps.</p>
+          <h5 class="text-lg font-bold mb-2 leading-tight">Powered by Across, Uniswap & MoonPay</h5>
+          <p class="text-sm opacity-80">Crosschain bridges in ~2 seconds. Same-chain swaps via Uniswap. Fiat on/off ramps via MoonPay.</p>
         </div>
         <div class="absolute -bottom-8 -right-8 w-32 h-32 bg-white/10 rounded-full blur-2xl"></div>
       </div>
@@ -335,6 +335,7 @@ async function onConnected() {
   document.getElementById('sidebar-addr').textContent = short;
 
   // Fetch data in parallel
+  renderActivity();
   await Promise.all([fetchPrices(), fetchBalances()]);
 }
 
@@ -544,7 +545,8 @@ function fmtNum(n) {
 function renderActivity() {
   const feed = document.getElementById('activity-feed');
   let history = [];
-  try { history = JSON.parse(localStorage.getItem('sage_tx_history') || '[]'); } catch {}
+  const historyKey = 'sage_tx_' + (walletAddress || 'unknown').toLowerCase();
+  try { history = JSON.parse(localStorage.getItem(historyKey) || '[]'); } catch {}
 
   if (history.length === 0) {
     feed.innerHTML = `<div class="text-center py-8">

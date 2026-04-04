@@ -125,10 +125,21 @@ function setFilter(f) {
   render();
 }
 
+let walletAddress = null;
+
+async function initWallet() {
+  if (window.ethereum) {
+    const accs = await window.ethereum.request({ method:'eth_accounts' });
+    if (accs.length > 0) walletAddress = accs[0];
+  }
+  render();
+}
+
 function render() {
   const list = document.getElementById('tx-list');
   let history = [];
-  try { history = JSON.parse(localStorage.getItem('sage_tx_history') || '[]'); } catch {}
+  const historyKey = 'sage_tx_' + (walletAddress || 'unknown').toLowerCase();
+  try { history = JSON.parse(localStorage.getItem(historyKey) || '[]'); } catch {}
 
   if (filter !== 'all') history = history.filter(tx => tx.type === filter);
 
@@ -180,7 +191,7 @@ function render() {
   }).join('');
 }
 
-render();
+initWallet();
 </script>
 
 </body>

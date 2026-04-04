@@ -431,7 +431,8 @@ async function executeGas() {
 
     // Save to history
     try {
-      const history = JSON.parse(localStorage.getItem('sage_tx_history') || '[]');
+      const historyKey = 'sage_tx_' + (walletAddress || 'unknown').toLowerCase();
+      const history = JSON.parse(localStorage.getItem(historyKey) || '[]');
       history.unshift({
         type:'bridge', summary:`Gas top-up: ${total} ${t.symbol} → ${selected.length} chains`,
         time:0, fromToken:t.symbol, toToken:'gas',
@@ -439,7 +440,7 @@ async function executeGas() {
         fromChainId:sc.chainId, amount:total.toFixed(6), timestamp:Date.now(), txHash:null,
       });
       if (history.length > 20) history.length = 20;
-      localStorage.setItem('sage_tx_history', JSON.stringify(history));
+      localStorage.setItem(historyKey, JSON.stringify(history));
     } catch {}
 
   } catch (e) {

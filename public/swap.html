@@ -986,7 +986,8 @@ function showTxSuccess(summary, elapsedSec, txHash, chainId) {
 
   // Save to localStorage for dashboard activity feed
   try {
-    const history = JSON.parse(localStorage.getItem('sage_tx_history') || '[]');
+    const historyKey = 'sage_tx_' + (walletAddress || 'unknown').toLowerCase();
+    const history = JSON.parse(localStorage.getItem(historyKey) || '[]');
     history.unshift({
       type: lastQuote?._routeType === 'across' || lastQuote?._routeType === 'hyperliquid' ? 'bridge' : 'swap',
       summary,
@@ -1001,7 +1002,7 @@ function showTxSuccess(summary, elapsedSec, txHash, chainId) {
       txHash: txHash || null,
     });
     if (history.length > 20) history.length = 20;
-    localStorage.setItem('sage_tx_history', JSON.stringify(history));
+    localStorage.setItem(historyKey, JSON.stringify(history));
   } catch {}
   document.getElementById('tx-summary').textContent = summary;
   document.getElementById('tx-time-final').textContent = elapsedSec.toFixed(1) + 's';
