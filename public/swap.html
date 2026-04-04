@@ -1029,7 +1029,7 @@ async function executeSwap() {
         // Check allowance and approve if needed
         showTxScreen('Approving...', `Approve ${fromSym}`, false);
         document.getElementById('tx-timer').textContent = '';
-        await ensureApproval(q.tokenIn, UNI_ROUTER, q.amountWei, q.chainId);
+        await ensureApproval(q.tokenIn, SWAP_ROUTER, q.amountWei, q.chainId);
       }
       showTxScreen('Confirm in wallet...', `${amount} ${fromSym} → ${toSym}`, false);
       document.getElementById('tx-timer').textContent = '';
@@ -1124,25 +1124,28 @@ async function ensureApproval(tokenAddr, spender, amountWei, chainId) {
   });
 }
 
+// SwapRouter02 — same address on Ethereum, Arbitrum, Base, Optimism, Polygon
+const SWAP_ROUTER = '0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45';
+
 async function executeUniswapSwap(q) {
-  // Use exactInputSingle on SwapRouter02: 0x414bf389
-  const sel = '0x414bf389';
-  const pad = (v) => v.replace('0x','').padStart(64,'0');
-  const deadline = Math.floor(Date.now() / 1000) + 1800;
+  const pAddr = (a) => a.toLowerCase().replace('0x','').padStart(64,'0');
+  const pUint = (v) => BigInt(v).toString(16).padStart(64,'0');
   const fromToken = TOKENS[fromTokenIdx];
-  // Encode params tuple: tokenIn, tokenOut, fee, recipient, deadline, amountIn, amountOutMin, sqrtPriceLimitX96
-  const amountOutMin = BigInt(BigInt(q.outputWei) * 95n / 100n); // 5% slippage guard
-  const data = sel
-    + pad(q.tokenIn) + pad(q.tokenOut)
-    + pad(BigInt(q.fee).toString(16))
-    + pad(walletAddress)
-    + pad(BigInt(deadline).toString(16))
-    + pad(BigInt(q.amountWei).toString(16))
-    + pad(amountOutMin.toString(16))
-    + pad('0');
+  const amountOutMin = BigInt(q.outputWei) * 95n / 100n; // 5% slippage
+
+  // SwapRouter02.exactInputSingle(ExactInputSingleParams)
+  // Params: tokenIn, tokenOut, fee, recipient, amountIn, amountOutMinimum, sqrtPriceLimitX96
+  // Selector: 0x04e45aaf (SwapRouter02 version — no deadline param)
+  const data = '0x04e45aaf'
+    + pAddr(q.tokenIn)
+    + pAddr(q.tokenOut)
+    + pUint(q.fee)
+    + pAddr(walletAddress)
+    + pUint(q.amountWei)
+    + pUint(amountOutMin)
+    + pUint(0);
 
   const chainHex = '0x' + q.chainId.toString(16);
-  const SWAP_ROUTER = '0xE592427A0AEce92De3Edee1F18E0157C05861564'; // SwapRouter (deployed everywhere)
   const value = fromToken.native ? '0x' + BigInt(q.amountWei).toString(16) : '0x0';
 
   return window.ethereum.request({
