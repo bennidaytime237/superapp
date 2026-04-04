@@ -71,9 +71,12 @@ tailwind.config = {
   <div class="mb-5">
     <p class="text-sm text-on-surface-variant mb-2">From</p>
     <div class="flex items-center justify-between gap-4">
-      <button onclick="cycleSource()" class="flex items-center gap-2 bg-surface-container-low pl-1.5 pr-4 py-1.5 rounded-full border border-outline-variant/10 hover:bg-surface-container-high transition-colors">
-        <img id="source-icon" src="" alt="" class="w-8 h-8 rounded-full"/>
-        <span class="font-bold text-sm" id="source-label">ETH on Base</span>
+      <button onclick="openSourcePicker()" class="flex items-center gap-2 bg-surface-container-low pl-1.5 pr-4 py-1.5 rounded-full border border-outline-variant/10 hover:bg-surface-container-high transition-colors">
+        <div class="relative">
+          <img id="source-token-icon" src="" alt="" class="w-8 h-8 rounded-full"/>
+          <img id="source-chain-icon" src="" alt="" class="w-5 h-5 rounded-full absolute -right-1 -bottom-0.5 border-2 border-white bg-white"/>
+        </div>
+        <span class="font-bold text-sm ml-1" id="source-label">USDC on Base</span>
         <span class="material-symbols-outlined text-sm text-on-surface-variant">expand_more</span>
       </button>
       <div class="text-right">
@@ -116,15 +119,48 @@ tailwind.config = {
 
 </main>
 
+<!-- Source Picker Modal -->
+<div id="source-modal" class="fixed inset-0 z-50 hidden">
+  <div class="absolute inset-0 bg-black/30 backdrop-blur-sm" onclick="closeSourcePicker()"></div>
+  <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md bg-white rounded-3xl shadow-2xl p-6 max-h-[80vh] flex flex-col">
+    <div class="flex items-center justify-between mb-4">
+      <h3 class="text-lg font-black text-on-background">Choose source token</h3>
+      <button onclick="closeSourcePicker()" class="p-2 rounded-full hover:bg-surface-container-high"><span class="material-symbols-outlined text-on-surface-variant">close</span></button>
+    </div>
+    <input id="source-search" type="text" placeholder="Search..." class="w-full px-4 py-3 rounded-xl border border-outline-variant/15 text-sm mb-3 focus:outline-none focus:ring-2 focus:ring-primary/30" oninput="filterSourceList()"/>
+    <div id="source-list" class="overflow-y-auto max-h-[50vh] space-y-1"></div>
+  </div>
+</div>
+
 <script>
 const TW = 'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains';
 const ACROSS_API = 'https://app.across.to/api';
 
-const SOURCES = [
+const MULTICALL3 = '0xcA11bde05977b3631167028862bE2a173976CA11';
+// aggregate3: function aggregate3((address target, bool allowFailure, bytes callData)[])
+// selector: 0x82ad56cb
+
+const SOURCE_CHAINS = [
   { chainId:8453, name:'Base', slug:'base' },
   { chainId:42161, name:'Arbitrum', slug:'arbitrum' },
   { chainId:10, name:'Optimism', slug:'optimism' },
   { chainId:1, name:'Ethereum', slug:'ethereum' },
+  { chainId:137, name:'Polygon', slug:'polygon' },
+];
+
+const SOURCE_TOKENS = [
+  { symbol:'ETH', name:'Ethereum', decimals:18, native:true,
+    chains:[1,42161,8453,10],
+    wrapAddresses:{1:'0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2',42161:'0x82aF49447D8a07e3bd95BD0d56f35241523fBab1',8453:'0x4200000000000000000000000000000000000006',10:'0x4200000000000000000000000000000000000006'}},
+  { symbol:'USDC', name:'USD Coin', decimals:6, native:false,
+    chains:[1,42161,8453,10,137],
+    addresses:{1:'0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48',42161:'0xaf88d065e77c8cC2239327C5EDb3A432268e5831',8453:'0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913',10:'0x0b2C639c533813f4Aa9D7837CAf62653d097Ff85',137:'0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359'}},
+  { symbol:'USDT', name:'Tether', decimals:6, native:false,
+    chains:[1,42161,10],
+    addresses:{1:'0xdAC17F958D2ee523a2206206994597C13D831ec7',42161:'0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9',10:'0x94b008aA00579c1307B0EF2c499aD98a8ce58e58'}},
+  { symbol:'DAI', name:'Dai', decimals:18, native:false,
+    chains:[1,42161],
+    addresses:{1:'0x6B175474E89094C44Da98b954EedeAC495271d0F',42161:'0xDA10009cBd5D07dd0CeCc66161FC93D7c9000da1'}},
 ];
 
 // All chains that use ETH as the native gas token
@@ -159,10 +195,28 @@ const WETH = {
   1135:'0x4200000000000000000000000000000000000006',
 };
 
-let sourceIdx = 0;
+let sourceTokenIdx = 1; // USDC default
+let sourceChainIdx = 0; // Base default
 let walletAddress = null;
-let ethBalance = null;
-let ethPrice = 0;
+let sourceBalance = null;
+let prices = {};
+let cachedBalances = null;
+
+function sourceToken() { return SOURCE_TOKENS[sourceTokenIdx]; }
+function sourceChain() { return SOURCE_CHAINS[sourceChainIdx]; }
+
+function tokenIconUrl(token, chainId) {
+  if (token.native) return `${TW}/ethereum/assets/0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2/logo.png`;
+  const addr = token.addresses?.[chainId];
+  const slug = SOURCE_CHAINS.find(c=>c.chainId===chainId)?.slug || DEST_CHAINS.find(c=>c.chainId===chainId)?.slug;
+  if (addr && slug) return `${TW}/${slug}/assets/${addr}/logo.png`;
+  if (token.addresses?.[1]) return `${TW}/ethereum/assets/${token.addresses[1]}/logo.png`;
+  return '';
+}
+function chainLogoUrl(chainId) {
+  const c = SOURCE_CHAINS.find(c=>c.chainId===chainId) || DEST_CHAINS.find(c=>c.chainId===chainId);
+  return c ? `${TW}/${c.slug}/info/logo.png` : '';
+}
 
 async function connectWallet() {
   if (!window.ethereum) { alert('Install MetaMask'); return; }
@@ -179,36 +233,74 @@ async function fetchBalance() {
   if (!walletAddress) return;
   try {
     const res = await fetch(`/api/balances?address=${walletAddress}`);
-    const data = await res.json();
-    const chainId = SOURCES[sourceIdx].chainId;
-    ethBalance = data[chainId]?.ETH || 0;
-    document.getElementById('source-balance').textContent = `Balance: ${fmt(ethBalance)} ETH`;
-  } catch { ethBalance = null; }
+    cachedBalances = await res.json();
+    const bal = cachedBalances[sourceChain().chainId]?.[sourceToken().symbol] || 0;
+    sourceBalance = bal;
+    document.getElementById('source-balance').textContent = `Balance: ${fmt(bal)} ${sourceToken().symbol}`;
+  } catch { sourceBalance = null; }
 }
 
-async function fetchPrice() {
+async function fetchPrices() {
   try {
     const res = await fetch('/api/prices');
-    const data = await res.json();
-    ethPrice = data.ethereum?.usd || 0;
-  } catch { ethPrice = 2000; }
+    const raw = await res.json();
+    prices = { ETH:raw.ethereum?.usd||0, USDC:1, USDT:1, DAI:1, WBTC:raw['wrapped-bitcoin']?.usd||0 };
+  } catch { prices = { ETH:2000, USDC:1, USDT:1, DAI:1 }; }
 }
 
-function cycleSource() {
-  sourceIdx = (sourceIdx + 1) % SOURCES.length;
+function updateSourceDisplay() {
+  const t = sourceToken(), c = sourceChain();
+  document.getElementById('source-token-icon').src = tokenIconUrl(t, c.chainId);
+  document.getElementById('source-chain-icon').src = chainLogoUrl(c.chainId);
+  document.getElementById('source-label').textContent = `${t.symbol} on ${c.name}`;
+}
+
+// ── Source picker ──
+function openSourcePicker() {
+  document.getElementById('source-search').value = '';
+  buildSourceList();
+  document.getElementById('source-modal').classList.remove('hidden');
+}
+function closeSourcePicker() { document.getElementById('source-modal').classList.add('hidden'); }
+
+function buildSourceList() { filterSourceList(); }
+function filterSourceList() {
+  const q = (document.getElementById('source-search').value||'').toLowerCase();
+  const list = document.getElementById('source-list');
+  let rows = [];
+  SOURCE_TOKENS.forEach((t, ti) => {
+    SOURCE_CHAINS.forEach((c, ci) => {
+      if (!t.chains.includes(c.chainId)) return;
+      if (q && !t.symbol.toLowerCase().includes(q) && !t.name.toLowerCase().includes(q) && !c.name.toLowerCase().includes(q)) return;
+      const bal = cachedBalances?.[c.chainId]?.[t.symbol] || 0;
+      rows.push({ t, ti, c, ci, bal });
+    });
+  });
+  rows.sort((a,b) => b.bal - a.bal);
+  list.innerHTML = rows.map(({t,ti,c,ci,bal}) => {
+    const p = prices[t.symbol]||0;
+    return `<button onclick="selectSource(${ti},${ci})" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-surface-container-low transition-colors text-left">
+      <div class="relative flex-shrink-0">
+        <img src="${tokenIconUrl(t,c.chainId)}" class="w-10 h-10 rounded-full bg-surface-container"/>
+        <img src="${chainLogoUrl(c.chainId)}" class="w-5 h-5 rounded-full absolute -bottom-0.5 -right-0.5 border-2 border-white bg-white"/>
+      </div>
+      <div class="flex-1"><p class="font-bold text-[15px] ${bal>0?'text-on-background':'text-on-surface-variant'}">${bal>0?fmt(bal)+' ':'0 '}${t.symbol}</p><p class="text-xs text-on-surface-variant">${t.name} · ${c.name}</p></div>
+      ${bal>0?`<span class="text-xs text-on-surface-variant">$${fmt(bal*p)}</span>`:''}
+      <span class="material-symbols-outlined text-on-surface-variant text-base">chevron_right</span>
+    </button>`;
+  }).join('') || '<p class="text-sm text-on-surface-variant text-center py-4">No tokens found</p>';
+}
+
+function selectSource(ti, ci) {
+  sourceTokenIdx = ti; sourceChainIdx = ci;
+  closeSourcePicker();
   updateSourceDisplay();
   fetchBalance();
   onAmountChange();
 }
 
-function updateSourceDisplay() {
-  const s = SOURCES[sourceIdx];
-  document.getElementById('source-icon').src = `${TW}/${s.slug}/info/logo.png`;
-  document.getElementById('source-label').textContent = `ETH on ${s.name}`;
-}
-
 function getSelected() {
-  return DEST_CHAINS.filter(c => c.selected && c.chainId !== SOURCES[sourceIdx].chainId);
+  return DEST_CHAINS.filter(c => c.selected && c.chainId !== sourceChain().chainId);
 }
 
 function selectAll() { DEST_CHAINS.forEach(c => c.selected = true); renderChains(); onAmountChange(); }
@@ -226,12 +318,13 @@ function renderChains() {
   const total = parseFloat(document.getElementById('total-amount').value) || 0;
   const selected = getSelected();
   const perChain = selected.length > 0 ? total / selected.length : 0;
-  const sourceChainId = SOURCES[sourceIdx].chainId;
+  const sourceChainId = sourceChain().chainId;
 
   list.innerHTML = DEST_CHAINS.map(c => {
     const isSelf = c.chainId === sourceChainId;
     const active = c.selected && !isSelf;
-    const perUsd = active ? perChain * ethPrice : 0;
+    const sp = prices[sourceToken().symbol] || 0;
+    const perUsd = active ? perChain * sp : 0;
     return `<button onclick="toggleChain(${c.chainId})" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-colors ${isSelf ? 'opacity-30 pointer-events-none' : active ? 'bg-surface-container-lowest border border-primary/20' : 'bg-surface-container-low border border-transparent hover:border-outline-variant/20'}">
       <img src="${TW}/${c.slug}/info/logo.png" class="w-8 h-8 rounded-full"/>
       <div class="flex-1 text-left">
@@ -239,7 +332,7 @@ function renderChains() {
         ${isSelf ? '<p class="text-xs text-on-surface-variant">Source chain</p>' : ''}
       </div>
       <div class="text-right">
-        ${active ? `<p class="text-sm font-bold text-on-background">${fmt(perChain)} ETH</p><p class="text-xs text-on-surface-variant">≈ $${fmt(perUsd)}</p>` : ''}
+        ${active ? `<p class="text-sm font-bold text-on-background">${fmt(perChain)} ${sourceToken().symbol}</p><p class="text-xs text-on-surface-variant">≈ $${fmt(perUsd)}</p>` : ''}
       </div>
       <div class="w-6 h-6 rounded-md border-2 flex items-center justify-center flex-shrink-0 ${active ? 'border-primary bg-primary' : 'border-outline-variant/30'}">
         ${active ? '<span class="material-symbols-outlined text-on-primary text-sm">check</span>' : ''}
@@ -253,9 +346,10 @@ function onAmountChange() {
   const selected = getSelected();
   const perChain = selected.length > 0 ? total / selected.length : 0;
 
-  document.getElementById('summary-total').textContent = `${fmt(total)} ETH ≈ $${fmt(total * ethPrice)}`;
+  const sp = prices[sourceToken().symbol] || 0;
+  document.getElementById('summary-total').textContent = `${fmt(total)} ${sourceToken().symbol} ≈ $${fmt(total * sp)}`;
   document.getElementById('summary-per').textContent = selected.length > 0
-    ? `${fmt(perChain)} ETH × ${selected.length} chains`
+    ? `${fmt(perChain)} ${sourceToken().symbol} × ${selected.length} chains`
     : 'Select chains';
 
   renderChains();
@@ -278,61 +372,155 @@ async function executeGas() {
   const selected = getSelected();
   if (total <= 0 || selected.length === 0) return;
 
+  const t = sourceToken(), sc = sourceChain();
   const perChain = total / selected.length;
-  const sourceChain = SOURCES[sourceIdx].chainId;
+  const decimals = t.decimals;
   const btn = document.getElementById('action-btn');
   btn.disabled = true;
+  btn.textContent = `Fetching ${selected.length} quotes...`;
 
-  let completed = 0;
-  for (const dest of selected) {
-    completed++;
-    btn.textContent = `Bridging ${completed}/${selected.length}...`;
+  try {
+    // Get input token address
+    const inputAddr = t.native ? t.wrapAddresses?.[sc.chainId] : t.addresses?.[sc.chainId];
+    if (!inputAddr) throw new Error('No input token address');
 
-    try {
-      const amountWei = BigInt(Math.floor(perChain * 1e18)).toString();
-      const inputAddr = WETH[sourceChain];
+    // Fetch all quotes in parallel
+    const amountPerWei = BigInt(Math.floor(perChain * 10 ** decimals)).toString();
+    const quotePromises = selected.map(async (dest) => {
       const outputAddr = WETH[dest.chainId];
-      if (!inputAddr || !outputAddr) continue;
-
+      if (!outputAddr) return null;
       const params = new URLSearchParams({
-        tradeType:'exactInput', amount:amountWei,
+        tradeType:'exactInput', amount:amountPerWei,
         inputToken:inputAddr, outputToken:outputAddr,
-        originChainId:sourceChain, destinationChainId:dest.chainId,
+        originChainId:sc.chainId, destinationChainId:dest.chainId,
         depositor:walletAddress, slippage:'auto',
       });
-
       const res = await fetch(`${ACROSS_API}/swap/approval?${params}`);
-      if (!res.ok) { console.warn(`Quote failed for ${dest.name}`); continue; }
-      const quote = await res.json();
+      if (!res.ok) return null;
+      return res.json();
+    });
 
-      // Approvals
-      if (quote.approvalTxns?.length) {
-        for (const tx of quote.approvalTxns) await sendTx(tx);
+    const quotes = (await Promise.all(quotePromises)).filter(Boolean);
+    if (quotes.length === 0) throw new Error('No quotes available');
+
+    // Handle approvals first (all go to same spender, so one approval is enough)
+    const allApprovals = quotes.flatMap(q => q.approvalTxns || []);
+    if (allApprovals.length > 0) {
+      btn.textContent = 'Approving...';
+      // Dedupe approvals by spender (usually same contract)
+      const seen = new Set();
+      for (const tx of allApprovals) {
+        const key = tx.to + tx.data;
+        if (seen.has(key)) continue;
+        seen.add(key);
+        await sendTx(tx);
       }
-      // Bridge tx
-      if (quote.swapTx) await sendTx(quote.swapTx);
-    } catch (e) {
-      if (e.code === 4001) { btn.textContent = 'Rejected'; btn.disabled = false; setTimeout(updateBtn, 2000); return; }
-      console.warn(`Failed for ${dest.name}:`, e);
     }
+
+    // Bundle all swapTx into one Multicall3 call
+    const swapTxs = quotes.map(q => q.swapTx).filter(Boolean);
+    if (swapTxs.length === 0) throw new Error('No swap transactions');
+
+    btn.textContent = 'Confirm in wallet...';
+
+    if (swapTxs.length === 1) {
+      // Single bridge, no need for multicall
+      await sendTx(swapTxs[0]);
+    } else {
+      // Encode Multicall3.aggregate3 call
+      const totalValue = swapTxs.reduce((sum, tx) => sum + BigInt(tx.value || '0'), 0n);
+      const multicallData = encodeMulticall3(swapTxs);
+      const chainHex = '0x' + sc.chainId.toString(16);
+
+      // Switch chain if needed
+      const current = await window.ethereum.request({ method:'eth_chainId' });
+      if (current !== chainHex) {
+        await window.ethereum.request({ method:'wallet_switchEthereumChain', params:[{chainId:chainHex}] });
+      }
+
+      await window.ethereum.request({
+        method:'eth_sendTransaction',
+        params:[{
+          from: walletAddress,
+          to: MULTICALL3,
+          data: multicallData,
+          value: totalValue > 0n ? '0x' + totalValue.toString(16) : '0x0',
+          chainId: chainHex,
+        }],
+      });
+    }
+
+    btn.textContent = `Sent to ${selected.length} chains!`;
+    btn.disabled = false;
+    setTimeout(updateBtn, 3000);
+
+    // Save to history
+    try {
+      const history = JSON.parse(localStorage.getItem('sage_tx_history') || '[]');
+      history.unshift({
+        type:'bridge', summary:`Gas top-up: ${total} ${t.symbol} → ${selected.length} chains`,
+        time:0, fromToken:t.symbol, toToken:'ETH',
+        fromChain:sc.name, toChain:`${selected.length} chains`,
+        fromChainId:sc.chainId, amount:total.toFixed(6), timestamp:Date.now(), txHash:null,
+      });
+      if (history.length > 20) history.length = 20;
+      localStorage.setItem('sage_tx_history', JSON.stringify(history));
+    } catch {}
+
+  } catch (e) {
+    console.error('Gas top-up failed:', e);
+    btn.textContent = e.code === 4001 ? 'Rejected' : 'Failed';
+    btn.disabled = false;
+    setTimeout(updateBtn, 2000);
+  }
+}
+
+// Encode Multicall3.aggregate3(Call3[])
+// Call3: { target: address, allowFailure: bool, callData: bytes }
+function encodeMulticall3(txs) {
+  const pad = (v, n=64) => v.replace('0x','').padStart(n,'0');
+  const padNum = (v, n=64) => BigInt(v).toString(16).padStart(n,'0');
+
+  // aggregate3 selector
+  let encoded = '0x82ad56cb';
+  // offset to array
+  encoded += padNum(32);
+  // array length
+  encoded += padNum(txs.length);
+
+  // First pass: calculate offsets for each Call3 struct
+  // Each Call3 is: target (32) + allowFailure (32) + offset to callData (32) = 96 bytes header
+  // Plus dynamic callData
+  const headerSize = txs.length * 32; // offsets to each struct
+  let structsOffset = 0;
+  const structOffsets = [];
+  const structs = [];
+
+  for (const tx of txs) {
+    structOffsets.push(structsOffset);
+    const callData = tx.data.replace('0x','');
+    const callDataPadded = callData + '0'.repeat((32 - (callData.length / 2) % 32) % 32 * 2);
+    const structSize = 32 + 32 + 32 + 32 + Math.ceil(callData.length / 2 / 32) * 32;
+    structs.push({ target: tx.to, callData, callDataLen: callData.length / 2, callDataPadded });
+    structsOffset += structSize;
   }
 
-  btn.textContent = `Sent to ${selected.length} chains!`;
-  btn.disabled = false;
-  setTimeout(updateBtn, 3000);
+  // Offsets to each struct
+  const baseOffset = txs.length * 32;
+  for (let i = 0; i < txs.length; i++) {
+    encoded += padNum(baseOffset + structOffsets[i]);
+  }
 
-  // Save to history
-  try {
-    const history = JSON.parse(localStorage.getItem('sage_tx_history') || '[]');
-    history.unshift({
-      type: 'bridge', summary: `Gas top-up to ${selected.length} chains`,
-      time: 0, fromToken: 'ETH', toToken: 'ETH',
-      fromChain: SOURCES[sourceIdx].name, toChain: `${selected.length} chains`,
-      fromChainId: sourceChain, amount: total.toFixed(6), timestamp: Date.now(), txHash: null,
-    });
-    if (history.length > 20) history.length = 20;
-    localStorage.setItem('sage_tx_history', JSON.stringify(history));
-  } catch {}
+  // Structs
+  for (const s of structs) {
+    encoded += pad(s.target); // target address
+    encoded += padNum(0); // allowFailure = false
+    encoded += padNum(64); // offset to callData within struct
+    encoded += padNum(s.callDataLen); // callData length
+    encoded += s.callDataPadded; // callData bytes
+  }
+
+  return encoded;
 }
 
 async function sendTx(tx) {
@@ -361,7 +549,7 @@ function fmt(n) {
   updateSourceDisplay();
   renderChains();
   updateBtn();
-  await fetchPrice();
+  await fetchPrices();
   onAmountChange();
   if (window.ethereum) {
     const accs = await window.ethereum.request({ method:'eth_accounts' });
