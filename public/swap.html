@@ -515,7 +515,9 @@ function setChainFilter(chainId) {
 function buildTokenList() {
   allModalRows = [];
   CHAINS.forEach((chain) => {
+    if (chain.virtual) return;
     TOKENS.forEach((token, tIdx) => {
+      if (!token.symbol) return;
       const hasAddr = token.native
         ? (token.addresses.hasOwnProperty(chain.id))
         : (token.addresses[chain.id]);
