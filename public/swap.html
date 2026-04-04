@@ -262,11 +262,11 @@ let CHAINS = [
   { id: 130, name: 'Unichain', slug: 'unichain' },
   { id: 57073, name: 'Ink', slug: 'ink' },
   { id: 1868, name: 'Soneium', slug: 'soneium' },
-  { id: 999, name: 'HyperEVM', slug: 'hyperliquid' },
+  { id: 999, name: 'HyperEVM', slug: 'hyperliquid%20evm' },
   { id: 232, name: 'Lens', slug: 'lens%20network' },
   // Virtual destinations — Hyperliquid deposits via Arbitrum
-  { id: 'hl-spot', name: 'Hyperliquid Spot', slug: 'hyperliquid', virtual: true },
-  { id: 'hl-perp', name: 'Hyperliquid Perp', slug: 'hyperliquid', virtual: true },
+  { id: 'hl-spot', name: 'Hyperliquid Spot', slug: 'hyperliquid%20evm', virtual: true },
+  { id: 'hl-perp', name: 'Hyperliquid Perp', slug: 'hyperliquid%20evm', virtual: true },
 ];
 
 let TOKENS = [
@@ -313,18 +313,16 @@ const UNI_RPCS = {
 // struct: (address tokenIn, address tokenOut, uint256 amountIn, uint24 fee, uint160 sqrtPriceLimitX96)
 // This is a struct param so ABI-encoded with an offset pointer
 function encodeQuoteExactInputSingle(tokenIn, tokenOut, amountIn, fee) {
-  const p64 = (v) => {
-    if (typeof v === 'string' && v.startsWith('0x')) return v.slice(2).padStart(64,'0');
-    return BigInt(v).toString(16).padStart(64,'0');
-  };
-  // selector + offset to tuple (0x20) + 5 fields
+  const pAddr = (a) => a.toLowerCase().replace('0x','').padStart(64,'0');
+  const pUint = (v) => BigInt(v).toString(16).padStart(64,'0');
+  // QuoterV2.quoteExactInputSingle(QuoteExactInputSingleParams)
+  // Struct fields encoded inline (no offset pointer for single struct param)
   return '0xc6a5026a'
-    + '0000000000000000000000000000000000000000000000000000000000000020' // offset
-    + p64(tokenIn)    // tokenIn
-    + p64(tokenOut)   // tokenOut
-    + p64(amountIn)   // amountIn
-    + p64(fee)        // fee (uint24, still padded to 32 bytes)
-    + p64(0);         // sqrtPriceLimitX96 = 0
+    + pAddr(tokenIn)
+    + pAddr(tokenOut)
+    + pUint(amountIn)
+    + pUint(fee)
+    + pUint(0);  // sqrtPriceLimitX96
 }
 async function uniRpcCall(chainId, to, data) {
   const url = UNI_RPCS[chainId];
@@ -752,20 +750,25 @@ async function fetchUniswapQuote(chainId, fromToken, toToken, amountWei) {
   const tokenOut = toToken.native ? toToken.wrapAddresses?.[chainId] : toToken.addresses[chainId];
   if (!tokenIn || !tokenOut || !UNI_RPCS[chainId]) return null;
 
-  const fees = [500, 3000, 10000]; // 0.05%, 0.3%, 1%
+  const fees = [500, 3000, 10000];
   let bestOutput = null;
   let bestFee = 0;
 
-  // Query all fee tiers in parallel
-  const results = await Promise.allSettled(fees.map(async (fee) => {
-    const calldata = encodeQuoteExactInputSingle(tokenIn, tokenOut, amountWei, fee);
-    const result = await uniRpcCall(chainId, UNI_QUOTER, calldata);
-    if (result && result !== '0x' && result.length >= 66) {
-      // First 32 bytes = amountOut
-      return { fee, output: BigInt('0x' + result.slice(2, 66)) };
-    }
-    return null;
-  }));
+  // Try both QuoterV2 addresses (canonical + alternative)
+  const quoters = [UNI_QUOTER, '0x3d4e44Eb1374240CE5F1B871ab261CD16335B76a'];
+
+  const results = await Promise.allSettled(
+    quoters.flatMap(quoter =>
+      fees.map(async (fee) => {
+        const calldata = encodeQuoteExactInputSingle(tokenIn, tokenOut, amountWei, fee);
+        const result = await uniRpcCall(chainId, quoter, calldata);
+        if (result && result !== '0x' && result.length >= 66) {
+          return { fee, output: BigInt('0x' + result.slice(2, 66)) };
+        }
+        return null;
+      })
+    )
+  );
 
   for (const r of results) {
     if (r.status === 'fulfilled' && r.value) {
