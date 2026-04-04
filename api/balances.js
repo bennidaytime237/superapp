@@ -6,11 +6,23 @@ function encodeBalanceOf(address) {
 
 // Multiple RPCs per chain for reliability
 const RPC_LIST = {
-  1:     ['https://eth.drpc.org', 'https://rpc.ankr.com/eth', 'https://eth.llamarpc.com', 'https://cloudflare-eth.com'],
+  1:     ['https://eth.drpc.org', 'https://rpc.ankr.com/eth', 'https://cloudflare-eth.com'],
   42161: ['https://arb1.arbitrum.io/rpc', 'https://rpc.ankr.com/arbitrum'],
   8453:  ['https://mainnet.base.org', 'https://base.drpc.org'],
   10:    ['https://mainnet.optimism.io', 'https://rpc.ankr.com/optimism'],
   137:   ['https://polygon-rpc.com', 'https://rpc.ankr.com/polygon'],
+  56:    ['https://bsc-dataseed.binance.org', 'https://rpc.ankr.com/bsc'],
+  324:   ['https://mainnet.era.zksync.io'],
+  59144: ['https://rpc.linea.build'],
+  34443: ['https://mainnet.mode.network'],
+  534352:['https://rpc.scroll.io'],
+  81457: ['https://rpc.blast.io'],
+  130:   ['https://mainnet.unichain.org'],
+  57073: ['https://rpc-gel.inkonchain.com'],
+  1868:  ['https://rpc.soneium.org'],
+  480:   ['https://worldchain-mainnet.g.alchemy.com/public'],
+  1135:  ['https://rpc.api.lisk.com'],
+  7777777:['https://rpc.zora.energy'],
 };
 
 const TOKENS = {
@@ -39,6 +51,44 @@ const TOKENS = {
   137: [
     { symbol: 'MATIC', decimals: 18, address: null },
     { symbol: 'USDC',  decimals: 6,  address: '0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359' },
+  ],
+  56: [
+    { symbol: 'BNB',  decimals: 18, address: null },
+    { symbol: 'USDC', decimals: 18, address: '0x8AC76a51cc950d9822D68b83fE1Ad97B32Cd580d' },
+    { symbol: 'USDT', decimals: 18, address: '0x55d398326f99059fF775485246999027B3197955' },
+  ],
+  324: [
+    { symbol: 'ETH', decimals: 18, address: null },
+  ],
+  59144: [
+    { symbol: 'ETH', decimals: 18, address: null },
+  ],
+  34443: [
+    { symbol: 'ETH', decimals: 18, address: null },
+  ],
+  534352: [
+    { symbol: 'ETH', decimals: 18, address: null },
+  ],
+  81457: [
+    { symbol: 'ETH', decimals: 18, address: null },
+  ],
+  130: [
+    { symbol: 'ETH', decimals: 18, address: null },
+  ],
+  57073: [
+    { symbol: 'ETH', decimals: 18, address: null },
+  ],
+  1868: [
+    { symbol: 'ETH', decimals: 18, address: null },
+  ],
+  480: [
+    { symbol: 'ETH', decimals: 18, address: null },
+  ],
+  1135: [
+    { symbol: 'ETH', decimals: 18, address: null },
+  ],
+  7777777: [
+    { symbol: 'ETH', decimals: 18, address: null },
   ],
 };
 

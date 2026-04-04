@@ -248,11 +248,26 @@ tailwind.config = {
 // ── Config ──
 const TW = 'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains';
 const CHAINS = {
-  1:     { name:'Ethereum', slug:'ethereum', color:'#627EEA' },
-  42161: { name:'Arbitrum', slug:'arbitrum', color:'#28A0F0' },
-  8453:  { name:'Base',     slug:'base',     color:'#0052FF' },
-  10:    { name:'Optimism', slug:'optimism', color:'#FF0420' },
-  137:   { name:'Polygon',  slug:'polygon',  color:'#8247E5' },
+  1:     { name:'Ethereum',  slug:'ethereum' },
+  42161: { name:'Arbitrum',  slug:'arbitrum' },
+  8453:  { name:'Base',      slug:'base' },
+  10:    { name:'Optimism',  slug:'optimism' },
+  137:   { name:'Polygon',   slug:'polygon' },
+  56:    { name:'BNB Chain', slug:'binance' },
+  324:   { name:'zkSync Era',slug:'zksync-era' },
+  59144: { name:'Linea',     slug:'linea' },
+  34443: { name:'Mode',      slug:'mode' },
+  1135:  { name:'Lisk',      slug:'lisk' },
+  480:   { name:'World Chain',slug:'world-chain' },
+  81457: { name:'Blast',     slug:'blast' },
+  534352:{ name:'Scroll',    slug:'scroll' },
+  7777777:{ name:'Zora',     slug:'zora' },
+  130:   { name:'Unichain',  slug:'unichain' },
+  57073: { name:'Ink',       slug:'ink' },
+  1868:  { name:'Soneium',   slug:'soneium' },
+  999:   { name:'HyperEVM',  slug:'hyperliquid' },
+  232:   { name:'Lens',      slug:'lens' },
+  288:   { name:'Boba',      slug:'boba' },
 };
 function chainIcon(chainId) {
   const c = CHAINS[chainId];
