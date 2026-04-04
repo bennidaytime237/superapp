@@ -64,7 +64,7 @@ tailwind.config = {
   <!-- Title -->
   <div class="mb-6">
     <h2 class="text-2xl font-black text-on-background">Top up gas</h2>
-    <p class="text-sm text-on-surface-variant mt-1">Distribute ETH across chains in one go</p>
+    <p class="text-sm text-on-surface-variant mt-1">Receive native ETH for gas on each chain</p>
   </div>
 
   <!-- Source -->
@@ -329,7 +329,7 @@ function renderChains() {
         ${isSelf ? '<p class="text-xs text-on-surface-variant">Source chain</p>' : ''}
       </div>
       <div class="text-right">
-        ${active ? `<p class="text-sm font-bold text-on-background">${fmt(perChain)} ${sourceToken().symbol}</p><p class="text-xs text-on-surface-variant">≈ $${fmt(perUsd)}</p>` : ''}
+        ${active ? `<p class="text-sm font-bold text-on-background">≈ $${fmt(perUsd)} of ETH</p>` : ''}
       </div>
       <div class="w-6 h-6 rounded-md border-2 flex items-center justify-center flex-shrink-0 ${active ? 'border-primary bg-primary' : 'border-outline-variant/30'}">
         ${active ? '<span class="material-symbols-outlined text-on-primary text-sm">check</span>' : ''}
@@ -345,8 +345,10 @@ function onAmountChange() {
 
   const sp = prices[sourceToken().symbol] || 0;
   document.getElementById('summary-total').textContent = `${fmt(total)} ${sourceToken().symbol} ≈ $${fmt(total * sp)}`;
+  const ethP = prices.ETH || 0;
+  const ethPerChain = sp && ethP ? (perChain * sp / ethP) : 0;
   document.getElementById('summary-per').textContent = selected.length > 0
-    ? `${fmt(perChain)} ${sourceToken().symbol} × ${selected.length} chains`
+    ? `≈ ${fmt(ethPerChain)} ETH × ${selected.length} chains`
     : 'Select chains';
 
   renderChains();
