@@ -325,21 +325,20 @@ const UNI_QUOTER = '0x61fFE014bA17989E743c5F6cB21bF9697530B21e';
 const UNI_RPCS = {
   1:'https://eth.drpc.org', 42161:'https://arb1.arbitrum.io/rpc',
   8453:'https://mainnet.base.org', 10:'https://mainnet.optimism.io', 137:'https://polygon-rpc.com',
+  56:'https://bsc-dataseed.binance.org', 81457:'https://rpc.blast.io',
+  534352:'https://rpc.scroll.io', 7777777:'https://rpc.zora.energy',
 };
 // QuoterV2.quoteExactInputSingle(QuoteExactInputSingleParams)
-// struct: (address tokenIn, address tokenOut, uint256 amountIn, uint24 fee, uint160 sqrtPriceLimitX96)
-// This is a struct param so ABI-encoded with an offset pointer
+// Static-only tuple is encoded inline (no offset pointer needed)
 function encodeQuoteExactInputSingle(tokenIn, tokenOut, amountIn, fee) {
   const pAddr = (a) => a.toLowerCase().replace('0x','').padStart(64,'0');
   const pUint = (v) => BigInt(v).toString(16).padStart(64,'0');
-  // QuoterV2.quoteExactInputSingle(QuoteExactInputSingleParams)
-  // Struct fields encoded inline (no offset pointer for single struct param)
   return '0xc6a5026a'
     + pAddr(tokenIn)
     + pAddr(tokenOut)
     + pUint(amountIn)
     + pUint(fee)
-    + pUint(0);  // sqrtPriceLimitX96
+    + pUint(0);              // sqrtPriceLimitX96
 }
 async function uniRpcCall(chainId, to, data) {
   const url = UNI_RPCS[chainId];
@@ -491,7 +490,10 @@ let showAllChains = false;
 
 function buildChainGrid(chainsToShow) {
   const grid = document.getElementById('chain-grid');
-  const list = chainsToShow || (showAllChains ? CHAINS.filter(c => !c.virtual) : CHAINS.filter(c => !c.virtual).slice(0, 11));
+  let defaultList = CHAINS.filter(c => !c.virtual);
+  // In swap mode, only show chains where Uniswap is available
+  if (mode === 'swap') defaultList = defaultList.filter(c => isUniswapChain(c.id));
+  const list = chainsToShow || (showAllChains ? defaultList : defaultList.slice(0, 11));
   grid.innerHTML = `<button onclick="setChainFilter(null)" class="flex flex-col items-center justify-center w-12 h-12 rounded-xl text-[10px] font-bold transition-colors ${modalChainFilter === null ? 'bg-primary text-on-primary' : 'bg-surface-container-low text-on-surface-variant hover:bg-surface-container-high'}">All</button>` +
     list.map(c => {
       const active = modalChainFilter === c.id;
@@ -523,14 +525,19 @@ function setChainFilter(chainId) {
   filterTokenList();
 }
 
+// Chains where Uniswap is available (has router + RPC)
+function isUniswapChain(chainId) { return !!(UNI_ROUTERS[chainId] && UNI_RPCS[chainId]); }
+
 function buildTokenList() {
   allModalRows = [];
   CHAINS.forEach((chain) => {
     if (chain.virtual) return;
-    // In swap mode, only show tokens on the current chain
+    // In swap mode, only show tokens on the current from-chain (same-chain swap)
     if (mode === 'swap') {
-      const currentChainId = pickerSide === 'from' ? CHAINS[fromChainIdx].id : CHAINS[fromChainIdx].id;
+      const currentChainId = CHAINS[fromChainIdx].id;
       if (chain.id !== currentChainId) return;
+      // Skip if Uniswap not available on this chain
+      if (!isUniswapChain(chain.id)) return;
     }
     TOKENS.forEach((token, tIdx) => {
       if (!token.symbol) return;
@@ -694,8 +701,11 @@ function setMode(m) {
     ? 'tab-active px-6 py-2 rounded-full text-sm font-bold transition-all'
     : 'px-6 py-2 rounded-full text-sm font-bold text-on-surface-variant transition-all';
   document.getElementById('mode-badge').textContent = m === 'swap' ? 'via Uniswap' : 'via Across';
-  // In swap mode, force same chain
+  // In swap mode, force same chain; switch to Ethereum if current chain has no Uniswap
   if (m === 'swap') {
+    if (!isUniswapChain(CHAINS[fromChainIdx].id)) {
+      fromChainIdx = 0; // Ethereum
+    }
     toChainIdx = fromChainIdx;
   }
   // In bridge mode, ensure different chains

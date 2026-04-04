@@ -1,22 +1,9 @@
 {
-  "name": "superapp",
-  "version": "0.1.0",
-  "description": "Unified crypto mega-app: Across Protocol + MoonPay for AI-native cross-chain operations",
-  "type": "module",
-  "main": "dist/index.js",
+  "name": "sage",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Unified crypto superapp — Swap (Uniswap), Bridge (Across), Buy/Sell (MoonPay), Gas top-up",
   "scripts": {
-    "build": "tsc --noEmit || true",
-    "dev": "tsx src/router/index.ts",
-    "test": "vitest"
-  },
-  "dependencies": {
-    "@across-protocol/app-sdk": "^0.1.0",
-    "viem": "^2.0.0"
-  },
-  "devDependencies": {
-    "@types/node": "^22.0.0",
-    "tsx": "^4.0.0",
-    "typescript": "^5.5.0",
-    "vitest": "^2.0.0"
+    "build": "echo 'Static site — no build step required'"
   }
 }
