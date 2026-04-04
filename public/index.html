@@ -348,7 +348,7 @@ async function onConnected() {
 
   // Fetch data in parallel
   renderActivity();
-  await Promise.all([fetchPrices(), fetchBalances(), fetchOnchainActivity()]);
+  await Promise.all([fetchPrices(), fetchBalances()]);
 }
 
 // ── Prices ──
@@ -560,30 +560,11 @@ function fmtNum(n) {
   return n.toLocaleString('en-US', { maximumFractionDigits: 6 });
 }
 
-let onchainTxs = [];
-
-async function fetchOnchainActivity() {
-  if (!walletAddress) return;
-  try {
-    const res = await fetch(`/api/history?address=${walletAddress}`);
-    if (!res.ok) return;
-    onchainTxs = await res.json();
-    renderActivity();
-  } catch {}
-}
-
 function renderActivity() {
   const feed = document.getElementById('activity-feed');
   let history = [];
   const historyKey = 'sage_tx_' + (walletAddress || 'unknown').toLowerCase();
   try { history = JSON.parse(localStorage.getItem(historyKey) || '[]'); } catch {}
-
-  // Merge onchain txs
-  const localHashes = new Set(history.map(t => t.txHash).filter(Boolean));
-  for (const otx of onchainTxs) {
-    if (localHashes.has(otx.txHash)) continue;
-    history.push({ type:otx.type, fromToken:otx.type==='bridge'?'Bridge':'Swap', toToken:'', fromChain:otx.chainName, toChain:'', fromChainId:otx.chainId, amount:otx.value?(Number(otx.value)/1e18).toFixed(6):'', timestamp:otx.timestamp, txHash:otx.txHash, time:0 });
-  }
   history.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
 
   if (history.length === 0) {
