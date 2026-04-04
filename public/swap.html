@@ -1148,49 +1148,93 @@ async function executeUniswapSwap(q) {
   const pAddr = (a) => a.toLowerCase().replace('0x','').padStart(64,'0');
   const pUint = (v) => BigInt(v).toString(16).padStart(64,'0');
   const fromToken = TOKENS[fromTokenIdx];
+  const toToken = TOKENS[toTokenIdx];
   const amountOutMin = BigInt(q.outputWei) * 95n / 100n;
   const router = getSwapRouter(q.chainId);
   const deadline = BigInt(Math.floor(Date.now() / 1000) + 1800);
   const chainHex = '0x' + q.chainId.toString(16);
   const value = fromToken.native ? '0x' + BigInt(q.amountWei).toString(16) : '0x0';
 
-  // Universal Router v2: execute(bytes commands, bytes[] inputs, uint256 deadline)
-  // Command 0x00 = V3_SWAP_EXACT_IN
-  // Input: (address recipient, uint256 amountIn, uint256 amountOutMin, bytes path, bool payerIsUser)
-  // Path encoding: tokenIn (20 bytes) + fee (3 bytes) + tokenOut (20 bytes)
+  // If output is native ETH, swap to router first then unwrap
+  const outputIsNative = toToken.native;
+  // ADDRESS_THIS = 0x02 means "send to the router itself"
+  const swapRecipient = outputIsNative
+    ? '0x0000000000000000000000000000000000000002'
+    : walletAddress;
+
+  // Path: tokenIn(20) + fee(3) + tokenOut(20)
   const pathHex = q.tokenIn.slice(2).toLowerCase()
     + q.fee.toString(16).padStart(6, '0')
     + q.tokenOut.slice(2).toLowerCase();
   const pathBytes = pathHex.length / 2;
 
-  // Encode the V3_SWAP_EXACT_IN input
-  const input = pAddr(walletAddress)               // recipient
-    + pUint(q.amountWei)                            // amountIn
-    + pUint(amountOutMin)                           // amountOutMin
-    + pUint(160)                                    // offset to path bytes
-    + pUint(1)                                      // payerIsUser = true
-    + pUint(pathBytes)                              // path length
-    + pathHex + '0'.repeat((32 - pathBytes % 32) % 32 * 2); // path padded
+  // Encode V3_SWAP_EXACT_IN input
+  const swapInput = pAddr(swapRecipient)
+    + pUint(q.amountWei)
+    + pUint(amountOutMin)
+    + pUint(160)                      // offset to path
+    + pUint(1)                        // payerIsUser = true
+    + pUint(pathBytes)
+    + pathHex + '0'.repeat((32 - pathBytes % 32) % 32 * 2);
 
-  const inputHex = input;
-  const inputBytes = inputHex.length / 2;
+  // Encode UNWRAP_WETH input: (address recipient, uint256 amountMin)
+  const unwrapInput = pAddr(walletAddress) + pUint(amountOutMin);
+
+  // Build commands + inputs
+  let commands, inputs;
+  if (outputIsNative) {
+    // Two commands: V3_SWAP_EXACT_IN (0x00) + UNWRAP_WETH (0x0c)
+    commands = '000c';
+    inputs = [swapInput, unwrapInput];
+  } else {
+    commands = '00';
+    inputs = [swapInput];
+  }
+
+  const commandsLen = commands.length / 2;
+  const commandsPadded = commands + '0'.repeat(64 - commands.length);
 
   // Encode execute(bytes commands, bytes[] inputs, uint256 deadline)
-  // selector: 0x3593564c
-  const commands = '00'; // single command: V3_SWAP_EXACT_IN
-  const commandsLen = 1;
-  const commandsPadded = commands + '0'.repeat(62);
+  // ABI: offset_commands, offset_inputs, deadline, commands_len, commands, inputs_count, [offsets], [lengths+data]
+  let inputsEncoded = pUint(inputs.length); // array length
+  // Calculate offsets for each input
+  let inputDataOffset = inputs.length * 32; // after all offset words
+  let offsets = '';
+  let datas = '';
+  for (const inp of inputs) {
+    offsets += pUint(inputDataOffset);
+    const inpBytes = inp.length / 2;
+    datas += pUint(inpBytes) + inp;
+    inputDataOffset += 32 + inp.length / 2 * 2 / 2 * 2; // length word + data
+    // Actually: 32 bytes for length + padded data bytes
+    inputDataOffset = inputs.length * 32; // recalc below
+  }
+  // Simpler: build inputs section properly
+  inputsEncoded = pUint(inputs.length);
+  let inputOffsets = '';
+  let inputBodies = '';
+  let runningOffset = inputs.length * 32;
+  for (const inp of inputs) {
+    inputOffsets += pUint(runningOffset);
+    const len = inp.length / 2;
+    inputBodies += pUint(len) + inp;
+    runningOffset += 32 + Math.ceil(len / 32) * 32;
+  }
+
+  const commandsSection = pUint(commandsLen) + commandsPadded;
+  const inputsSection = inputsEncoded + inputOffsets + inputBodies;
+
+  // Top-level: offset_commands(32) + offset_inputs(32) + deadline(32) = 96 bytes header
+  const commandsSectionBytes = 32 + 32; // length + padded data
+  const commandsOffset = 96; // after 3 header words
+  const inputsOffset = commandsOffset + commandsSectionBytes;
 
   const data = '0x3593564c'
-    + pUint(96)                       // offset to commands
-    + pUint(128 + 32)                 // offset to inputs array (after commands)
-    + pUint(deadline)                 // deadline
-    + pUint(commandsLen)              // commands length
-    + commandsPadded                  // commands bytes (padded to 32)
-    + pUint(1)                        // inputs array length (1 input)
-    + pUint(32)                       // offset to first input
-    + pUint(inputBytes)               // input length
-    + inputHex;                       // input data
+    + pUint(commandsOffset)
+    + pUint(inputsOffset)
+    + pUint(deadline)
+    + commandsSection
+    + inputsSection;
 
   return window.ethereum.request({
     method: 'eth_sendTransaction',
