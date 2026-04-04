@@ -35,6 +35,7 @@ tailwind.config = {
 <style>
   body { font-family: 'Outfit', sans-serif; }
   .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+  .tab-active { background: white; color: #2f3a33; box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
   input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
   input[type=number] { -moz-appearance: textfield; }
   html { height: 100%; }
@@ -61,6 +62,15 @@ tailwind.config = {
 
 <!-- Main -->
 <main class="w-full max-w-[640px] mx-auto px-8 py-6 flex-1 flex flex-col justify-center min-h-0">
+
+  <!-- Mode Tabs -->
+  <div class="flex items-center justify-between mb-5">
+    <div class="inline-flex bg-surface-container-low rounded-full p-1 gap-1">
+      <button id="tab-swap" onclick="setMode('swap')" class="tab-active px-6 py-2 rounded-full text-sm font-bold transition-all">Swap</button>
+      <button id="tab-bridge" onclick="setMode('bridge')" class="px-6 py-2 rounded-full text-sm font-bold text-on-surface-variant transition-all">Bridge</button>
+    </div>
+    <span id="mode-badge" class="text-xs text-on-surface-variant">via Uniswap</span>
+  </div>
 
   <!-- Rate pill — right aligned -->
   <div class="flex justify-end mb-5">
@@ -343,6 +353,7 @@ async function uniRpcCall(chainId, to, data) {
 }
 
 // ── State ──
+let mode = 'swap'; // 'swap' = same-chain Uniswap, 'bridge' = crosschain Across
 let fromChainIdx = 0, toChainIdx = 1;
 let fromTokenIdx = 0, toTokenIdx = 1;
 let slippage = 'auto';
@@ -516,6 +527,11 @@ function buildTokenList() {
   allModalRows = [];
   CHAINS.forEach((chain) => {
     if (chain.virtual) return;
+    // In swap mode, only show tokens on the current chain
+    if (mode === 'swap') {
+      const currentChainId = pickerSide === 'from' ? CHAINS[fromChainIdx].id : CHAINS[fromChainIdx].id;
+      if (chain.id !== currentChainId) return;
+    }
     TOKENS.forEach((token, tIdx) => {
       if (!token.symbol) return;
       const hasAddr = token.native
@@ -595,14 +611,20 @@ function selectToken(tokenIdx, chainId) {
   if (pickerSide === 'from') {
     fromTokenIdx = tokenIdx;
     if (chainIdx >= 0) fromChainIdx = chainIdx;
+    // Swap mode: force same chain on both sides
+    if (mode === 'swap') toChainIdx = fromChainIdx;
     if (fromTokenIdx === toTokenIdx && fromChainIdx === toChainIdx) {
-      toChainIdx = (toChainIdx + 1) % CHAINS.length;
+      toTokenIdx = (toTokenIdx + 1) % TOKENS.length;
     }
   } else {
     toTokenIdx = tokenIdx;
     if (chainIdx >= 0) toChainIdx = chainIdx;
+    // Swap mode: force same chain on both sides
+    if (mode === 'swap') fromChainIdx = toChainIdx;
+    // Bridge mode: can't be same chain+token
     if (fromTokenIdx === toTokenIdx && fromChainIdx === toChainIdx) {
-      fromChainIdx = (fromChainIdx + 1) % CHAINS.length;
+      if (mode === 'bridge') toChainIdx = (toChainIdx + 1) % CHAINS.length;
+      else toTokenIdx = (toTokenIdx + 1) % TOKENS.length;
     }
   }
   closeTokenModal();
@@ -663,10 +685,36 @@ function updateRate() {
 
 function isSameChain() { return !CHAINS[toChainIdx]?.virtual && fromChainIdx === toChainIdx; }
 
+function setMode(m) {
+  mode = m;
+  document.getElementById('tab-swap').className = m === 'swap'
+    ? 'tab-active px-6 py-2 rounded-full text-sm font-bold transition-all'
+    : 'px-6 py-2 rounded-full text-sm font-bold text-on-surface-variant transition-all';
+  document.getElementById('tab-bridge').className = m === 'bridge'
+    ? 'tab-active px-6 py-2 rounded-full text-sm font-bold transition-all'
+    : 'px-6 py-2 rounded-full text-sm font-bold text-on-surface-variant transition-all';
+  document.getElementById('mode-badge').textContent = m === 'swap' ? 'via Uniswap' : 'via Across';
+  // In swap mode, force same chain
+  if (m === 'swap') {
+    toChainIdx = fromChainIdx;
+  }
+  // In bridge mode, ensure different chains
+  if (m === 'bridge' && fromChainIdx === toChainIdx) {
+    toChainIdx = (fromChainIdx + 1) % CHAINS.length;
+    if (CHAINS[toChainIdx]?.virtual) toChainIdx = (toChainIdx + 1) % CHAINS.length;
+  }
+  updateTokenDisplay();
+  updateRoute();
+  updateBalance();
+  onAmountChange();
+}
+
 function updateRoute() {
-  document.getElementById('fee-route').textContent = isSameChain()
-    ? CHAINS[fromChainIdx].name
-    : `${CHAINS[fromChainIdx].name} → ${CHAINS[toChainIdx].name}`;
+  if (mode === 'swap') {
+    document.getElementById('fee-route').textContent = `${CHAINS[fromChainIdx].name} · Uniswap`;
+  } else {
+    document.getElementById('fee-route').textContent = `${CHAINS[fromChainIdx].name} → ${CHAINS[toChainIdx].name} · Across`;
+  }
 }
 
 let routeAvailable = false;
@@ -687,7 +735,7 @@ function updateActionBtn() {
     btn.className = 'w-full py-4 bg-surface-container-high text-on-surface-variant/50 rounded-full font-black text-lg cursor-not-allowed';
     btn.disabled = true;
   } else {
-    btn.textContent = isHyperliquidDest() ? 'Deposit to Hyperliquid' : isSameChain() ? 'Swap' : 'Bridge';
+    btn.textContent = isHyperliquidDest() ? 'Deposit to Hyperliquid' : mode === 'swap' ? 'Swap' : 'Bridge';
     btn.className = 'w-full py-4 bg-primary text-on-primary rounded-full font-black text-lg active:scale-[0.98] transition-transform';
     btn.disabled = false;
   }
@@ -749,7 +797,7 @@ function onAmountChange() {
   }
   // Fetch best route
   document.getElementById('fee-display').textContent = '...';
-  document.getElementById('fee-route').textContent = 'Finding best route...';
+  document.getElementById('fee-route').textContent = mode === 'swap' ? 'Fetching Uniswap quote...' : 'Fetching Across quote...';
   quoteTimer = setTimeout(() => fetchBestQuote(val), 300);
 }
 
@@ -766,26 +814,27 @@ async function fetchBestQuote(amount) {
 
   const candidates = [];
 
-  // Hyperliquid deposit — route via Across to Arbitrum with embedded action
-  if (isHyperliquidDest()) {
-    try {
-      const hlResult = await fetchHyperliquidQuote(originChain, fromToken, amountWei);
-      if (hlResult) candidates.push(hlResult);
-    } catch (e) { console.warn('Hyperliquid quote failed:', e); }
-  }
-  // 1) Uniswap (same-chain only)
-  else if (sameChain && fromToken.symbol !== toToken.symbol) {
-    try {
-      const uniResult = await fetchUniswapQuote(originChain, fromToken, toToken, amountWei);
-      if (uniResult) candidates.push(uniResult);
-    } catch (e) { console.warn('Uniswap quote failed:', e); }
-  }
-  // 2) Across (crosschain only)
-  else if (!sameChain) {
-    try {
-      const acrossResult = await fetchAcrossQuote(originChain, destChain, fromToken, toToken, amountWei);
-      if (acrossResult) candidates.push(acrossResult);
-    } catch (e) { console.warn('Across quote failed:', e); }
+  if (mode === 'swap') {
+    // Same-chain only via Uniswap
+    if (fromToken.symbol !== toToken.symbol) {
+      try {
+        const uniResult = await fetchUniswapQuote(originChain, fromToken, toToken, amountWei);
+        if (uniResult) candidates.push(uniResult);
+      } catch (e) { console.warn('Uniswap quote failed:', e); }
+    }
+  } else {
+    // Bridge mode — Across only
+    if (isHyperliquidDest()) {
+      try {
+        const hlResult = await fetchHyperliquidQuote(originChain, fromToken, amountWei);
+        if (hlResult) candidates.push(hlResult);
+      } catch (e) { console.warn('Hyperliquid quote failed:', e); }
+    } else {
+      try {
+        const acrossResult = await fetchAcrossQuote(originChain, destChain, fromToken, toToken, amountWei);
+        if (acrossResult) candidates.push(acrossResult);
+      } catch (e) { console.warn('Across quote failed:', e); }
+    }
   }
 
 
@@ -1004,7 +1053,7 @@ function showTxSuccess(summary, elapsedSec, txHash, chainId) {
     const historyKey = 'sage_tx_' + (walletAddress || 'unknown').toLowerCase();
     const history = JSON.parse(localStorage.getItem(historyKey) || '[]');
     history.unshift({
-      type: lastQuote?._routeType === 'across' || lastQuote?._routeType === 'hyperliquid' ? 'bridge' : 'swap',
+      type: mode === 'bridge' ? 'bridge' : 'swap',
       summary,
       time: elapsedSec,
       fromToken: TOKENS[fromTokenIdx].symbol,
