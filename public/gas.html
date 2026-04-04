@@ -136,9 +136,6 @@ tailwind.config = {
 const TW = 'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains';
 const ACROSS_API = 'https://app.across.to/api';
 
-const MULTICALL3 = '0xcA11bde05977b3631167028862bE2a173976CA11';
-// aggregate3: function aggregate3((address target, bool allowFailure, bytes callData)[])
-// selector: 0x82ad56cb
 
 const SOURCE_CHAINS = [
   { chainId:8453, name:'Base', slug:'base' },
@@ -421,33 +418,13 @@ async function executeGas() {
     const swapTxs = quotes.map(q => q.swapTx).filter(Boolean);
     if (swapTxs.length === 0) throw new Error('No swap transactions');
 
-    btn.textContent = 'Confirm in wallet...';
+    btn.textContent = `Sending ${swapTxs.length} bridges...`;
 
-    if (swapTxs.length === 1) {
-      // Single bridge, no need for multicall
-      await sendTx(swapTxs[0]);
-    } else {
-      // Encode Multicall3.aggregate3 call
-      const totalValue = swapTxs.reduce((sum, tx) => sum + BigInt(tx.value || '0'), 0n);
-      const multicallData = encodeMulticall3(swapTxs);
-      const chainHex = '0x' + sc.chainId.toString(16);
-
-      // Switch chain if needed
-      const current = await window.ethereum.request({ method:'eth_chainId' });
-      if (current !== chainHex) {
-        await window.ethereum.request({ method:'wallet_switchEthereumChain', params:[{chainId:chainHex}] });
-      }
-
-      await window.ethereum.request({
-        method:'eth_sendTransaction',
-        params:[{
-          from: walletAddress,
-          to: MULTICALL3,
-          data: multicallData,
-          value: totalValue > 0n ? '0x' + totalValue.toString(16) : '0x0',
-          chainId: chainHex,
-        }],
-      });
+    let sent = 0;
+    for (const tx of swapTxs) {
+      sent++;
+      btn.textContent = `Bridge ${sent}/${swapTxs.length} — confirm in wallet`;
+      await sendTx(tx);
     }
 
     btn.textContent = `Sent to ${selected.length} chains!`;
@@ -475,53 +452,6 @@ async function executeGas() {
   }
 }
 
-// Encode Multicall3.aggregate3(Call3[])
-// Call3: { target: address, allowFailure: bool, callData: bytes }
-function encodeMulticall3(txs) {
-  const pad = (v, n=64) => v.replace('0x','').padStart(n,'0');
-  const padNum = (v, n=64) => BigInt(v).toString(16).padStart(n,'0');
-
-  // aggregate3 selector
-  let encoded = '0x82ad56cb';
-  // offset to array
-  encoded += padNum(32);
-  // array length
-  encoded += padNum(txs.length);
-
-  // First pass: calculate offsets for each Call3 struct
-  // Each Call3 is: target (32) + allowFailure (32) + offset to callData (32) = 96 bytes header
-  // Plus dynamic callData
-  const headerSize = txs.length * 32; // offsets to each struct
-  let structsOffset = 0;
-  const structOffsets = [];
-  const structs = [];
-
-  for (const tx of txs) {
-    structOffsets.push(structsOffset);
-    const callData = tx.data.replace('0x','');
-    const callDataPadded = callData + '0'.repeat((32 - (callData.length / 2) % 32) % 32 * 2);
-    const structSize = 32 + 32 + 32 + 32 + Math.ceil(callData.length / 2 / 32) * 32;
-    structs.push({ target: tx.to, callData, callDataLen: callData.length / 2, callDataPadded });
-    structsOffset += structSize;
-  }
-
-  // Offsets to each struct
-  const baseOffset = txs.length * 32;
-  for (let i = 0; i < txs.length; i++) {
-    encoded += padNum(baseOffset + structOffsets[i]);
-  }
-
-  // Structs
-  for (const s of structs) {
-    encoded += pad(s.target); // target address
-    encoded += padNum(0); // allowFailure = false
-    encoded += padNum(64); // offset to callData within struct
-    encoded += padNum(s.callDataLen); // callData length
-    encoded += s.callDataPadded; // callData bytes
-  }
-
-  return encoded;
-}
 
 async function sendTx(tx) {
   const chainHex = '0x' + tx.chainId.toString(16);
