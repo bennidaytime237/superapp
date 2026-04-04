@@ -272,7 +272,9 @@ const CHAINS = {
   999:   { name:'HyperEVM',  slug:'hyperliquid%20evm' },
   232:   { name:'Lens',      slug:'lens%20network' },
 };
+const CHAIN_ICONS = {1:'https://icons.llamao.fi/icons/chains/rsz_ethereum.jpg',42161:'https://icons.llamao.fi/icons/chains/rsz_arbitrum.jpg',8453:'https://icons.llamao.fi/icons/chains/rsz_base.jpg',10:'https://icons.llamao.fi/icons/chains/rsz_optimism.jpg',137:'https://icons.llamao.fi/icons/chains/rsz_polygon.jpg',56:'https://icons.llamao.fi/icons/chains/rsz_bsc.jpg',324:'https://icons.llamao.fi/icons/chains/rsz_zksync%20era.jpg',59144:'https://icons.llamao.fi/icons/chains/rsz_linea.jpg',34443:'https://icons.llamao.fi/icons/chains/rsz_mode.jpg',1135:'https://icons.llamao.fi/icons/chains/rsz_lisk.jpg',480:'https://icons.llamao.fi/icons/chains/rsz_world%20chain.jpg',81457:'https://icons.llamao.fi/icons/chains/rsz_blast.jpg',534352:'https://icons.llamao.fi/icons/chains/rsz_scroll.jpg',7777777:'https://icons.llamao.fi/icons/chains/rsz_zora.jpg',130:'https://raw.githubusercontent.com/Uniswap/assets/master/blockchains/unichain/info/logo.png',57073:'https://icons.llamao.fi/icons/chains/rsz_ink.jpg',1868:'https://icons.llamao.fi/icons/chains/rsz_soneium.jpg',999:'https://icons.llamao.fi/icons/chains/rsz_hyperliquid.jpg',232:'https://icons.llamao.fi/icons/chains/rsz_lens%20network.jpg'};
 function chainIcon(chainId) {
+  if (CHAIN_ICONS[chainId]) return CHAIN_ICONS[chainId];
   const c = CHAINS[chainId];
   if (!c) return '';
   return `https://icons.llamao.fi/icons/chains/rsz_${c.slug}.jpg`;
