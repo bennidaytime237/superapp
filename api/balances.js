@@ -4,18 +4,20 @@ function encodeBalanceOf(address) {
   return '0x70a08231' + addr;
 }
 
-const RPCS = {
-  1:     'https://eth.llamarpc.com',
-  42161: 'https://arb1.arbitrum.io/rpc',
-  8453:  'https://mainnet.base.org',
-  10:    'https://mainnet.optimism.io',
-  137:   'https://polygon-rpc.com',
+// Multiple RPCs per chain for reliability
+const RPC_LIST = {
+  1:     ['https://eth.drpc.org', 'https://rpc.ankr.com/eth', 'https://eth.llamarpc.com', 'https://cloudflare-eth.com'],
+  42161: ['https://arb1.arbitrum.io/rpc', 'https://rpc.ankr.com/arbitrum'],
+  8453:  ['https://mainnet.base.org', 'https://base.drpc.org'],
+  10:    ['https://mainnet.optimism.io', 'https://rpc.ankr.com/optimism'],
+  137:   ['https://polygon-rpc.com', 'https://rpc.ankr.com/polygon'],
 };
 
 const TOKENS = {
   1: [
     { symbol: 'ETH',  decimals: 18, address: null },
     { symbol: 'USDC', decimals: 6,  address: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48' },
+    { symbol: 'USDT', decimals: 6,  address: '0xdAC17F958D2ee523a2206206994597C13D831ec7' },
     { symbol: 'WBTC', decimals: 8,  address: '0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599' },
     { symbol: 'DAI',  decimals: 18, address: '0x6B175474E89094C44Da98b954EedeAC495271d0F' },
     { symbol: 'WETH', decimals: 18, address: '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2' },
@@ -40,18 +42,29 @@ const TOKENS = {
   ],
 };
 
-async function rpc(url, method, params) {
-  const res = await fetch(url, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ jsonrpc: '2.0', id: 1, method, params }),
-  });
-  const json = await res.json();
-  return json.result;
+async function rpc(urls, method, params) {
+  // Try each RPC until one works
+  if (typeof urls === 'string') urls = [urls];
+  for (const url of urls) {
+    try {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 5000);
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ jsonrpc: '2.0', id: 1, method, params }),
+        signal: controller.signal,
+      });
+      clearTimeout(timeout);
+      const json = await res.json();
+      if (json.result !== undefined) return json.result;
+    } catch {}
+  }
+  return null;
 }
 
 function fromHex(hex, decimals) {
-  if (!hex || hex === '0x') return 0;
+  if (!hex || hex === '0x' || hex === '0x0' || hex === null) return 0;
   const raw = BigInt(hex);
   const divisor = BigInt(10 ** decimals);
   const whole = raw / divisor;
@@ -69,7 +82,7 @@ export default async function handler(req, res) {
   const results = {};
 
   await Promise.all(
-    Object.entries(RPCS).map(async ([chainIdStr, rpcUrl]) => {
+    Object.entries(RPC_LIST).map(async ([chainIdStr, rpcUrls]) => {
       const chainId = Number(chainIdStr);
       const tokens = TOKENS[chainId] || [];
       const chainBalances = {};
@@ -78,9 +91,9 @@ export default async function handler(req, res) {
         try {
           let raw;
           if (!token.address) {
-            raw = await rpc(rpcUrl, 'eth_getBalance', [address, 'latest']);
+            raw = await rpc(rpcUrls, 'eth_getBalance', [address, 'latest']);
           } else {
-            raw = await rpc(rpcUrl, 'eth_call', [
+            raw = await rpc(rpcUrls, 'eth_call', [
               { to: token.address, data: encodeBalanceOf(address) },
               'latest',
             ]);
