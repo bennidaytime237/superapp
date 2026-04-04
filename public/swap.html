@@ -343,8 +343,10 @@ function tokenIconUrl(token, chainId) {
   return '';
 }
 function chainLogoUrl(chainId) {
+  const LLAMA = 'https://icons.llamao.fi/icons/chains/rsz_';
   const c = CHAINS.find(c=>c.id===chainId);
-  return c ? `${TW}/${c.slug}/info/logo.png` : '';
+  if (!c) return '';
+  return `${LLAMA}${c.slug}.jpg`;
 }
 
 // ── Wallet ──
@@ -420,7 +422,7 @@ function buildChainGrid() {
     top10.map(c => {
       const active = modalChainFilter === c.id;
       return `<button onclick="setChainFilter(${c.id})" class="flex flex-col items-center justify-center w-12 h-12 rounded-xl transition-colors ${active ? 'bg-primary' : 'bg-surface-container-low hover:bg-surface-container-high'}" title="${c.name}">
-        <img src="${TW}/${c.slug}/info/logo.png" class="w-6 h-6 rounded-full" onerror="this.style.display='none'"/>
+        <img src="https://icons.llamao.fi/icons/chains/rsz_${c.slug}.jpg" class="w-6 h-6 rounded-full" onerror="this.src='${TW}/${c.slug}/info/logo.png'"/>
       </button>`;
     }).join('');
 }
@@ -470,7 +472,7 @@ function renderModalRows(rows) {
     const isSelected = selToken.symbol === token.symbol && selChain.id === chain.id;
     const highlight = isSelected ? 'bg-primary-container/20' : 'hover:bg-surface-container-low';
     const tIcon = tokenIconUrl(token, chain.id);
-    const cIcon = `${TW}/${chain.slug}/info/logo.png`;
+    const cIcon = `https://icons.llamao.fi/icons/chains/rsz_${chain.slug}.jpg`;
 
     return `<button onclick="selectToken(${tIdx}, ${chain.id})" class="w-full flex items-center gap-3 px-4 py-3 ${highlight} rounded-xl transition-colors text-left" data-search="${token.symbol} ${token.name} ${chain.name}">
       <div class="relative flex-shrink-0">

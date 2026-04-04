@@ -256,7 +256,8 @@ const CHAINS = {
 };
 function chainIcon(chainId) {
   const c = CHAINS[chainId];
-  return c ? `${TW}/${c.slug}/info/logo.png` : '';
+  if (!c) return '';
+  return `https://icons.llamao.fi/icons/chains/rsz_${c.slug}.jpg`;
 }
 function tokenIcon(symbol, chainId) {
   // ETH: always use WETH address on Ethereum for the icon

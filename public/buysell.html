@@ -290,8 +290,8 @@ function updateTokenDisplay() {
   const t = TOKENS[tokenIdx];
   const c = CHAINS[chainIdx];
   const weth = '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2';
-  document.getElementById('token-icon').src = t.symbol === 'ETH' ? `${TW}/ethereum/assets/${weth}/logo.png` : `${TW}/${c.slug}/info/logo.png`;
-  document.getElementById('chain-icon').src = `${TW}/${c.slug}/info/logo.png`;
+  document.getElementById('token-icon').src = t.symbol === 'ETH' ? `${TW}/ethereum/assets/${weth}/logo.png` : `https://icons.llamao.fi/icons/chains/rsz_${c.slug}.jpg`;
+  document.getElementById('chain-icon').src = `https://icons.llamao.fi/icons/chains/rsz_${c.slug}.jpg`;
   document.getElementById('token-label').textContent = t.symbol;
   onAmountInput();
 }
@@ -361,8 +361,8 @@ function filterBuyTokens() {
   });
   const weth = '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2';
   list.innerHTML = rows.map(({ t, tIdx: ti, c, cIdx: ci }) => {
-    const tIcon = t.symbol === 'ETH' ? `${TW}/ethereum/assets/${weth}/logo.png` : `${TW}/${c.slug}/info/logo.png`;
-    const cIcon = `${TW}/${c.slug}/info/logo.png`;
+    const tIcon = t.symbol === 'ETH' ? `${TW}/ethereum/assets/${weth}/logo.png` : `https://icons.llamao.fi/icons/chains/rsz_${c.slug}.jpg`;
+    const cIcon = `https://icons.llamao.fi/icons/chains/rsz_${c.slug}.jpg`;
     return `<button onclick="selectBuyToken(${ti},${ci})" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-surface-container-low transition-colors text-left">
       <div class="relative flex-shrink-0">
         <img src="${tIcon}" class="w-10 h-10 rounded-full bg-surface-container"/>

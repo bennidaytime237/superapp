@@ -207,7 +207,8 @@ function tokenIconUrl(token, chainId) {
 }
 function chainLogoUrl(chainId) {
   const c = SOURCE_CHAINS.find(c=>c.chainId===chainId) || DEST_CHAINS.find(c=>c.chainId===chainId);
-  return c ? `${TW}/${c.slug}/info/logo.png` : '';
+  if (!c) return '';
+  return `https://icons.llamao.fi/icons/chains/rsz_${c.slug}.jpg`;
 }
 
 async function connectWallet() {
@@ -318,7 +319,7 @@ function renderChains() {
     const sp = prices[sourceToken().symbol] || 0;
     const perUsd = active ? perChain * sp : 0;
     return `<button onclick="toggleChain(${c.chainId})" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-colors ${isSelf ? 'opacity-30 pointer-events-none' : active ? 'bg-surface-container-lowest border border-primary/20' : 'bg-surface-container-low border border-transparent hover:border-outline-variant/20'}">
-      <img src="${TW}/${c.slug}/info/logo.png" class="w-8 h-8 rounded-full"/>
+      <img src="https://icons.llamao.fi/icons/chains/rsz_${c.slug}.jpg" class="w-8 h-8 rounded-full" onerror="this.src='${TW}/${c.slug}/info/logo.png'"/>
       <div class="flex-1 text-left">
         <p class="text-sm font-bold ${active ? 'text-on-background' : 'text-on-surface-variant'}">${c.name}</p>
         ${isSelf ? '<p class="text-xs text-on-surface-variant">Source chain</p>' : ''}
