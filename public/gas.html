@@ -161,20 +161,30 @@ const SOURCE_TOKENS = [
 ];
 
 // All supported destination chains with their native gas token
+// All Across-supported destination chains
 const DEST_CHAINS = [
-  { chainId:1,       name:'Ethereum',   slug:'ethereum',  gas:'ETH', gasWrap:'0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2', selected:true },
-  { chainId:42161,   name:'Arbitrum',    slug:'arbitrum',  gas:'ETH', gasWrap:'0x82aF49447D8a07e3bd95BD0d56f35241523fBab1', selected:true },
-  { chainId:8453,    name:'Base',        slug:'base',      gas:'ETH', gasWrap:'0x4200000000000000000000000000000000000006', selected:true },
-  { chainId:10,      name:'Optimism',    slug:'optimism',  gas:'ETH', gasWrap:'0x4200000000000000000000000000000000000006', selected:true },
-  { chainId:137,     name:'Polygon',     slug:'polygon',   gas:'POL', gasWrap:'0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270', selected:false },
-  { chainId:324,     name:'zkSync Era',  slug:'zksync',    gas:'ETH', gasWrap:'0x5AEa5775959fBC2557Cc8789bC1bf90A239D9a91', selected:false },
-  { chainId:59144,   name:'Linea',       slug:'linea',     gas:'ETH', gasWrap:'0xe5D7C2a44FfDDf6b295A15c148167daaAf5Cf34f', selected:false },
-  { chainId:34443,   name:'Mode',        slug:'mode',      gas:'ETH', gasWrap:'0x4200000000000000000000000000000000000006', selected:false },
-  { chainId:534352,  name:'Scroll',      slug:'scroll',    gas:'ETH', gasWrap:'0x5300000000000000000000000000000000000004', selected:false },
-  { chainId:81457,   name:'Blast',       slug:'blast',     gas:'ETH', gasWrap:'0x4300000000000000000000000000000000000004', selected:false },
-  { chainId:7777777, name:'Zora',        slug:'zora',      gas:'ETH', gasWrap:'0x4200000000000000000000000000000000000006', selected:false },
-  { chainId:480,     name:'World Chain', slug:'worldchain', gas:'ETH', gasWrap:'0x4200000000000000000000000000000000000006', selected:false },
-  { chainId:1135,    name:'Lisk',        slug:'lisk',      gas:'ETH', gasWrap:'0x4200000000000000000000000000000000000006', selected:false },
+  // Major L1/L2 — default on
+  { chainId:1,        name:'Ethereum',    slug:'ethereum',   gas:'ETH', gasWrap:'0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2', selected:true },
+  { chainId:42161,    name:'Arbitrum',     slug:'arbitrum',   gas:'ETH', gasWrap:'0x82aF49447D8a07e3bd95BD0d56f35241523fBab1', selected:true },
+  { chainId:8453,     name:'Base',         slug:'base',       gas:'ETH', gasWrap:'0x4200000000000000000000000000000000000006', selected:true },
+  { chainId:10,       name:'Optimism',     slug:'optimism',   gas:'ETH', gasWrap:'0x4200000000000000000000000000000000000006', selected:true },
+  // Other ETH-gas L2s
+  { chainId:324,      name:'zkSync Era',   slug:'zksync',     gas:'ETH', gasWrap:'0x5AEa5775959fBC2557Cc8789bC1bf90A239D9a91', selected:false },
+  { chainId:59144,    name:'Linea',        slug:'linea',      gas:'ETH', gasWrap:'0xe5D7C2a44FfDDf6b295A15c148167daaAf5Cf34f', selected:false },
+  { chainId:34443,    name:'Mode',         slug:'mode',       gas:'ETH', gasWrap:'0x4200000000000000000000000000000000000006', selected:false },
+  { chainId:534352,   name:'Scroll',       slug:'scroll',     gas:'ETH', gasWrap:'0x5300000000000000000000000000000000000004', selected:false },
+  { chainId:81457,    name:'Blast',        slug:'blast',      gas:'ETH', gasWrap:'0x4300000000000000000000000000000000000004', selected:false },
+  { chainId:7777777,  name:'Zora',         slug:'zora',       gas:'ETH', gasWrap:'0x4200000000000000000000000000000000000006', selected:false },
+  { chainId:480,      name:'World Chain',  slug:'worldchain', gas:'ETH', gasWrap:'0x4200000000000000000000000000000000000006', selected:false },
+  { chainId:1135,     name:'Lisk',         slug:'lisk',       gas:'ETH', gasWrap:'0x4200000000000000000000000000000000000006', selected:false },
+  { chainId:41455,    name:'Aleph Zero',   slug:'alephzero',  gas:'ETH', gasWrap:'0x4200000000000000000000000000000000000006', selected:false },
+  { chainId:690,      name:'Redstone',     slug:'redstone',   gas:'ETH', gasWrap:'0x4200000000000000000000000000000000000006', selected:false },
+  { chainId:57073,    name:'Ink',          slug:'ink',        gas:'ETH', gasWrap:'0x4200000000000000000000000000000000000006', selected:false },
+  { chainId:1868,     name:'Soneium',      slug:'soneium',    gas:'ETH', gasWrap:'0x4200000000000000000000000000000000000006', selected:false },
+  { chainId:130,      name:'Unichain',     slug:'unichain',   gas:'ETH', gasWrap:'0x4200000000000000000000000000000000000006', selected:false },
+  { chainId:360,      name:'Shape',        slug:'shape',      gas:'ETH', gasWrap:'0x4200000000000000000000000000000000000006', selected:false },
+  // Non-ETH gas
+  { chainId:137,      name:'Polygon',      slug:'polygon',    gas:'POL', gasWrap:'0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270', selected:false },
 ];
 
 let sourceTokenIdx = 1; // USDC default
