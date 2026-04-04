@@ -414,13 +414,13 @@ async function executeGas() {
     const swapTxs = quotes.map(q => q.swapTx).filter(Boolean);
     if (swapTxs.length === 0) throw new Error('No swap transactions');
 
-    btn.textContent = 'Confirm in wallet...';
+    btn.textContent = `Sending ${swapTxs.length} bridges...`;
 
-    if (swapTxs.length === 1) {
-      await sendTx(swapTxs[0]);
-    } else {
-      // Bundle all bridges into one tx via Multicall3.aggregate3Value
-      await sendMulticall(swapTxs, sc.chainId);
+    let sent = 0;
+    for (const tx of swapTxs) {
+      sent++;
+      btn.textContent = `Bridge ${sent}/${swapTxs.length} — confirm in wallet`;
+      await sendTx(tx);
     }
 
     btn.textContent = `Sent to ${selected.length} chains!`;
@@ -449,92 +449,19 @@ async function executeGas() {
 }
 
 
-async function switchChain(chainId) {
-  const chainHex = '0x' + chainId.toString(16);
+async function sendTx(tx) {
+  const chainHex = '0x' + tx.chainId.toString(16);
   const current = await window.ethereum.request({ method:'eth_chainId' });
   if (current !== chainHex) {
     try { await window.ethereum.request({ method:'wallet_switchEthereumChain', params:[{chainId:chainHex}] }); }
     catch (e) { if (e.code === 4902) throw new Error('Add chain to wallet'); throw e; }
   }
-}
-
-async function sendTx(tx) {
-  await switchChain(tx.chainId);
-  const chainHex = '0x' + tx.chainId.toString(16);
   return window.ethereum.request({
     method:'eth_sendTransaction',
     params:[{ from:walletAddress, to:tx.to, data:tx.data,
       value: tx.value && tx.value !== '0' ? '0x'+BigInt(tx.value).toString(16) : '0x0',
       chainId: chainHex }],
   });
-}
-
-// Multicall3.aggregate3Value — bundles multiple calls with individual ETH values into one tx
-// Address: 0xcA11bde05977b3631167028862bE2a173976CA11 (same on all chains)
-// Selector: 0x174dea71
-// struct Call3Value { address target; bool allowFailure; uint256 value; bytes callData; }
-const MULTICALL3 = '0xcA11bde05977b3631167028862bE2a173976CA11';
-
-async function sendMulticall(txs, chainId) {
-  await switchChain(chainId);
-  const chainHex = '0x' + chainId.toString(16);
-  const totalValue = txs.reduce((s, tx) => s + BigInt(tx.value || '0'), 0n);
-  const data = encodeAggregate3Value(txs);
-
-  return window.ethereum.request({
-    method:'eth_sendTransaction',
-    params:[{
-      from: walletAddress,
-      to: MULTICALL3,
-      data,
-      value: '0x' + totalValue.toString(16),
-      chainId: chainHex,
-    }],
-  });
-}
-
-function encodeAggregate3Value(txs) {
-  // aggregate3Value(Call3Value[])
-  // Call3Value: (address target, bool allowFailure, uint256 value, bytes callData)
-  const p = (v) => BigInt(v).toString(16).padStart(64, '0');
-  const pAddr = (a) => a.toLowerCase().replace('0x','').padStart(64, '0');
-
-  let enc = '0x174dea71'; // selector
-  enc += p(32); // offset to Call3Value[]
-  enc += p(txs.length); // array length
-
-  // Each element is dynamic (has bytes callData), so we need offset pointers
-  // Calculate offsets: each struct pointer is 32 bytes
-  const structOffsets = [];
-  let dataOffset = txs.length * 32; // after all offset pointers
-  for (const tx of txs) {
-    structOffsets.push(dataOffset);
-    const cdLen = (tx.data.length - 2) / 2; // calldata byte length
-    const cdPadded = Math.ceil(cdLen / 32) * 32;
-    // struct: target(32) + allowFailure(32) + value(32) + cdOffset(32) + cdLength(32) + cdPadded
-    dataOffset += 32 + 32 + 32 + 32 + 32 + cdPadded;
-  }
-
-  // Write offset pointers
-  for (const off of structOffsets) {
-    enc += p(off);
-  }
-
-  // Write each struct
-  for (const tx of txs) {
-    const cd = tx.data.replace('0x', '');
-    const cdLen = cd.length / 2;
-    const cdPadded = cd + '0'.repeat((Math.ceil(cdLen / 32) * 32 - cdLen) * 2);
-
-    enc += pAddr(tx.to);           // target
-    enc += p(0);                   // allowFailure = false
-    enc += p(tx.value || 0);       // value
-    enc += p(128);                 // offset to callData (4 * 32 = 128 bytes from struct start)
-    enc += p(cdLen);               // callData length
-    enc += cdPadded;               // callData bytes (padded to 32)
-  }
-
-  return enc;
 }
 
 function fmt(n) {
