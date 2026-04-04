@@ -238,8 +238,14 @@ async function fetchPrices() {
   try {
     const res = await fetch('/api/prices');
     const raw = await res.json();
-    prices = { ETH:raw.ethereum?.usd||0, USDC:1, USDT:1, DAI:1, WBTC:raw['wrapped-bitcoin']?.usd||0 };
-  } catch { prices = { ETH:2000, USDC:1, USDT:1, DAI:1 }; }
+    prices = {
+      ETH:raw.ethereum?.usd||0, WETH:raw.ethereum?.usd||0,
+      USDC:1, USDT:1, DAI:1,
+      WBTC:raw['wrapped-bitcoin']?.usd||0,
+      POL:raw['matic-network']?.usd||0, MATIC:raw['matic-network']?.usd||0,
+      BNB:raw.binancecoin?.usd||0,
+    };
+  } catch { prices = { ETH:2500, WETH:2500, USDC:1, USDT:1, DAI:1, POL:0.4, BNB:600 }; }
 }
 
 function updateSourceDisplay() {

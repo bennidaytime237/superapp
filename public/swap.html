@@ -308,6 +308,12 @@ let TOKENS = [
     addresses: { 1:'0x0cEC1A9154Ff802e7934Fc916Ed7Ca50bDE6844e', 10:'0x395Ae52bB17aef68C2888d941736A71dC6d4e125' }},
   { symbol: 'SNX', name: 'Synthetix', decimals: 18, native: false,
     addresses: { 1:'0xC011a73ee8576Fb46F5E1c5751cA3B9Fe0af2a6F', 10:'0x8700dAec35aF8Ff88c16BdF0418774CB3D7599B4' }},
+  { symbol: 'POL', name: 'Polygon', decimals: 18, native: true,
+    addresses: { 137:null },
+    wrapAddresses: { 137:'0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270' }},
+  { symbol: 'BNB', name: 'BNB', decimals: 18, native: true,
+    addresses: { 56:null },
+    wrapAddresses: { 56:'0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c' }},
 ];
 
 // ── Hyperliquid deposit via Across embedded actions ──
@@ -455,10 +461,18 @@ async function fetchPrices() {
     const raw = await res.json();
     prices = {
       ETH: raw.ethereum?.usd || 0,
+      WETH: raw.ethereum?.usd || 0,
       WBTC: raw['wrapped-bitcoin']?.usd || raw.bitcoin?.usd || 0,
       USDC: 1, USDT: 1, DAI: 1,
+      POL: raw['matic-network']?.usd || 0,
+      MATIC: raw['matic-network']?.usd || 0,
+      BNB: raw.binancecoin?.usd || 0,
+      UMA: raw.uma?.usd || 0,
+      ACX: raw['across-protocol']?.usd || 0,
+      POOL: raw['pooltogether-v2']?.usd || 0,
+      SNX: raw.havven?.usd || 0,
     };
-  } catch { prices = { ETH:2800, WBTC:94000, USDC:1, USDT:1, DAI:1 }; }
+  } catch { prices = { ETH:2500, WETH:2500, WBTC:90000, USDC:1, USDT:1, DAI:1, POL:0.4, BNB:600 }; }
   updateRate();
 }
 
@@ -1363,7 +1377,7 @@ async function executeUniswapSwap(q) {
   const inputsSection = inputsEncoded + inputOffsets + inputBodies;
 
   // Top-level: offset_commands(32) + offset_inputs(32) + deadline(32) = 96 bytes header
-  const commandsSectionBytes = 32 + 32; // length + padded data
+  const commandsSectionBytes = 32 + Math.ceil(commandsLen / 32) * 32; // length + padded data
   const commandsOffset = 96; // after 3 header words
   const inputsOffset = commandsOffset + commandsSectionBytes;
 

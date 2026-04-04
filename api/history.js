@@ -76,7 +76,7 @@ export default async function handler(req, res) {
           });
         }
       } catch (e) {
-        // Skip failed explorers
+        console.warn(`Explorer ${explorer.name} failed:`, e.message);
       }
     })
   );
