@@ -455,17 +455,21 @@ async function onConnected() {
 
   // Update header button
   document.getElementById('connect-label').textContent = short;
-  document.getElementById('connect-btn').classList.remove('bg-primary');
-  document.getElementById('connect-btn').classList.add('bg-surface-container-high', 'text-on-surface');
+  document.getElementById('connect-btn').className = 'flex items-center gap-2 px-4 py-2 bg-surface-container-high text-on-surface rounded-full text-sm font-bold tracking-wide active:scale-95 transition-transform';
 
   // Update sidebar
   document.getElementById('sidebar-disconnected').classList.add('hidden');
   document.getElementById('sidebar-connected').classList.remove('hidden');
   document.getElementById('sidebar-addr').textContent = short;
 
-  // Fetch data in parallel
+  // Show loading state
+  document.getElementById('assets-grid').innerHTML = '<div class="col-span-2 flex items-center gap-2 text-sm text-on-surface-variant py-4"><div class="w-4 h-4 rounded-full border-2 border-primary border-t-transparent animate-spin"></div>Loading assets...</div>';
+  document.getElementById('hero-balance').innerHTML = '<span class="text-on-surface-variant text-2xl tracking-wide">Loading...</span>';
+
   renderActivity();
-  await Promise.all([fetchPrices(), fetchBalances()]);
+  // Prices must load before balances so renderPortfolio has correct values
+  await fetchPrices();
+  await fetchBalances();
 }
 
 // ── Prices ──
@@ -499,12 +503,14 @@ async function fetchPrices() {
 async function fetchBalances() {
   if (!walletAddress) return;
   try {
-    const res = await fetch(`/api/balances?address=${walletAddress}`);
-    const data = await res.json(); // { chainId: { SYMBOL: amount } }
+    const res = await fetch(`/api/balances?address=${walletAddress}&_t=${Date.now()}`);
+    if (!res.ok) throw new Error('API error ' + res.status);
+    const data = await res.json();
     renderPortfolio(data);
   } catch (e) {
     console.error('Balance fetch failed:', e);
     document.getElementById('hero-balance').innerHTML = '<span class="text-on-surface-variant text-lg">Could not load balances</span>';
+    document.getElementById('assets-grid').innerHTML = '<p class="text-sm text-error col-span-2">Failed to load balances — <button onclick="fetchBalances()" class="underline font-bold">retry</button></p>';
   }
 }
 
@@ -733,7 +739,9 @@ function timeAgo(ts) {
     const userDisconnected = localStorage.getItem('sage_disconnected') === '1';
     if (accounts.length > 0 && !userDisconnected) {
       walletAddress = accounts[0];
-      onConnected();
+      await onConnected();
+    } else {
+      renderActivity();
     }
     window.ethereum.on('accountsChanged', (accs) => {
       if (accs.length === 0) { disconnect(); return; }
@@ -741,9 +749,9 @@ function timeAgo(ts) {
       walletAddress = accs[0];
       onConnected();
     });
+  } else {
+    renderActivity();
   }
-  renderActivity();
-  fetchPrices();
 })();
 </script>
 </body>
