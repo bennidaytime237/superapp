@@ -130,11 +130,19 @@ tailwind.config = {
       <a href="index.html"><img src="sage-wordmark.svg" alt="Sage" class="h-6 md:hidden"/></a>
       <h2 class="hidden md:block font-headline font-bold text-xl tracking-tight text-on-background">Portfolio Overview</h2>
     </div>
-    <div class="flex items-center gap-3">
-      <button id="connect-btn" onclick="connectWallet()" class="flex items-center gap-2 px-4 py-2 bg-primary text-on-primary rounded-full text-sm font-bold active:scale-95 transition-transform">
+    <div class="flex items-center gap-3 relative">
+      <button id="connect-btn" onclick="walletAddress?toggleWalletMenu():connectWallet()" class="flex items-center gap-2 px-4 py-2 bg-primary text-on-primary rounded-full text-sm font-bold active:scale-95 transition-transform">
         <span class="material-symbols-outlined text-lg">account_balance_wallet</span>
         <span id="connect-label">Connect Wallet</span>
       </button>
+      <div id="wallet-menu" class="hidden absolute right-0 top-full mt-2 bg-white rounded-xl shadow-lg border border-outline-variant/10 overflow-hidden z-50 min-w-[180px]">
+        <button onclick="copyAddress()" class="w-full px-4 py-3 text-sm font-medium text-on-surface hover:bg-surface-container-low transition-colors text-left flex items-center gap-2">
+          <span class="material-symbols-outlined text-base">content_copy</span>Copy Address
+        </button>
+        <button onclick="disconnect()" class="w-full px-4 py-3 text-sm font-medium text-error hover:bg-error-container/30 transition-colors text-left flex items-center gap-2">
+          <span class="material-symbols-outlined text-base">logout</span>Disconnect
+        </button>
+      </div>
     </div>
   </header>
 
@@ -336,6 +344,30 @@ let walletAddress = null;
 let prices = {};
 
 // ── Wallet Connect ──
+function toggleWalletMenu() {
+  const menu = document.getElementById('wallet-menu');
+  menu.classList.toggle('hidden');
+  if (!menu.classList.contains('hidden')) {
+    setTimeout(() => document.addEventListener('click', closeWalletMenu, { once: true }), 0);
+  }
+}
+function closeWalletMenu() { document.getElementById('wallet-menu').classList.add('hidden'); }
+
+function copyAddress() {
+  navigator.clipboard.writeText(walletAddress);
+  closeWalletMenu();
+  const label = document.getElementById('connect-label');
+  const prev = label.textContent;
+  label.textContent = 'Copied!';
+  setTimeout(() => { label.textContent = prev; }, 1500);
+}
+
+function disconnect() {
+  closeWalletMenu();
+  walletAddress = null;
+  location.reload();
+}
+
 async function connectWallet() {
   if (!window.ethereum) {
     alert('Please install MetaMask to connect your wallet.');
