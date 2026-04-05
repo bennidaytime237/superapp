@@ -61,9 +61,9 @@ export default async function handler(req, res) {
   }
 
   const ENDPOINTS = [
-    `https://public.api.across.to/deposits/tx-page?address=${address}&limit=50&status=filled`,
-    `https://public.api.across.to/deposits?depositorOrRecipient=${address}&limit=50&skip=0`,
-    `https://app.across.to/api/deposits/tx-page?address=${address}&limit=50&status=filled`,
+    `https://public.api.across.to/deposits/tx-page?depositorOrRecipientAddress=${address}&limit=50&offset=0`,
+    `https://public.api.across.to/deposits?address=${address}&limit=50&offset=0`,
+    `https://app.across.to/api/deposits/tx-page?depositorOrRecipientAddress=${address}&limit=50&offset=0`,
   ];
 
   let data = null;
