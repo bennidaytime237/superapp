@@ -60,51 +60,71 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'Invalid address' });
   }
 
-  try {
-    const ctrl = new AbortController();
-    const t = setTimeout(() => ctrl.abort(), 10000);
-    const url = `https://public.api.across.to/deposits/tx-page?address=${address}&limit=50&status=filled`;
-    const response = await fetch(url, { signal: ctrl.signal });
-    clearTimeout(t);
+  const ENDPOINTS = [
+    `https://public.api.across.to/deposits/tx-page?address=${address}&limit=50&status=filled`,
+    `https://public.api.across.to/deposits?depositorOrRecipient=${address}&limit=50&skip=0`,
+    `https://app.across.to/api/deposits/tx-page?address=${address}&limit=50&status=filled`,
+  ];
 
-    if (!response.ok) throw new Error(`Across API ${response.status}`);
-    const data = await response.json();
+  let data = null;
+  let lastErr = null;
 
-    const deposits = (data.deposits || data || []).map(d => {
-      const inToken = resolveToken(d.inputToken || d.sourceToken);
-      const outToken = resolveToken(d.outputToken || d.destinationToken);
-      const fromChainId = d.originChainId || d.sourceChainId;
-      const toChainId = d.destinationChainId || d.destChainId;
-      const recipient = (d.recipient || '').toLowerCase();
-      let toChain = CHAIN_NAMES[toChainId] || `Chain ${toChainId}`;
-      if (recipient === BRIDGE2) toChain = 'Hyperliquid';
-
-      return {
-        type: 'bridge',
-        depositTxHash: d.depositTxHash || d.transactionHash || d.txHash || null,
-        fillTxHash: d.fillTxHash || null,
-        fromToken: inToken.symbol,
-        toToken: outToken.symbol,
-        amount: formatAmount(d.inputAmount || d.amount, inToken.decimals),
-        outputAmount: formatAmount(d.outputAmount, outToken.decimals),
-        fromChain: CHAIN_NAMES[fromChainId] || `Chain ${fromChainId}`,
-        toChain,
-        fromChainId,
-        toChainId,
-        timestamp: d.depositTime ? d.depositTime * 1000
-          : d.depositDate ? new Date(d.depositDate).getTime()
-          : d.timestamp || 0,
-        fillTime: d.fillTime || d.fillDeadline || null,
-        status: d.status || 'filled',
-      };
-    });
-
-    deposits.sort((a, b) => b.timestamp - a.timestamp);
-
-    res.setHeader('Cache-Control', 's-maxage=15, stale-while-revalidate=30');
-    return res.json({ deposits });
-  } catch (e) {
-    console.error('Across deposits API error:', e.message);
-    return res.status(502).json({ error: 'Could not fetch deposit history', deposits: [] });
+  for (const url of ENDPOINTS) {
+    try {
+      const ctrl = new AbortController();
+      const t = setTimeout(() => ctrl.abort(), 8000);
+      const response = await fetch(url, {
+        signal: ctrl.signal,
+        headers: { 'Accept': 'application/json' },
+      });
+      clearTimeout(t);
+      if (!response.ok) { lastErr = `${url} → ${response.status}`; continue; }
+      data = await response.json();
+      break;
+    } catch (e) {
+      lastErr = `${url} → ${e.message}`;
+    }
   }
+
+  if (!data) {
+    console.error('All Across endpoints failed. Last error:', lastErr);
+    return res.status(502).json({ error: 'Could not reach Across API', deposits: [] });
+  }
+
+  const rawDeposits = Array.isArray(data) ? data : (data.deposits || data.results || []);
+
+  const deposits = rawDeposits.map(d => {
+    const inToken = resolveToken(d.inputToken || d.sourceToken);
+    const outToken = resolveToken(d.outputToken || d.destinationToken);
+    const fromChainId = d.originChainId || d.sourceChainId;
+    const toChainId = d.destinationChainId || d.destChainId;
+    const recipient = (d.recipient || '').toLowerCase();
+    let toChain = CHAIN_NAMES[toChainId] || `Chain ${toChainId}`;
+    if (recipient === BRIDGE2) toChain = 'Hyperliquid';
+
+    return {
+      type: 'bridge',
+      depositTxHash: d.depositTxHash || d.transactionHash || d.txHash || null,
+      fillTxHash: d.fillTxHash || null,
+      fromToken: inToken.symbol,
+      toToken: outToken.symbol,
+      amount: formatAmount(d.inputAmount || d.amount, inToken.decimals),
+      outputAmount: formatAmount(d.outputAmount, outToken.decimals),
+      fromChain: CHAIN_NAMES[fromChainId] || `Chain ${fromChainId}`,
+      toChain,
+      fromChainId,
+      toChainId,
+      timestamp: d.depositTime ? d.depositTime * 1000
+        : d.depositDate ? new Date(d.depositDate).getTime()
+        : d.quoteTimestamp ? d.quoteTimestamp * 1000
+        : d.timestamp || 0,
+      fillTime: d.fillTime || d.fillDeadline || null,
+      status: d.status || 'filled',
+    };
+  });
+
+  deposits.sort((a, b) => b.timestamp - a.timestamp);
+
+  res.setHeader('Cache-Control', 's-maxage=15, stale-while-revalidate=30');
+  return res.json({ deposits });
 }
