@@ -462,24 +462,20 @@ async function onConnected() {
   document.getElementById('sidebar-connected').classList.remove('hidden');
   document.getElementById('sidebar-addr').textContent = short;
 
-  // Show loading state
-  document.getElementById('assets-grid').innerHTML = '<div class="col-span-2 flex items-center gap-2 text-sm text-on-surface-variant py-4"><div class="w-4 h-4 rounded-full border-2 border-primary border-t-transparent animate-spin"></div>Loading assets...</div>';
-  document.getElementById('hero-balance').innerHTML = '<span class="text-on-surface-variant text-2xl tracking-wide">Loading...</span>';
-
   renderActivity();
 
-  // Fetch both in parallel — balances waits for prices before rendering
+  // Kick off both fetches immediately in parallel
   const balanceFetch = fetch(`/api/balances?address=${walletAddress}&_t=${Date.now()}`);
-  await fetchPrices(); // sets prices; balances response may already be in-flight
+  // Wait for prices first so renderPortfolio has correct values
+  await fetchPrices();
+  // Now await the balance response (likely already in-flight or done)
   try {
     const res = await balanceFetch;
-    if (!res.ok) throw new Error('API error ' + res.status);
     const data = await res.json();
     renderPortfolio(data);
   } catch (e) {
     console.error('Balance fetch failed:', e);
-    document.getElementById('hero-balance').innerHTML = '<span class="text-on-surface-variant text-lg">Could not load balances</span>';
-    document.getElementById('assets-grid').innerHTML = '<p class="text-sm text-error col-span-2">Failed to load balances — <button onclick="fetchBalances()" class="underline font-bold">retry</button></p>';
+    document.getElementById('hero-balance').innerHTML = '<span class="text-on-surface-variant text-lg">Could not load balances — <button onclick="fetchBalances()" class="underline text-primary font-bold">retry</button></span>';
   }
 }
 
@@ -731,7 +727,7 @@ function renderActivity() {
         </div>
         <div class="flex justify-between gap-2">
           <p class="text-xs text-on-surface-variant">${tx.fromChain} → ${tx.toChain}</p>
-          <p class="text-xs text-primary font-bold">${tx.time.toFixed(1)}s &middot; ${ago}</p>
+          <p class="text-xs text-primary font-bold">${tx.time > 0 ? tx.time.toFixed(1) + 's · ' : ''}${ago}</p>
         </div>
       </div>
       ${url ? '<span class="material-symbols-outlined text-on-surface-variant text-base flex-shrink-0">open_in_new</span>' : ''}
