@@ -556,8 +556,13 @@ function filterChainGrid() {
 
 function setChainFilter(chainId) {
   modalChainFilter = chainId;
+  // In swap mode, switching chain in picker changes the from chain
+  if (mode === 'swap' && chainId !== null) {
+    const idx = CHAINS.findIndex(c => c.id === chainId);
+    if (idx >= 0) { fromChainIdx = idx; toChainIdx = idx; }
+  }
   buildChainGrid();
-  filterTokenList();
+  buildTokenList();
 }
 
 // Chains where Uniswap is available (has router + RPC)
@@ -1381,53 +1386,53 @@ async function executeUniswapSwap(q) {
   const value = fromToken.native ? '0x' + BigInt(q.amountWei).toString(16) : '0x0';
 
   // SwapRouter02.exactInputSingle((address,address,uint24,address,uint256,uint256,uint256,uint160))
-  // selector: 0x04e45aaf
-  const recipient = toToken.native ? '0x0000000000000000000000000000000000000002' : walletAddress;
-  const swapData = '0x04e45aaf'
+  // selector: 0x414bf389 (includes deadline in struct)
+  const recipient = toToken.native ? router : walletAddress;
+  const swapData = '0x414bf389'
     + pAddr(q.tokenIn)
     + pAddr(q.tokenOut)
     + pUint(q.fee)
     + pAddr(recipient)
+    + pUint(deadline)
     + pUint(q.amountWei)
     + pUint(amountOutMin)
     + pUint(0); // sqrtPriceLimitX96
 
   if (toToken.native) {
-    // Multicall: exactInputSingle → unwrapWETH9
+    // multicall(bytes[]) — swap then unwrapWETH9
     // unwrapWETH9(uint256,address) selector: 0x49404b7c
     const unwrapData = '0x49404b7c' + pUint(amountOutMin) + pAddr(walletAddress);
-
-    // multicall(uint256 deadline, bytes[] data)
-    // selector: 0x5ae401dc
-    const call1Len = (swapData.length - 2) / 2;
-    const call2Len = (unwrapData.length - 2) / 2;
-    const call1Padded = swapData.slice(2) + '0'.repeat((Math.ceil(call1Len / 32) * 32 - call1Len) * 2);
-    const call2Padded = unwrapData.slice(2) + '0'.repeat((Math.ceil(call2Len / 32) * 32 - call2Len) * 2);
-
-    // bytes[] array: count, offset1, offset2, len1, data1, len2, data2
-    const off1 = 64; // 2 offset words
-    const off2 = off1 + 32 + Math.ceil(call1Len / 32) * 32;
-    const arrayData = pUint(2)
-      + pUint(off1) + pUint(off2)
-      + pUint(call1Len) + call1Padded
-      + pUint(call2Len) + call2Padded;
-
-    const data = '0x5ae401dc'
-      + pUint(deadline)
-      + pUint(64) // offset to bytes[]
-      + arrayData;
-
+    const data = encodeMulticall([swapData, unwrapData]);
     return window.ethereum.request({
       method: 'eth_sendTransaction',
       params: [{ from: walletAddress, to: router, data, value, chainId: chainHex }],
     });
   }
 
-  // Simple case — no unwrap needed
   return window.ethereum.request({
     method: 'eth_sendTransaction',
     params: [{ from: walletAddress, to: router, data: swapData, value, chainId: chainHex }],
   });
+}
+
+// Encode multicall(bytes[] data) — selector 0xac9650d8
+function encodeMulticall(calls) {
+  const pUint = (v) => BigInt(v).toString(16).padStart(64,'0');
+  // bytes[] is: offset_to_array, array_length, [offsets...], [len+data...]
+  let offsets = '', bodies = '';
+  let running = calls.length * 32;
+  for (const c of calls) {
+    offsets += pUint(running);
+    const raw = c.startsWith('0x') ? c.slice(2) : c;
+    const len = raw.length / 2;
+    const padded = raw + '0'.repeat((Math.ceil(len / 32) * 32 - len) * 2);
+    bodies += pUint(len) + padded;
+    running += 32 + Math.ceil(len / 32) * 32;
+  }
+  return '0xac9650d8'
+    + pUint(32)              // offset to bytes[]
+    + pUint(calls.length)    // array length
+    + offsets + bodies;
 }
 
 async function waitForTx(hash, chainId) {
