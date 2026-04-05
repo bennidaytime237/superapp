@@ -601,7 +601,7 @@ function renderPortfolio(balancesByChain) {
     grid.innerHTML = '<p class="text-sm text-on-surface-variant col-span-2">No tokens found in this wallet</p>';
     return;
   }
-  grid.innerHTML = sorted.map(([symbol, info]) => {
+  const cards = sorted.map(([symbol, info]) => {
     const meta = TOKEN_META[symbol] || { label:symbol };
     const price = prices[symbol]?.usd || 0;
     const change = prices[symbol]?.change || 0;
@@ -628,7 +628,22 @@ function renderPortfolio(balancesByChain) {
       </div>
       <div id="asset-drop-${symbol}" class="hidden"></div>
     </div>`;
-  }).join('');
+  });
+
+  const ASSET_LIMIT = 4;
+  const visible = cards.slice(0, assetsExpanded ? cards.length : ASSET_LIMIT);
+  const remaining = cards.length - ASSET_LIMIT;
+
+  grid.innerHTML = visible.join('')
+    + (remaining > 0 && !assetsExpanded
+      ? `<button onclick="expandAssets()" class="col-span-1 md:col-span-2 py-3 bg-surface-container-low text-on-surface-variant rounded-xl font-bold text-sm hover:bg-surface-container-high transition-colors">Show ${remaining} more asset${remaining > 1 ? 's' : ''}</button>`
+      : '');
+}
+
+let assetsExpanded = false;
+function expandAssets() {
+  assetsExpanded = true;
+  if (portfolioData) renderPortfolio(portfolioData);
 }
 
 // ── Auto-reconnect if already connected ──
