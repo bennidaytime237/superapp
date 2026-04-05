@@ -252,15 +252,16 @@ tailwind.config = {
     <div class="lg:col-span-4 space-y-8">
 
       <!-- Bridge Times -->
-      <section class="bg-surface-container-lowest rounded-xl p-6">
-        <div class="flex items-center justify-between mb-4">
-          <h4 class="text-lg font-bold text-on-background">Bridge Times</h4>
-          <span class="text-[10px] font-bold text-on-surface-variant bg-surface-container px-2 py-0.5 rounded-full">Current</span>
+      <section class="bg-surface-container-lowest rounded-xl px-5 py-4">
+        <div class="flex items-center justify-between mb-3">
+          <h4 class="text-sm font-bold text-on-background">Bridge Times</h4>
+          <a href="radar.html" class="text-[10px] font-bold text-primary hover:underline">Radar →</a>
         </div>
-        <div id="bridge-times" class="space-y-3">
-          <div class="flex items-center justify-between py-2"><span class="text-sm text-on-surface-variant">Loading...</span></div>
+        <div id="bridge-times" class="flex gap-2">
+          <div class="flex-1 bg-surface-container rounded-lg py-2 px-2 text-center"><span class="text-xs text-on-surface-variant">--</span></div>
+          <div class="flex-1 bg-surface-container rounded-lg py-2 px-2 text-center"><span class="text-xs text-on-surface-variant">--</span></div>
+          <div class="flex-1 bg-surface-container rounded-lg py-2 px-2 text-center"><span class="text-xs text-on-surface-variant">--</span></div>
         </div>
-        <a href="radar.html" class="block mt-4 text-xs font-bold text-primary hover:underline text-center">View full Radar →</a>
       </section>
 
       <!-- Get Started -->
@@ -829,19 +830,14 @@ function timeAgo(ts) {
 async function fetchBridgeTimes() {
   const el = document.getElementById('bridge-times');
   const cacheKey = 'sage_bridge_times';
-  const icons = { 'L1 → L1': 'sync_alt', 'L1 → L2': 'south_east', 'L2 → L1': 'north_east', 'L2 → L2': 'swap_horiz' };
-  const colors = { 'L1 → L1': 'text-on-surface-variant', 'L1 → L2': 'text-primary', 'L2 → L1': 'text-amber-600', 'L2 → L2': 'text-primary' };
-
   function renderTimes(data) {
-    el.innerHTML = ['L1 → L1','L1 → L2','L2 → L1','L2 → L2'].map(label => {
-      const median = data[label];
-      const timeStr = median !== null && median !== undefined ? (median < 60 ? '~' + Math.round(median) + 's' : '~' + (median / 60).toFixed(1) + 'm') : '--';
-      return `<div class="flex items-center justify-between py-2.5 border-b border-outline-variant/10 last:border-0">
-        <div class="flex items-center gap-3">
-          <span class="material-symbols-outlined ${colors[label]} text-lg">${icons[label]}</span>
-          <p class="text-sm font-bold text-on-background">${label}</p>
-        </div>
-        <p class="text-lg font-black ${median != null && median < 5 ? 'text-primary' : median != null && median < 30 ? 'text-on-background' : 'text-on-surface-variant'}">${timeStr}</p>
+    el.innerHTML = ['L1 → L2','L2 → L1','L2 → L2'].map(label => {
+      const val = data[label];
+      const timeStr = val != null ? (val < 60 ? '~' + Math.round(val) + 's' : '~' + (val / 60).toFixed(1) + 'm') : '--';
+      const color = val != null && val < 5 ? 'text-primary' : val != null && val < 30 ? 'text-on-background' : 'text-on-surface-variant';
+      return `<div class="flex-1 bg-surface-container rounded-lg py-2 px-2 text-center">
+        <p class="text-[10px] font-bold text-on-surface-variant mb-0.5">${label}</p>
+        <p class="text-sm font-black ${color}">${timeStr}</p>
       </div>`;
     }).join('');
   }

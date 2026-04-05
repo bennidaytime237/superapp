@@ -2,10 +2,6 @@ const BASE = 'https://app.across.to/api/suggested-fees';
 
 // Representative routes for each category
 const ROUTES = [
-  { label: 'L1 → L1', originChainId: 1, destinationChainId: 1,
-    inputToken: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48',
-    outputToken: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48',
-    amount: '1000000000' }, // 1000 USDC
   { label: 'L1 → L2', originChainId: 1, destinationChainId: 42161,
     inputToken: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48',
     outputToken: '0xaf88d065e77c8cC2239327C5EDb3A432268e5831',
