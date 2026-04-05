@@ -86,10 +86,20 @@ tailwind.config = {
   </header>
 
   <div class="px-6 lg:px-10 py-6 max-w-3xl">
-    <!-- Filter pills -->
-    <div class="flex gap-2 mb-6">
-      <button onclick="setFilter('all')" id="f-all" class="px-4 py-2 rounded-full text-sm font-bold bg-primary text-on-primary">All</button>
-      <button onclick="setFilter('bridge')" id="f-bridge" class="px-4 py-2 rounded-full text-sm font-bold bg-surface-container-low text-on-surface-variant hover:bg-surface-container-high">Bridges</button>
+    <!-- Search + Filters -->
+    <div class="flex flex-wrap gap-2 mb-6 items-center">
+      <input id="search-input" type="text" placeholder="Search token, chain, address..." oninput="render()" class="flex-1 min-w-[180px] px-4 py-2 rounded-full text-sm border border-outline-variant/15 bg-surface-container-lowest focus:outline-none focus:ring-2 focus:ring-primary/30 placeholder:text-on-surface-variant/40"/>
+      <select id="filter-chain" onchange="render()" class="px-4 py-2 rounded-full text-sm font-bold bg-surface-container-low text-on-surface-variant border-none cursor-pointer focus:ring-2 focus:ring-primary/30">
+        <option value="">All chains</option>
+      </select>
+      <select id="filter-token" onchange="render()" class="px-4 py-2 rounded-full text-sm font-bold bg-surface-container-low text-on-surface-variant border-none cursor-pointer focus:ring-2 focus:ring-primary/30">
+        <option value="">All tokens</option>
+      </select>
+      <select id="filter-status" onchange="render()" class="px-4 py-2 rounded-full text-sm font-bold bg-surface-container-low text-on-surface-variant border-none cursor-pointer focus:ring-2 focus:ring-primary/30">
+        <option value="">All status</option>
+        <option value="filled">Filled</option>
+        <option value="pending">Pending</option>
+      </select>
     </div>
 
     <!-- Transaction list -->
@@ -114,19 +124,22 @@ tailwind.config = {
 </nav>
 
 <script>
-let filter = 'all';
 let walletAddress = null;
 let txData = [];
 
-function setFilter(f) {
-  filter = f;
-  ['all','bridge'].forEach(k => {
-    const el = document.getElementById('f-' + k);
-    el.className = k === f
-      ? 'px-4 py-2 rounded-full text-sm font-bold bg-primary text-on-primary'
-      : 'px-4 py-2 rounded-full text-sm font-bold bg-surface-container-low text-on-surface-variant hover:bg-surface-container-high';
+function populateFilters() {
+  const chains = new Set();
+  const tokens = new Set();
+  txData.forEach(tx => {
+    if (tx.fromChain) chains.add(tx.fromChain);
+    if (tx.toChain) chains.add(tx.toChain);
+    if (tx.fromToken) tokens.add(tx.fromToken);
+    if (tx.toToken) tokens.add(tx.toToken);
   });
-  render();
+  const chainSel = document.getElementById('filter-chain');
+  const tokenSel = document.getElementById('filter-token');
+  chainSel.innerHTML = '<option value="">All chains</option>' + [...chains].sort().map(c => `<option value="${c}">${c}</option>`).join('');
+  tokenSel.innerHTML = '<option value="">All tokens</option>' + [...tokens].sort().map(t => `<option value="${t}">${t}</option>`).join('');
 }
 
 function updateConnectBtn() {
@@ -186,6 +199,7 @@ async function loadTransactions() {
     const res = await fetch(`/api/transactions?address=${walletAddress}`);
     const data = await res.json();
     txData = data.deposits || [];
+    populateFilters();
     render();
   } catch (e) {
     console.error('Failed to load transactions:', e);
@@ -204,8 +218,21 @@ function shortAddr(a) { return a ? a.slice(0,6)+'…'+a.slice(-4) : '--'; }
 
 function render() {
   const list = document.getElementById('tx-list');
-  let history = [...txData];
-  if (filter !== 'all') history = history.filter(tx => tx.type === filter);
+  const q = (document.getElementById('search-input').value || '').toLowerCase().trim();
+  const chainFilter = document.getElementById('filter-chain').value;
+  const tokenFilter = document.getElementById('filter-token').value;
+  const statusFilter = document.getElementById('filter-status').value;
+
+  let history = txData.filter(tx => {
+    if (chainFilter && tx.fromChain !== chainFilter && tx.toChain !== chainFilter) return false;
+    if (tokenFilter && tx.fromToken !== tokenFilter && tx.toToken !== tokenFilter) return false;
+    if (statusFilter && tx.status !== statusFilter) return false;
+    if (q) {
+      const hay = `${tx.fromToken} ${tx.toToken} ${tx.fromChain} ${tx.toChain} ${tx.recipient||''} ${tx.depositor||''} ${tx.depositTxHash||''} ${tx.amount} ${tx.outputAmount||''}`.toLowerCase();
+      if (!hay.includes(q)) return false;
+    }
+    return true;
+  });
 
   if (history.length === 0) {
     showEmpty('No transactions yet');
