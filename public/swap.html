@@ -1351,7 +1351,7 @@ async function ensureApproval(tokenAddr, spender, amountWei, chainId) {
   const allowance = await window.ethereum.request({
     method: 'eth_call', params: [{ to: tokenAddr, data: allowanceData }, 'latest'],
   });
-  if (BigInt(allowance || '0x0') >= BigInt(amountWei)) return; // already approved
+  if (BigInt((!allowance || allowance === '0x') ? '0x0' : allowance) >= BigInt(amountWei)) return;
   // Send approval tx
   const approveData = '0x095ea7b3' + spender.slice(2).padStart(64,'0') + BigInt(amountWei).toString(16).padStart(64,'0');
   await window.ethereum.request({
