@@ -718,9 +718,20 @@ async function renderActivity() {
   }
 
   try {
-    const res = await fetch(`/api/transactions?address=${walletAddress}`);
-    const data = await res.json();
-    const allTx = data.deposits || [];
+    // Try cache first for instant render
+    let allTx = [];
+    try { allTx = JSON.parse(localStorage.getItem('sage_txcache_' + walletAddress.toLowerCase()) || '[]'); } catch {}
+
+    // Fetch fresh in background
+    fetch(`/api/transactions?address=${walletAddress}`)
+      .then(r => r.json())
+      .then(data => {
+        const fresh = data.deposits || [];
+        if (fresh.length > 0) {
+          try { localStorage.setItem('sage_txcache_' + walletAddress.toLowerCase(), JSON.stringify(fresh)); } catch {}
+          if (JSON.stringify(fresh) !== JSON.stringify(allTx)) renderActivityList(fresh);
+        }
+      }).catch(() => {});
 
     if (allTx.length === 0) {
       feed.innerHTML = `<div class="text-center py-8">
@@ -730,31 +741,7 @@ async function renderActivity() {
       return;
     }
 
-    const show = allTx.slice(0, 3);
-    const EXP = {1:'https://etherscan.io/tx/',42161:'https://arbiscan.io/tx/',8453:'https://basescan.org/tx/',10:'https://optimistic.etherscan.io/tx/',137:'https://polygonscan.com/tx/',324:'https://explorer.zksync.io/tx/',59144:'https://lineascan.build/tx/'};
-    feed.innerHTML = '<div class="space-y-4">' + show.map(tx => {
-      const ago = timeAgo(tx.timestamp);
-      const url = tx.depositTxHash && tx.fromChainId ? (EXP[tx.fromChainId] || 'https://etherscan.io/tx/') + tx.depositTxHash : null;
-      const tag = url ? 'a' : 'div';
-      const attrs = url ? `href="${url}" target="_blank" rel="noopener"` : '';
-      return `<${tag} ${attrs} class="flex items-center gap-4 px-2 ${url ? 'hover:bg-surface-container-low rounded-lg cursor-pointer transition-colors' : ''}">
-        <div class="w-10 h-10 rounded-full bg-primary-container flex items-center justify-center flex-shrink-0">
-          <span class="material-symbols-outlined text-primary text-lg">layers</span>
-        </div>
-        <div class="flex-1 border-b border-outline-variant/10 pb-3">
-          <div class="flex justify-between gap-2">
-            <p class="text-sm font-bold text-on-background">Bridged ${tx.fromToken} → ${tx.toToken}</p>
-            <p class="text-sm font-bold text-on-background">${tx.amount} ${tx.fromToken}</p>
-          </div>
-          <div class="flex justify-between gap-2">
-            <p class="text-xs text-on-surface-variant">${tx.fromChain} → ${tx.toChain}</p>
-            <p class="text-xs text-primary font-bold">${ago}</p>
-          </div>
-        </div>
-        ${url ? '<span class="material-symbols-outlined text-on-surface-variant text-base flex-shrink-0">open_in_new</span>' : ''}
-      </${tag}>`;
-    }).join('') + '</div>'
-    + (allTx.length > 3 ? `<a href="transactions.html" class="block mt-4 text-center text-sm font-bold text-primary hover:underline">View all ${allTx.length} transactions →</a>` : '');
+    renderActivityList(allTx);
   } catch (e) {
     console.warn('Activity feed failed:', e);
     feed.innerHTML = `<div class="text-center py-8">
@@ -762,6 +749,35 @@ async function renderActivity() {
       <p class="text-sm text-on-surface-variant">No transactions yet</p>
     </div>`;
   }
+}
+
+function renderActivityList(allTx) {
+  const feed = document.getElementById('activity-feed');
+  const show = allTx.slice(0, 3);
+  const EXP = {1:'https://etherscan.io/tx/',42161:'https://arbiscan.io/tx/',8453:'https://basescan.org/tx/',10:'https://optimistic.etherscan.io/tx/',137:'https://polygonscan.com/tx/',324:'https://explorer.zksync.io/tx/',59144:'https://lineascan.build/tx/'};
+  feed.innerHTML = '<div class="space-y-4">' + show.map(tx => {
+    const ago = timeAgo(tx.timestamp);
+    const url = tx.depositTxHash && tx.fromChainId ? (EXP[tx.fromChainId] || 'https://etherscan.io/tx/') + tx.depositTxHash : null;
+    const tag = url ? 'a' : 'div';
+    const attrs = url ? `href="${url}" target="_blank" rel="noopener"` : '';
+    return `<${tag} ${attrs} class="flex items-center gap-4 px-2 ${url ? 'hover:bg-surface-container-low rounded-lg cursor-pointer transition-colors' : ''}">
+      <div class="w-10 h-10 rounded-full bg-primary-container flex items-center justify-center flex-shrink-0">
+        <span class="material-symbols-outlined text-primary text-lg">layers</span>
+      </div>
+      <div class="flex-1 border-b border-outline-variant/10 pb-3">
+        <div class="flex justify-between gap-2">
+          <p class="text-sm font-bold text-on-background">Bridged ${tx.fromToken} → ${tx.toToken}</p>
+          <p class="text-sm font-bold text-on-background">${tx.amount} ${tx.fromToken}</p>
+        </div>
+        <div class="flex justify-between gap-2">
+          <p class="text-xs text-on-surface-variant">${tx.fromChain} → ${tx.toChain}</p>
+          <p class="text-xs text-primary font-bold">${ago}</p>
+        </div>
+      </div>
+      ${url ? '<span class="material-symbols-outlined text-on-surface-variant text-base flex-shrink-0">open_in_new</span>' : ''}
+    </${tag}>`;
+  }).join('') + '</div>'
+  + (allTx.length > 3 ? `<a href="transactions.html" class="block mt-4 text-center text-sm font-bold text-primary hover:underline">View all ${allTx.length} transactions →</a>` : '');
 }
 
 function timeAgo(ts) {

@@ -102,6 +102,12 @@ export default async function handler(req, res) {
     console.log('TS debug:', JSON.stringify({ dbt: d.depositBlockTimestamp, qt: d.quoteTimestamp, fbt: d.fillBlockTimestamp, dd: d.depositDate, t_dbt: typeof d.depositBlockTimestamp }));
   }
 
+  function toMs(v) {
+    if (!v) return 0;
+    if (typeof v === 'string') { const t = new Date(v).getTime(); return isNaN(t) ? 0 : t; }
+    return v > 1e12 ? v : v * 1000;
+  }
+
   const deposits = rawDeposits.map(d => {
     const inToken = resolveToken(d.inputToken || d.sourceToken);
     const outToken = resolveToken(d.outputToken || d.destinationToken);
@@ -116,12 +122,6 @@ export default async function handler(req, res) {
     const inputNum = parseFloat((inputAmt || '0').replace(/,/g, ''));
     const outputNum = parseFloat((outputAmt || '0').replace(/,/g, ''));
 
-    // Timestamps — handle number (seconds or ms) or ISO string
-    function toMs(v) {
-      if (!v) return 0;
-      if (typeof v === 'string') { const t = new Date(v).getTime(); return isNaN(t) ? 0 : t; }
-      return v > 1e12 ? v : v * 1000;
-    }
     const depositMs = toMs(d.depositBlockTimestamp) || toMs(d.quoteTimestamp) || toMs(d.depositDate) || 0;
     const fillMs = toMs(d.fillBlockTimestamp) || 0;
     const fillDuration = (fillMs && depositMs && fillMs > depositMs) ? Math.round((fillMs - depositMs) / 1000) : null;
