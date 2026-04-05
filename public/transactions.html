@@ -89,17 +89,27 @@ tailwind.config = {
     <!-- Search + Filters -->
     <div class="flex flex-wrap gap-2 mb-6 items-center">
       <input id="search-input" type="text" placeholder="Search token, chain, address..." oninput="render()" class="flex-1 min-w-[180px] px-4 py-2 rounded-full text-sm border border-outline-variant/15 bg-surface-container-lowest focus:outline-none focus:ring-2 focus:ring-primary/30 placeholder:text-on-surface-variant/40"/>
-      <select id="filter-chain" onchange="render()" class="px-4 py-2 rounded-full text-sm font-bold bg-surface-container-low text-on-surface-variant border-none cursor-pointer focus:ring-2 focus:ring-primary/30">
-        <option value="">All chains</option>
-      </select>
-      <select id="filter-token" onchange="render()" class="px-4 py-2 rounded-full text-sm font-bold bg-surface-container-low text-on-surface-variant border-none cursor-pointer focus:ring-2 focus:ring-primary/30">
-        <option value="">All tokens</option>
-      </select>
-      <select id="filter-status" onchange="render()" class="px-4 py-2 rounded-full text-sm font-bold bg-surface-container-low text-on-surface-variant border-none cursor-pointer focus:ring-2 focus:ring-primary/30">
-        <option value="">All status</option>
-        <option value="filled">Filled</option>
-        <option value="pending">Pending</option>
-      </select>
+      <div class="relative" id="dd-chain">
+        <button onclick="toggleDrop('chain')" class="flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-bold bg-surface-container-low text-on-surface-variant hover:bg-surface-container-high transition-colors">
+          <span id="dd-chain-label">All chains</span>
+          <span class="material-symbols-outlined text-sm">expand_more</span>
+        </button>
+        <div id="dd-chain-menu" class="hidden absolute left-0 top-full mt-1 bg-white rounded-xl shadow-lg border border-outline-variant/10 z-50 min-w-[160px] max-h-[240px] overflow-y-auto py-1"></div>
+      </div>
+      <div class="relative" id="dd-token">
+        <button onclick="toggleDrop('token')" class="flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-bold bg-surface-container-low text-on-surface-variant hover:bg-surface-container-high transition-colors">
+          <span id="dd-token-label">All tokens</span>
+          <span class="material-symbols-outlined text-sm">expand_more</span>
+        </button>
+        <div id="dd-token-menu" class="hidden absolute left-0 top-full mt-1 bg-white rounded-xl shadow-lg border border-outline-variant/10 z-50 min-w-[160px] max-h-[240px] overflow-y-auto py-1"></div>
+      </div>
+      <div class="relative" id="dd-status">
+        <button onclick="toggleDrop('status')" class="flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-bold bg-surface-container-low text-on-surface-variant hover:bg-surface-container-high transition-colors">
+          <span id="dd-status-label">All status</span>
+          <span class="material-symbols-outlined text-sm">expand_more</span>
+        </button>
+        <div id="dd-status-menu" class="hidden absolute left-0 top-full mt-1 bg-white rounded-xl shadow-lg border border-outline-variant/10 z-50 min-w-[140px] py-1"></div>
+      </div>
     </div>
 
     <!-- Transaction list -->
@@ -129,6 +139,9 @@ let txData = [];
 let visibleCount = 10;
 const PAGE_SIZE = 10;
 
+const selected = { chain: new Set(), token: new Set(), status: new Set() };
+let allChains = [], allTokens = [];
+
 function populateFilters() {
   const chains = new Set();
   const tokens = new Set();
@@ -138,10 +151,63 @@ function populateFilters() {
     if (tx.fromToken) tokens.add(tx.fromToken);
     if (tx.toToken) tokens.add(tx.toToken);
   });
-  const chainSel = document.getElementById('filter-chain');
-  const tokenSel = document.getElementById('filter-token');
-  chainSel.innerHTML = '<option value="">All chains</option>' + [...chains].sort().map(c => `<option value="${c}">${c}</option>`).join('');
-  tokenSel.innerHTML = '<option value="">All tokens</option>' + [...tokens].sort().map(t => `<option value="${t}">${t}</option>`).join('');
+  allChains = [...chains].sort();
+  allTokens = [...tokens].sort();
+  renderDropdown('chain', allChains);
+  renderDropdown('token', allTokens);
+  renderDropdown('status', ['filled', 'pending']);
+}
+
+function renderDropdown(key, options) {
+  const menu = document.getElementById(`dd-${key}-menu`);
+  menu.innerHTML = options.map(o => {
+    const checked = selected[key].has(o);
+    return `<label class="flex items-center gap-2 px-3 py-2 hover:bg-surface-container-low cursor-pointer transition-colors text-sm">
+      <input type="checkbox" ${checked ? 'checked' : ''} onchange="toggleFilter('${key}','${o}')" class="rounded border-outline-variant/30 text-primary focus:ring-primary/30"/>
+      <span class="text-on-surface">${o}</span>
+    </label>`;
+  }).join('');
+  updateLabel(key);
+}
+
+function toggleFilter(key, value) {
+  if (selected[key].has(value)) selected[key].delete(value);
+  else selected[key].add(value);
+  updateLabel(key);
+  render();
+}
+
+function updateLabel(key) {
+  const label = document.getElementById(`dd-${key}-label`);
+  const btn = label.parentElement;
+  const count = selected[key].size;
+  const defaults = { chain: 'All chains', token: 'All tokens', status: 'All status' };
+  if (count === 0) {
+    label.textContent = defaults[key];
+    btn.className = 'flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-bold bg-surface-container-low text-on-surface-variant hover:bg-surface-container-high transition-colors';
+  } else if (count === 1) {
+    label.textContent = [...selected[key]][0];
+    btn.className = 'flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-bold bg-primary text-on-primary transition-colors';
+  } else {
+    label.textContent = `${count} selected`;
+    btn.className = 'flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-bold bg-primary text-on-primary transition-colors';
+  }
+}
+
+function toggleDrop(key) {
+  const menu = document.getElementById(`dd-${key}-menu`);
+  const wasHidden = menu.classList.contains('hidden');
+  // Close all
+  ['chain','token','status'].forEach(k => document.getElementById(`dd-${k}-menu`).classList.add('hidden'));
+  if (wasHidden) {
+    menu.classList.remove('hidden');
+    setTimeout(() => document.addEventListener('click', function close(e) {
+      if (!document.getElementById(`dd-${key}`).contains(e.target)) {
+        menu.classList.add('hidden');
+        document.removeEventListener('click', close);
+      }
+    }), 0);
+  }
 }
 
 function updateConnectBtn() {
@@ -245,14 +311,11 @@ function render(resetPage) {
   if (resetPage !== false) visibleCount = PAGE_SIZE;
   const list = document.getElementById('tx-list');
   const q = (document.getElementById('search-input').value || '').toLowerCase().trim();
-  const chainFilter = document.getElementById('filter-chain').value;
-  const tokenFilter = document.getElementById('filter-token').value;
-  const statusFilter = document.getElementById('filter-status').value;
 
   let history = txData.filter(tx => {
-    if (chainFilter && tx.fromChain !== chainFilter && tx.toChain !== chainFilter) return false;
-    if (tokenFilter && tx.fromToken !== tokenFilter && tx.toToken !== tokenFilter) return false;
-    if (statusFilter && tx.status !== statusFilter) return false;
+    if (selected.chain.size && !selected.chain.has(tx.fromChain) && !selected.chain.has(tx.toChain)) return false;
+    if (selected.token.size && !selected.token.has(tx.fromToken) && !selected.token.has(tx.toToken)) return false;
+    if (selected.status.size && !selected.status.has(tx.status)) return false;
     if (q) {
       const hay = `${tx.fromToken} ${tx.toToken} ${tx.fromChain} ${tx.toChain} ${tx.recipient||''} ${tx.depositor||''} ${tx.depositTxHash||''} ${tx.amount} ${tx.outputAmount||''}`.toLowerCase();
       if (!hay.includes(q)) return false;
