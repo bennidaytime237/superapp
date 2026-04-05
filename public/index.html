@@ -251,6 +251,18 @@ tailwind.config = {
     <!-- Secondary Column -->
     <div class="lg:col-span-4 space-y-8">
 
+      <!-- Bridge Times -->
+      <section class="bg-surface-container-lowest rounded-xl p-6">
+        <div class="flex items-center justify-between mb-4">
+          <h4 class="text-lg font-bold text-on-background">Bridge Times</h4>
+          <span class="text-[10px] font-bold text-on-surface-variant bg-surface-container px-2 py-0.5 rounded-full">Last hour avg</span>
+        </div>
+        <div id="bridge-times" class="space-y-3">
+          <div class="flex items-center justify-between py-2"><span class="text-sm text-on-surface-variant">Loading...</span></div>
+        </div>
+        <a href="radar.html" class="block mt-4 text-xs font-bold text-primary hover:underline text-center">View full Radar →</a>
+      </section>
+
       <!-- Get Started -->
       <section class="bg-surface-container-low rounded-xl p-6">
         <h4 class="text-lg font-bold text-on-background mb-4">Get Started</h4>
@@ -811,7 +823,55 @@ function timeAgo(ts) {
   } else {
     renderActivity();
   }
+  fetchBridgeTimes();
 })();
+
+const L1_CHAINS = new Set([1]); // Ethereum mainnet
+async function fetchBridgeTimes() {
+  const el = document.getElementById('bridge-times');
+  try {
+    const res = await fetch('/api/radar');
+    const { deposits } = await res.json();
+    if (!deposits || !deposits.length) { el.innerHTML = '<p class="text-sm text-on-surface-variant">No data available</p>'; return; }
+
+    const cutoff = Date.now() - 3600_000;
+    const recent = deposits.filter(d => {
+      const ts = d.depositBlockTimestamp ? new Date(d.depositBlockTimestamp).getTime() : 0;
+      return ts >= cutoff && d.fillBlockTimestamp && d.status === 'filled';
+    });
+
+    const buckets = { 'L1 → L1': [], 'L1 → L2': [], 'L2 → L1': [], 'L2 → L2': [] };
+    for (const d of recent) {
+      const fromL1 = L1_CHAINS.has(d.originChainId);
+      const toL1 = L1_CHAINS.has(d.destinationChainId);
+      const key = `${fromL1 ? 'L1' : 'L2'} → ${toL1 ? 'L1' : 'L2'}`;
+      const secs = (new Date(d.fillBlockTimestamp).getTime() - new Date(d.depositBlockTimestamp).getTime()) / 1000;
+      if (secs > 0 && secs < 3600) buckets[key].push(secs);
+    }
+
+    const icons = { 'L1 → L1': 'sync_alt', 'L1 → L2': 'south_east', 'L2 → L1': 'north_east', 'L2 → L2': 'swap_horiz' };
+    const colors = { 'L1 → L1': 'text-on-surface-variant', 'L1 → L2': 'text-primary', 'L2 → L1': 'text-amber-600', 'L2 → L2': 'text-primary' };
+
+    el.innerHTML = Object.entries(buckets).map(([label, times]) => {
+      const avg = times.length > 0 ? (times.reduce((a,b) => a+b, 0) / times.length) : null;
+      const avgStr = avg !== null ? (avg < 60 ? avg.toFixed(1) + 's' : (avg / 60).toFixed(1) + 'm') : '--';
+      const countStr = times.length > 0 ? `${times.length} tx` : 'No data';
+      return `<div class="flex items-center justify-between py-2.5 border-b border-outline-variant/10 last:border-0">
+        <div class="flex items-center gap-3">
+          <span class="material-symbols-outlined ${colors[label]} text-lg">${icons[label]}</span>
+          <div>
+            <p class="text-sm font-bold text-on-background">${label}</p>
+            <p class="text-[10px] text-on-surface-variant">${countStr}</p>
+          </div>
+        </div>
+        <p class="text-lg font-black ${avg !== null && avg < 5 ? 'text-primary' : avg !== null && avg < 30 ? 'text-on-background' : 'text-on-surface-variant'}">${avgStr}</p>
+      </div>`;
+    }).join('');
+  } catch (e) {
+    console.warn('Bridge times failed:', e);
+    el.innerHTML = '<p class="text-sm text-on-surface-variant">Could not load</p>';
+  }
+}
 </script>
 </body>
 </html>
