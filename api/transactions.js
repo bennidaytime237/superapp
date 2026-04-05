@@ -98,6 +98,14 @@ export default async function handler(req, res) {
 
   const rawDeposits = Array.isArray(data) ? data : (data.deposits || data.results || []);
 
+  // Debug: log first deposit keys
+  if (rawDeposits.length > 0) {
+    console.log('Across deposit sample keys:', Object.keys(rawDeposits[0]));
+    console.log('Across deposit sample:', JSON.stringify(rawDeposits[0]).slice(0, 500));
+  } else {
+    console.log('Across returned empty deposits. Raw data keys:', Object.keys(data));
+  }
+
   const deposits = rawDeposits.map(d => {
     const inToken = resolveToken(d.inputToken || d.sourceToken);
     const outToken = resolveToken(d.outputToken || d.destinationToken);
@@ -112,12 +120,15 @@ export default async function handler(req, res) {
     const inputNum = parseFloat((inputAmt || '0').replace(/,/g, ''));
     const outputNum = parseFloat((outputAmt || '0').replace(/,/g, ''));
 
-    // Compute fill duration in seconds
-    const depositTs = d.depositTime ? d.depositTime
-      : d.depositDate ? Math.floor(new Date(d.depositDate).getTime() / 1000)
-      : d.quoteTimestamp || 0;
-    const fillTs = d.fillTime || 0;
-    const fillDuration = (fillTs && depositTs && fillTs > depositTs) ? fillTs - depositTs : null;
+    // Compute timestamps — try every known field
+    const rawTs = d.depositTime || d.quoteTimestamp || d.updatedAt || d.createdAt || d.timestamp || 0;
+    const depositTs = typeof rawTs === 'string' ? new Date(rawTs).getTime()
+      : rawTs > 1e12 ? rawTs
+      : rawTs > 0 ? rawTs * 1000
+      : d.depositDate ? new Date(d.depositDate).getTime()
+      : 0;
+    const fillTs = d.fillTime ? (d.fillTime > 1e12 ? d.fillTime : d.fillTime * 1000) : 0;
+    const fillDuration = (fillTs && depositTs && fillTs > depositTs) ? Math.floor((fillTs - depositTs) / 1000) : null;
 
     // Detect Sage transactions via depositor metadata or known patterns
     const isSage = !!(d.message && d.message !== '0x') || false;
@@ -136,7 +147,7 @@ export default async function handler(req, res) {
       toChainId,
       depositor: d.depositor || null,
       recipient: d.recipient || null,
-      timestamp: depositTs > 1e12 ? depositTs : depositTs * 1000 || 0,
+      timestamp: depositTs,
       fillDuration,
       status: d.status || 'filled',
       isSage,
