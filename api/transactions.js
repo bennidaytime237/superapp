@@ -99,7 +99,7 @@ export default async function handler(req, res) {
   const rawDeposits = Array.isArray(data) ? data : (data.deposits || data.results || []);
   if (rawDeposits.length > 0) {
     const d = rawDeposits[0];
-    console.log('Timestamp fields:', { depositBlockTimestamp: d.depositBlockTimestamp, quoteTimestamp: d.quoteTimestamp, fillBlockTimestamp: d.fillBlockTimestamp, typeof_dbt: typeof d.depositBlockTimestamp });
+    console.log('TS debug:', JSON.stringify({ dbt: d.depositBlockTimestamp, qt: d.quoteTimestamp, fbt: d.fillBlockTimestamp, dd: d.depositDate, t_dbt: typeof d.depositBlockTimestamp }));
   }
 
   const deposits = rawDeposits.map(d => {
@@ -116,11 +116,14 @@ export default async function handler(req, res) {
     const inputNum = parseFloat((inputAmt || '0').replace(/,/g, ''));
     const outputNum = parseFloat((outputAmt || '0').replace(/,/g, ''));
 
-    // Timestamps from Across API
-    const rawDeposit = d.depositBlockTimestamp || d.quoteTimestamp || 0;
-    const depositMs = rawDeposit > 1e12 ? rawDeposit : rawDeposit * 1000;
-    const rawFill = d.fillBlockTimestamp || 0;
-    const fillMs = rawFill > 1e12 ? rawFill : rawFill * 1000;
+    // Timestamps — handle number (seconds or ms) or ISO string
+    function toMs(v) {
+      if (!v) return 0;
+      if (typeof v === 'string') { const t = new Date(v).getTime(); return isNaN(t) ? 0 : t; }
+      return v > 1e12 ? v : v * 1000;
+    }
+    const depositMs = toMs(d.depositBlockTimestamp) || toMs(d.quoteTimestamp) || toMs(d.depositDate) || 0;
+    const fillMs = toMs(d.fillBlockTimestamp) || 0;
     const fillDuration = (fillMs && depositMs && fillMs > depositMs) ? Math.round((fillMs - depositMs) / 1000) : null;
 
     // Detect Sage transactions via depositor metadata or known patterns
