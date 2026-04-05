@@ -5,5 +5,8 @@
   "description": "Unified crypto superapp — Swap (Uniswap), Bridge (Across), Buy/Sell (MoonPay), Gas top-up",
   "scripts": {
     "build": "echo 'Static site — no build step required'"
+  },
+  "dependencies": {
+    "@vercel/speed-insights": "^2.0.0"
   }
 }
