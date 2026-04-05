@@ -467,15 +467,29 @@ async function onConnected() {
   document.getElementById('hero-balance').innerHTML = '<span class="text-on-surface-variant text-2xl tracking-wide">Loading...</span>';
 
   renderActivity();
-  // Prices must load before balances so renderPortfolio has correct values
-  await fetchPrices();
-  await fetchBalances();
+
+  // Fetch both in parallel — balances waits for prices before rendering
+  const balanceFetch = fetch(`/api/balances?address=${walletAddress}&_t=${Date.now()}`);
+  await fetchPrices(); // sets prices; balances response may already be in-flight
+  try {
+    const res = await balanceFetch;
+    if (!res.ok) throw new Error('API error ' + res.status);
+    const data = await res.json();
+    renderPortfolio(data);
+  } catch (e) {
+    console.error('Balance fetch failed:', e);
+    document.getElementById('hero-balance').innerHTML = '<span class="text-on-surface-variant text-lg">Could not load balances</span>';
+    document.getElementById('assets-grid').innerHTML = '<p class="text-sm text-error col-span-2">Failed to load balances — <button onclick="fetchBalances()" class="underline font-bold">retry</button></p>';
+  }
 }
 
 // ── Prices ──
 async function fetchPrices() {
   try {
-    const res = await fetch('/api/prices');
+    const ctrl = new AbortController();
+    const t = setTimeout(() => ctrl.abort(), 5000);
+    const res = await fetch('/api/prices', { signal: ctrl.signal });
+    clearTimeout(t);
     const raw = await res.json();
     // Normalise CoinGecko format
     prices = {
@@ -510,7 +524,7 @@ async function fetchBalances() {
   } catch (e) {
     console.error('Balance fetch failed:', e);
     document.getElementById('hero-balance').innerHTML = '<span class="text-on-surface-variant text-lg">Could not load balances</span>';
-    document.getElementById('assets-grid').innerHTML = '<p class="text-sm text-error col-span-2">Failed to load balances — <button onclick="fetchBalances()" class="underline font-bold">retry</button></p>';
+    document.getElementById('assets-grid').innerHTML = '<p class="text-sm text-error col-span-2">Failed to load — <button onclick="fetchBalances()" class="underline font-bold">retry</button></p>';
   }
 }
 
