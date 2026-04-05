@@ -73,6 +73,7 @@ tailwind.config = {
     <input id="pm-address" type="text" placeholder="0x..." class="w-full px-4 py-3 rounded-xl border border-pm-accent/20 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-pm-accent/40 bg-white" oninput="validateAddr()"/>
     <p id="addr-error" class="hidden text-xs text-error mt-1">Invalid address</p>
     <p class="text-xs text-on-surface-variant mt-1">Funds arrive as USDC on Polygon</p>
+    <div id="saved-addrs" class="hidden mt-2 flex flex-wrap gap-2"></div>
   </div>
 
   <!-- Source -->
@@ -189,6 +190,19 @@ const TOKEN_ICONS = {
 function chainIcon(id) { const c=CHAINS.find(x=>x.id===id); return c?`https://icons.llamao.fi/icons/chains/rsz_${c.slug}.jpg`:''; }
 
 let walletAddress=null, fromTokenIdx=1, fromChainIdx=0, fromBal=null, cachedBalances=null, prices={}, lastQuote=null, quoteTimer=null;
+
+function getSavedAddresses(){try{return JSON.parse(localStorage.getItem('sage_pm_addrs')||'[]');}catch{return[];}}
+function saveAddress(addr){if(!/^0x[0-9a-fA-F]{40}$/.test(addr))return;const list=getSavedAddresses().filter(a=>a.toLowerCase()!==addr.toLowerCase());list.unshift(addr);if(list.length>3)list.length=3;localStorage.setItem('sage_pm_addrs',JSON.stringify(list));renderSavedAddresses();}
+function renderSavedAddresses(){
+  const list=getSavedAddresses();
+  const el=document.getElementById('saved-addrs');
+  if(!list.length){el.classList.add('hidden');return;}
+  el.classList.remove('hidden');
+  el.innerHTML=list.map(a=>`<button onclick="useAddress('${a}')" class="flex items-center gap-1.5 px-3 py-1.5 bg-pm-accent-light border border-pm-accent/20 rounded-full text-xs font-mono text-pm-accent hover:border-pm-accent/50 transition-colors">
+    <span class="material-symbols-outlined text-sm">history</span>${a.slice(0,6)}…${a.slice(-4)}
+  </button>`).join('');
+}
+function useAddress(addr){document.getElementById('pm-address').value=addr;validateAddr();}
 
 async function connectWallet() {
   if(!window.ethereum){alert('Install MetaMask');return;}
@@ -311,6 +325,7 @@ async function execute() {
     btn.textContent='Deposit complete!';
     // Save to history
     try{const k='sage_tx_'+(walletAddress||'').toLowerCase();const h=JSON.parse(localStorage.getItem(k)||'[]');h.unshift({type:'bridge',summary:`Polymarket deposit: ${amount} ${TOKENS[fromTokenIdx].symbol} → USDC`,fromToken:TOKENS[fromTokenIdx].symbol,toToken:'USDC',fromChain:CHAINS[fromChainIdx].name,toChain:'Polygon',fromChainId:CHAINS[fromChainIdx].id,amount:String(amount),timestamp:Date.now(),txHash:hash});if(h.length>20)h.length=20;localStorage.setItem(k,JSON.stringify(h));}catch{}
+    saveAddress(addr);
     setTimeout(updateBtn,3000);
   } catch(e){
     console.error(e);
@@ -371,7 +386,7 @@ function selectToken(ti,ci){fromTokenIdx=ti;fromChainIdx=ci;closePicker();update
 function fmt(n){if(n>=1000)return n.toLocaleString('en-US',{maximumFractionDigits:2});if(n>=1)return n.toLocaleString('en-US',{maximumFractionDigits:4});return n.toLocaleString('en-US',{maximumFractionDigits:6});}
 
 (async function(){
-  updateDisplay();updateBtn();
+  updateDisplay();updateBtn();renderSavedAddresses();
   await fetchPrices();
   if(window.ethereum){
     const accs=await window.ethereum.request({method:'eth_accounts'});
