@@ -60,7 +60,7 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'Invalid address' });
   }
 
-  const url = `https://app.across.to/api/deposits?address=${address.toLowerCase()}&limit=25&offset=0&status=filled`;
+  const url = `https://app.across.to/api/deposits?address=${address.toLowerCase()}&limit=25&status=filled`;
   let data = null;
   let lastErr = null;
 
