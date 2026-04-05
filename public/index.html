@@ -185,23 +185,37 @@ tailwind.config = {
               <span class="material-symbols-outlined text-lg">local_gas_station</span>
               Gas
             </button>
+            <!-- Deposit dropdown -->
+            <div class="relative">
+              <button onclick="toggleDepositMenu()" class="flex items-center gap-2 px-5 py-3 bg-primary-container text-on-primary-container rounded-full font-bold text-sm hover:opacity-90 transition-opacity">
+                <span class="material-symbols-outlined text-lg">savings</span>
+                Deposit
+                <span class="material-symbols-outlined text-base">expand_more</span>
+              </button>
+              <div id="deposit-menu" class="hidden absolute left-0 top-full mt-2 bg-white rounded-2xl shadow-lg border border-outline-variant/10 overflow-hidden z-50 min-w-[210px]">
+                <a href="hyperliquid.html" class="flex items-center gap-3 px-4 py-3 text-sm font-medium text-on-surface hover:bg-surface-container-low transition-colors">
+                  <img src="hyperliquid-logo.svg" class="w-5 h-5 rounded-md"/>
+                  Hyperliquid
+                </a>
+                <a href="polymarket.html" class="flex items-center gap-3 px-4 py-3 text-sm font-medium text-on-surface hover:bg-surface-container-low transition-colors">
+                  <img src="polymarket-logo.svg" class="w-5 h-5 rounded-md"/>
+                  Polymarket
+                </a>
+              </div>
+            </div>
             <!-- More dropdown -->
             <div class="relative">
               <button onclick="toggleMoreMenu()" class="flex items-center gap-1 px-4 py-3 bg-primary-container text-on-primary-container rounded-full font-bold text-sm hover:opacity-90 transition-opacity">
                 <span class="tracking-widest">···</span>
               </button>
-              <div id="more-menu" class="hidden absolute left-0 bottom-full mb-2 bg-white rounded-2xl shadow-lg border border-outline-variant/10 overflow-hidden z-50 min-w-[200px]">
+              <div id="more-menu" class="hidden absolute left-0 top-full mt-2 bg-white rounded-2xl shadow-lg border border-outline-variant/10 overflow-hidden z-50 min-w-[200px]">
                 <a href="sweep.html" class="flex items-center gap-3 px-4 py-3 text-sm font-medium text-on-surface hover:bg-surface-container-low transition-colors">
                   <span class="material-symbols-outlined text-base text-primary">move_to_inbox</span>
-                  Sweep / Consolidate
-                </a>
-                <a href="polymarket.html" class="flex items-center gap-3 px-4 py-3 text-sm font-medium text-on-surface hover:bg-surface-container-low transition-colors">
-                  <span class="material-symbols-outlined text-base text-primary">account_balance</span>
-                  Fund Polymarket account
+                  Sweep
                 </a>
                 <a href="transactions.html" class="flex items-center gap-3 px-4 py-3 text-sm font-medium text-on-surface hover:bg-surface-container-low transition-colors">
                   <span class="material-symbols-outlined text-base text-primary">receipt_long</span>
-                  Transactions
+                  Transfers
                 </a>
               </div>
             </div>
@@ -379,8 +393,17 @@ function toggleWalletMenu() {
 }
 function closeWalletMenu() { document.getElementById('wallet-menu').classList.add('hidden'); }
 
+function toggleDepositMenu() {
+  const menu = document.getElementById('deposit-menu');
+  document.getElementById('more-menu').classList.add('hidden');
+  menu.classList.toggle('hidden');
+  if (!menu.classList.contains('hidden')) {
+    setTimeout(() => document.addEventListener('click', () => menu.classList.add('hidden'), { once: true }), 0);
+  }
+}
 function toggleMoreMenu() {
   const menu = document.getElementById('more-menu');
+  document.getElementById('deposit-menu').classList.add('hidden');
   menu.classList.toggle('hidden');
   if (!menu.classList.contains('hidden')) {
     setTimeout(() => document.addEventListener('click', () => menu.classList.add('hidden'), { once: true }), 0);
