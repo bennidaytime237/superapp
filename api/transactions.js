@@ -60,28 +60,30 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'Invalid address' });
   }
 
-  const ENDPOINTS = [
-    `https://app.across.to/api/deposits?address=${address}&limit=50&offset=0`,
-    `https://app.across.to/api/deposits?depositorOrRecipientAddress=${address}&limit=50&offset=0`,
-  ];
-
+  const url = `https://app.across.to/api/deposits?address=${address}&limit=50&offset=0`;
   let data = null;
   let lastErr = null;
 
-  for (const url of ENDPOINTS) {
+  // Retry with backoff on 429
+  for (let attempt = 0; attempt < 3; attempt++) {
     try {
+      if (attempt > 0) await new Promise(r => setTimeout(r, 1000 * attempt));
       const ctrl = new AbortController();
-      const t = setTimeout(() => ctrl.abort(), 8000);
+      const t = setTimeout(() => ctrl.abort(), 10000);
       const response = await fetch(url, {
         signal: ctrl.signal,
         headers: { 'Accept': 'application/json' },
       });
       clearTimeout(t);
-      if (!response.ok) { lastErr = `${url} → ${response.status}`; continue; }
+      if (response.status === 429) {
+        lastErr = `429 rate limited (attempt ${attempt + 1})`;
+        continue;
+      }
+      if (!response.ok) { lastErr = `${response.status}`; break; }
       data = await response.json();
       break;
     } catch (e) {
-      lastErr = `${url} → ${e.message}`;
+      lastErr = e.message;
     }
   }
 
@@ -124,6 +126,6 @@ export default async function handler(req, res) {
 
   deposits.sort((a, b) => b.timestamp - a.timestamp);
 
-  res.setHeader('Cache-Control', 's-maxage=15, stale-while-revalidate=30');
+  res.setHeader('Cache-Control', 's-maxage=60, stale-while-revalidate=120');
   return res.json({ deposits });
 }
