@@ -139,6 +139,22 @@ tailwind.config = {
         <p id="recipient-error" class="hidden text-xs text-error mt-1">Invalid Ethereum address</p>
       </div>
     </div>
+
+    <!-- Gas top-up option -->
+    <div id="gas-topup-row" class="hidden mt-3">
+      <button onclick="toggleGasTopup()" class="flex items-center gap-2 w-full text-left">
+        <div id="gas-toggle" class="relative w-9 h-5 rounded-full bg-surface-container-high transition-colors flex-shrink-0">
+          <div id="gas-toggle-knob" class="absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-on-surface-variant/50 transition-all"></div>
+        </div>
+        <span class="text-xs font-bold text-on-surface-variant">Add gas on <span id="gas-dest-name">--</span></span>
+      </button>
+      <div id="gas-amount-row" class="hidden flex gap-2 mt-2">
+        <button onclick="setGasUsd(1)" id="gas-btn-1" class="px-3 py-1.5 rounded-full text-xs font-bold bg-surface-container text-on-surface-variant hover:bg-surface-container-high transition-colors">$1</button>
+        <button onclick="setGasUsd(2)" id="gas-btn-2" class="px-3 py-1.5 rounded-full text-xs font-bold bg-primary text-on-primary">$2</button>
+        <button onclick="setGasUsd(5)" id="gas-btn-5" class="px-3 py-1.5 rounded-full text-xs font-bold bg-surface-container text-on-surface-variant hover:bg-surface-container-high transition-colors">$5</button>
+        <span id="gas-topup-symbol" class="text-xs text-on-surface-variant self-center ml-1">of ETH</span>
+      </div>
+    </div>
   </div>
 
   <!-- ═══ FEE BREAKDOWN ═══ -->
@@ -654,6 +670,7 @@ function updateTokenDisplay() {
   document.getElementById('to-token-icon').src = tokenIconUrl(tt);
   document.getElementById('to-token-label').textContent = tt.symbol;
   updateRate();
+  updateGasTopupVisibility();
 }
 
 function updateRate() {
@@ -672,6 +689,8 @@ function updateRoute() {
 }
 
 let routeAvailable = false;
+let gasTopupEnabled = false;
+let gasTopupUsd = 2;
 
 function updateActionBtn() {
   const btn = document.getElementById('action-btn');
@@ -745,6 +764,62 @@ function validateRecipient() {
 
 function updateRecipientVisibility() {
   document.getElementById('recipient-row').classList.remove('hidden');
+}
+
+// ── Gas top-up helpers ──
+function getNativeWrap(chainId) {
+  for (const t of TOKENS) {
+    if (t.native && t.wrapAddresses?.[chainId]) return { addr: t.wrapAddresses[chainId], symbol: t.symbol };
+  }
+  return null;
+}
+
+function updateGasTopupVisibility() {
+  const row = document.getElementById('gas-topup-row');
+  const destChain = CHAINS[toChainIdx];
+  // Hide for Hyperliquid virtual destinations
+  if (!destChain || destChain.virtual || isHyperliquidDest()) {
+    row.classList.add('hidden');
+    gasTopupEnabled = false;
+    return;
+  }
+  const nativeWrap = getNativeWrap(destChain.id);
+  if (!nativeWrap) { row.classList.add('hidden'); return; }
+  row.classList.remove('hidden');
+  document.getElementById('gas-dest-name').textContent = destChain.name;
+  document.getElementById('gas-topup-symbol').textContent = `of ${nativeWrap.symbol}`;
+}
+
+function toggleGasTopup() {
+  gasTopupEnabled = !gasTopupEnabled;
+  const toggle = document.getElementById('gas-toggle');
+  const knob = document.getElementById('gas-toggle-knob');
+  const amountRow = document.getElementById('gas-amount-row');
+  if (gasTopupEnabled) {
+    toggle.classList.remove('bg-surface-container-high');
+    toggle.classList.add('bg-primary');
+    knob.classList.remove('left-0.5', 'bg-on-surface-variant/50');
+    knob.classList.add('left-4', 'bg-white');
+    amountRow.classList.remove('hidden');
+  } else {
+    toggle.classList.add('bg-surface-container-high');
+    toggle.classList.remove('bg-primary');
+    knob.classList.add('left-0.5', 'bg-on-surface-variant/50');
+    knob.classList.remove('left-4', 'bg-white');
+    amountRow.classList.add('hidden');
+  }
+}
+
+function setGasUsd(n) {
+  gasTopupUsd = n;
+  [1, 2, 5].forEach(v => {
+    const btn = document.getElementById(`gas-btn-${v}`);
+    if (v === n) {
+      btn.className = 'px-3 py-1.5 rounded-full text-xs font-bold bg-primary text-on-primary';
+    } else {
+      btn.className = 'px-3 py-1.5 rounded-full text-xs font-bold bg-surface-container text-on-surface-variant hover:bg-surface-container-high transition-colors';
+    }
+  });
 }
 
 function setMax() {
@@ -1106,6 +1181,14 @@ async function executeSwap() {
       document.getElementById('tx-timer').textContent = '';
       const hash = await sendTx(lastQuote.swapTx);
       showTxScreen('Bridging...', `${fromChainName} → ${toChainName} via Across`, true);
+
+      // Fire gas top-up bridge in parallel (don't wait for main fill first)
+      if (gasTopupEnabled) {
+        try {
+          await executeGasTopup();
+        } catch (e) { console.warn('Gas top-up failed (non-fatal):', e); }
+      }
+
       await pollFill(CHAINS[fromChainIdx].id, hash);
       const elapsed = (Date.now() - txStartTime) / 1000;
       showTxSuccess(`${amount} ${fromSym} on ${fromChainName} → ${toSym} on ${toChainName}`, elapsed, hash, CHAINS[fromChainIdx].id);
@@ -1134,6 +1217,47 @@ async function executeSwap() {
     btn.textContent = e.code === 4001 ? 'Rejected' : 'Failed';
     setTimeout(() => updateActionBtn(), 2000);
   }
+}
+
+async function executeGasTopup() {
+  const fromToken = TOKENS[fromTokenIdx];
+  const originChain = CHAINS[fromChainIdx].id;
+  const destChain = CHAINS[toChainIdx].id;
+  const nativeWrap = getNativeWrap(destChain);
+  if (!nativeWrap) return;
+
+  const inputAddr = fromToken.native ? fromToken.wrapAddresses?.[originChain] : fromToken.addresses[originChain];
+  if (!inputAddr) return;
+
+  // Convert USD amount to source token amount
+  const srcPrice = prices[fromToken.symbol] || 1;
+  const gasAmountInSrc = gasTopupUsd / srcPrice;
+  const gasAmountWei = BigInt(Math.floor(gasAmountInSrc * 10 ** fromToken.decimals)).toString();
+
+  const params = new URLSearchParams({
+    tradeType: 'exactInput', amount: gasAmountWei,
+    inputToken: inputAddr, outputToken: nativeWrap.addr,
+    originChainId: originChain, destinationChainId: destChain,
+    depositor: walletAddress,
+    recipient: getRecipient(),
+    slippage: 'auto',
+  });
+
+  const ctrl = new AbortController();
+  const t = setTimeout(() => ctrl.abort(), 8000);
+  const res = await fetch(`${ACROSS_API}/swap/approval?${params}`, { signal: ctrl.signal });
+  clearTimeout(t);
+  if (!res.ok) return;
+  const data = await res.json();
+
+  if (data.approvalTxns?.length) {
+    showTxScreen('Approving gas...', `Approve ${fromToken.symbol}`, false);
+    document.getElementById('tx-timer').textContent = '';
+    for (const tx of data.approvalTxns) { await sendTx(tx); }
+  }
+  showTxScreen('Adding gas...', `+$${gasTopupUsd} of ${nativeWrap.symbol} on ${CHAINS[toChainIdx].name} — confirm in wallet`, false);
+  document.getElementById('tx-timer').textContent = '';
+  await sendTx(data.swapTx);
 }
 
 async function sendTx(tx) {
