@@ -337,13 +337,22 @@ function isHyperliquidDest() {
   return dest?.virtual && (dest.id === 'hl-spot' || dest.id === 'hl-perp');
 }
 
-// ── Uniswap Quoter V2 (same address on all major chains) ──
-const UNI_QUOTER = '0x61fFE014bA17989E743c5F6cB21bF9697530B21e';
+// ── Uniswap Quoter V2 per chain ──
+const UNI_QUOTERS = {
+  1:    '0x61fFE014bA17989E743c5F6cB21bF9697530B21e',
+  10:   '0x61fFE014bA17989E743c5F6cB21bF9697530B21e',
+  137:  '0x61fFE014bA17989E743c5F6cB21bF9697530B21e',
+  8453: '0x3d4e44Eb1374240CE5F1B871ab261CD16335B76a',
+  42161:'0x61fFE014bA17989E743c5F6cB21bF9697530B21e',
+  56:   '0x78D78E420Da98ad378D7799bE8f4AF69033EB077',
+  81457:'0x6Cdcd65e03c1CEc3730AeeCd45bc140D57A25C77',
+  534352:'0x2c3c9162cB08a0e47bF115D52B5a84E0a996e37a',
+};
 const UNI_RPCS = {
   1:'https://eth.drpc.org', 42161:'https://arb1.arbitrum.io/rpc',
   8453:'https://mainnet.base.org', 10:'https://mainnet.optimism.io', 137:'https://polygon-rpc.com',
   56:'https://bsc-dataseed.binance.org', 81457:'https://rpc.blast.io',
-  534352:'https://rpc.scroll.io', 7777777:'https://rpc.zora.energy',
+  534352:'https://rpc.scroll.io',
 };
 // QuoterV2.quoteExactInputSingle(QuoteExactInputSingleParams)
 // Static-only tuple is encoded inline (no offset pointer needed)
@@ -552,7 +561,7 @@ function setChainFilter(chainId) {
 }
 
 // Chains where Uniswap is available (has router + RPC)
-function isUniswapChain(chainId) { return !!(UNI_ROUTERS[chainId] && UNI_RPCS[chainId]); }
+function isUniswapChain(chainId) { return !!(SWAP_ROUTERS[chainId] && UNI_RPCS[chainId]); }
 
 function buildTokenList() {
   allModalRows = [];
@@ -960,26 +969,22 @@ async function fetchBestQuote(amount) {
 async function fetchUniswapQuote(chainId, fromToken, toToken, amountWei) {
   const tokenIn = fromToken.native ? fromToken.wrapAddresses?.[chainId] : fromToken.addresses[chainId];
   const tokenOut = toToken.native ? toToken.wrapAddresses?.[chainId] : toToken.addresses[chainId];
-  if (!tokenIn || !tokenOut || !UNI_RPCS[chainId]) return null;
+  const quoter = UNI_QUOTERS[chainId];
+  if (!tokenIn || !tokenOut || !UNI_RPCS[chainId] || !quoter) return null;
 
   const fees = [500, 3000, 10000];
   let bestOutput = null;
   let bestFee = 0;
 
-  // Try both QuoterV2 addresses (canonical + alternative)
-  const quoters = [UNI_QUOTER, '0x3d4e44Eb1374240CE5F1B871ab261CD16335B76a'];
-
   const results = await Promise.allSettled(
-    quoters.flatMap(quoter =>
-      fees.map(async (fee) => {
-        const calldata = encodeQuoteExactInputSingle(tokenIn, tokenOut, amountWei, fee);
-        const result = await uniRpcCall(chainId, quoter, calldata);
-        if (result && result !== '0x' && result.length >= 66) {
-          return { fee, output: BigInt('0x' + result.slice(2, 66)) };
-        }
-        return null;
-      })
-    )
+    fees.map(async (fee) => {
+      const calldata = encodeQuoteExactInputSingle(tokenIn, tokenOut, amountWei, fee);
+      const result = await uniRpcCall(chainId, quoter, calldata);
+      if (result && result !== '0x' && result.length >= 66) {
+        return { fee, output: BigInt('0x' + result.slice(2, 66)) };
+      }
+      return null;
+    })
   );
 
   for (const r of results) {
@@ -1350,25 +1355,19 @@ async function ensureApproval(tokenAddr, spender, amountWei, chainId) {
   });
 }
 
-// Universal Router v2 — per-chain addresses
-const UNI_ROUTERS = {
-  1:    '0x66a9893cc07d91d95644aedd05d03f95e1dba8af',
-  10:   '0x851116d9223fabed8e56c0e6b8ad0c31d98b3507',
-  56:   '0x1906c1d672b88cd1b9ac7593301ca990f94eae07',
-  130:  '0xef740bf23acae26f6492b10de645d6b98dc8eaf3',
-  137:  '0x1095692a6237d83c6a72f3f5efedb9a670c49223',
-  480:  '0x8ac7bee993bb44dab564ea4bc9ea67bf9eb5e743',
-  1868: '0x4cded7edf52c8aa5259a54ec6a3ce7c6d2a455df',
-  8453: '0x6ff5693b99212da76ad316178a184ab56d299b43',
-  42161:'0xa51afafe0263b40edaef0df8781ea9aa03e381a3',
-  57073:'0x112908dac86e20e7241b0927479ea3bf935d1fa0',
-  81457:'0xeabbcb3e8e415306207ef514f660a3f820025be3',
-  7777777:'0x3315ef7ca28db74abadc6c44570efdf06b04b020',
+// SwapRouter02 — simpler, proven, deployed everywhere
+const SWAP_ROUTERS = {
+  1:    '0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45',
+  10:   '0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45',
+  56:   '0xB971eF87ede563556b2ED4b1C0b0019111Dd85d2',
+  137:  '0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45',
+  8453: '0x2626664c2603336E57B271c5C0b26F421741e481',
+  42161:'0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45',
+  81457:'0x549FEB8c9bd4c12Ad2AB27022dA12492aC452B66',
+  534352:'0xfc30937f5cDe93Df8d48aCAF7e6f5D8D8ACf1DaB',
 };
-// SwapRouter02 fallback for chains not on Universal Router v2
-const SWAP_ROUTER_FALLBACK = '0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45';
 
-function getSwapRouter(chainId) { return UNI_ROUTERS[chainId] || SWAP_ROUTER_FALLBACK; }
+function getSwapRouter(chainId) { return SWAP_ROUTERS[chainId] || '0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45'; }
 
 async function executeUniswapSwap(q) {
   const pAddr = (a) => a.toLowerCase().replace('0x','').padStart(64,'0');
@@ -1381,90 +1380,53 @@ async function executeUniswapSwap(q) {
   const chainHex = '0x' + q.chainId.toString(16);
   const value = fromToken.native ? '0x' + BigInt(q.amountWei).toString(16) : '0x0';
 
-  // If output is native ETH, swap to router first then unwrap
-  const outputIsNative = toToken.native;
-  // ADDRESS_THIS = 0x02 means "send to the router itself"
-  const swapRecipient = outputIsNative
-    ? '0x0000000000000000000000000000000000000002'
-    : walletAddress;
-
-  // Path: tokenIn(20) + fee(3) + tokenOut(20)
-  const pathHex = q.tokenIn.slice(2).toLowerCase()
-    + q.fee.toString(16).padStart(6, '0')
-    + q.tokenOut.slice(2).toLowerCase();
-  const pathBytes = pathHex.length / 2;
-
-  // Encode V3_SWAP_EXACT_IN input
-  const swapInput = pAddr(swapRecipient)
+  // SwapRouter02.exactInputSingle((address,address,uint24,address,uint256,uint256,uint256,uint160))
+  // selector: 0x04e45aaf
+  const recipient = toToken.native ? '0x0000000000000000000000000000000000000002' : walletAddress;
+  const swapData = '0x04e45aaf'
+    + pAddr(q.tokenIn)
+    + pAddr(q.tokenOut)
+    + pUint(q.fee)
+    + pAddr(recipient)
     + pUint(q.amountWei)
     + pUint(amountOutMin)
-    + pUint(160)                      // offset to path
-    + pUint(1)                        // payerIsUser = true
-    + pUint(pathBytes)
-    + pathHex + '0'.repeat((32 - pathBytes % 32) % 32 * 2);
+    + pUint(0); // sqrtPriceLimitX96
 
-  // Encode UNWRAP_WETH input: (address recipient, uint256 amountMin)
-  const unwrapInput = pAddr(walletAddress) + pUint(amountOutMin);
+  if (toToken.native) {
+    // Multicall: exactInputSingle → unwrapWETH9
+    // unwrapWETH9(uint256,address) selector: 0x49404b7c
+    const unwrapData = '0x49404b7c' + pUint(amountOutMin) + pAddr(walletAddress);
 
-  // Build commands + inputs
-  let commands, inputs;
-  if (outputIsNative) {
-    // Two commands: V3_SWAP_EXACT_IN (0x00) + UNWRAP_WETH (0x0c)
-    commands = '000c';
-    inputs = [swapInput, unwrapInput];
-  } else {
-    commands = '00';
-    inputs = [swapInput];
+    // multicall(uint256 deadline, bytes[] data)
+    // selector: 0x5ae401dc
+    const call1Len = (swapData.length - 2) / 2;
+    const call2Len = (unwrapData.length - 2) / 2;
+    const call1Padded = swapData.slice(2) + '0'.repeat((Math.ceil(call1Len / 32) * 32 - call1Len) * 2);
+    const call2Padded = unwrapData.slice(2) + '0'.repeat((Math.ceil(call2Len / 32) * 32 - call2Len) * 2);
+
+    // bytes[] array: count, offset1, offset2, len1, data1, len2, data2
+    const off1 = 64; // 2 offset words
+    const off2 = off1 + 32 + Math.ceil(call1Len / 32) * 32;
+    const arrayData = pUint(2)
+      + pUint(off1) + pUint(off2)
+      + pUint(call1Len) + call1Padded
+      + pUint(call2Len) + call2Padded;
+
+    const data = '0x5ae401dc'
+      + pUint(deadline)
+      + pUint(64) // offset to bytes[]
+      + arrayData;
+
+    return window.ethereum.request({
+      method: 'eth_sendTransaction',
+      params: [{ from: walletAddress, to: router, data, value, chainId: chainHex }],
+    });
   }
 
-  const commandsLen = commands.length / 2;
-  const commandsPadded = commands + '0'.repeat(64 - commands.length);
-
-  // Encode execute(bytes commands, bytes[] inputs, uint256 deadline)
-  // ABI: offset_commands, offset_inputs, deadline, commands_len, commands, inputs_count, [offsets], [lengths+data]
-  let inputsEncoded = pUint(inputs.length); // array length
-  // Calculate offsets for each input
-  let inputDataOffset = inputs.length * 32; // after all offset words
-  let offsets = '';
-  let datas = '';
-  for (const inp of inputs) {
-    offsets += pUint(inputDataOffset);
-    const inpBytes = inp.length / 2;
-    datas += pUint(inpBytes) + inp;
-    inputDataOffset += 32 + inp.length / 2 * 2 / 2 * 2; // length word + data
-    // Actually: 32 bytes for length + padded data bytes
-    inputDataOffset = inputs.length * 32; // recalc below
-  }
-  // Simpler: build inputs section properly
-  inputsEncoded = pUint(inputs.length);
-  let inputOffsets = '';
-  let inputBodies = '';
-  let runningOffset = inputs.length * 32;
-  for (const inp of inputs) {
-    inputOffsets += pUint(runningOffset);
-    const len = inp.length / 2;
-    inputBodies += pUint(len) + inp;
-    runningOffset += 32 + Math.ceil(len / 32) * 32;
-  }
-
-  const commandsSection = pUint(commandsLen) + commandsPadded;
-  const inputsSection = inputsEncoded + inputOffsets + inputBodies;
-
-  // Top-level: offset_commands(32) + offset_inputs(32) + deadline(32) = 96 bytes header
-  const commandsSectionBytes = 32 + Math.ceil(commandsLen / 32) * 32; // length + padded data
-  const commandsOffset = 96; // after 3 header words
-  const inputsOffset = commandsOffset + commandsSectionBytes;
-
-  const data = '0x3593564c'
-    + pUint(commandsOffset)
-    + pUint(inputsOffset)
-    + pUint(deadline)
-    + commandsSection
-    + inputsSection;
-
+  // Simple case — no unwrap needed
   return window.ethereum.request({
     method: 'eth_sendTransaction',
-    params: [{ from: walletAddress, to: router, data, value, chainId: chainHex }],
+    params: [{ from: walletAddress, to: router, data: swapData, value, chainId: chainHex }],
   });
 }
 
