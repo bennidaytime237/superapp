@@ -964,9 +964,11 @@ async function fetchAcrossQuote(originChain, destChain, fromToken, toToken, amou
   try { outputNum = Number(BigInt(rawOutput)) / 10 ** toToken.decimals; } catch { outputNum = parseFloat(rawOutput) / 10 ** toToken.decimals || 0; }
   if (!outputNum || outputNum <= 0) return null;
   const fp = prices[fromToken.symbol] || 0;
-  const rawFee = data.fees?.total ?? data.fees?.totalRelayFee?.total ?? '0';
-  let totalFee = 0;
-  try { totalFee = Number(BigInt(rawFee)) / 10 ** fromToken.decimals; } catch { totalFee = 0; }
+  const tp = prices[toToken.symbol] || 0;
+  const amount = Number(BigInt(amountWei)) / 10 ** fromToken.decimals;
+  const inputUsd = amount * fp;
+  const outputUsd = outputNum * tp;
+  const feeUsd = Math.max(0, inputUsd - outputUsd);
   const fromChainName = CHAINS.find(c => c.id === originChain)?.name || originChain;
   const toChainName = CHAINS.find(c => c.id === destChain)?.name || destChain;
 
@@ -974,7 +976,7 @@ async function fetchAcrossQuote(originChain, destChain, fromToken, toToken, amou
     outputNum,
     provider: 'Across Protocol',
     route: `${fromToken.symbol}(${fromChainName}) → ${toToken.symbol}(${toChainName})`,
-    feeDisplay: `~$${fmtNum(totalFee * fp)}`,
+    feeDisplay: feeUsd > 0.001 ? `~$${fmtNum(feeUsd)}` : '<$0.01',
     time: '~2 seconds',
     type: 'across',
     quote: data,

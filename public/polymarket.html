@@ -286,11 +286,10 @@ async function fetchQuote(amount) {
     lastQuote=data;
     const rawOut=data.steps?.bridge?.outputAmount??data.expectedOutput??data.outputAmount??'0';
     let out=0; try{out=Number(BigInt(rawOut))/1e6;}catch{out=parseFloat(rawOut)/1e6||0;}
-    const rawFee=data.fees?.total??data.fees?.totalRelayFee?.total??'0';
-    let fee=0; try{fee=Number(BigInt(rawFee))/10**t.decimals;}catch{}
-    const fp=prices[t.symbol]||0;
+    const inputUsd=amount*(prices[t.symbol]||0);
+    const feeUsd=inputUsd>0?Math.max(0,inputUsd-out):0;
     document.getElementById('output-amount').textContent=fmt(out);
-    document.getElementById('fee-display').textContent=fee>0?`~$${fmt(fee*fp)} fee`:'No fee';
+    document.getElementById('fee-display').textContent=feeUsd>0.001?`~$${fmt(feeUsd)} fee`:'Calculating...';
     updateBtn();
   } catch(e){console.warn('Quote failed:',e);document.getElementById('fee-display').textContent='Quote failed';}
 }
