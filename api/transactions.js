@@ -97,6 +97,7 @@ export default async function handler(req, res) {
   }
 
   const rawDeposits = Array.isArray(data) ? data : (data.deposits || data.results || []);
+  console.log('Data type:', typeof data, 'isArray:', Array.isArray(data), 'keys:', Object.keys(data), 'rawDeposits count:', rawDeposits.length);
 
   const deposits = rawDeposits.map(d => {
     const inToken = resolveToken(d.inputToken || d.sourceToken);
