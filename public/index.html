@@ -826,50 +826,35 @@ function timeAgo(ts) {
   fetchBridgeTimes();
 })();
 
-const L1_CHAINS = new Set([1]); // Ethereum mainnet
 async function fetchBridgeTimes() {
   const el = document.getElementById('bridge-times');
-  try {
-    const res = await fetch('/api/radar');
-    const { deposits } = await res.json();
-    if (!deposits || !deposits.length) { el.innerHTML = '<p class="text-sm text-on-surface-variant">No data available</p>'; return; }
+  const cacheKey = 'sage_bridge_times';
+  const icons = { 'L1 → L1': 'sync_alt', 'L1 → L2': 'south_east', 'L2 → L1': 'north_east', 'L2 → L2': 'swap_horiz' };
+  const colors = { 'L1 → L1': 'text-on-surface-variant', 'L1 → L2': 'text-primary', 'L2 → L1': 'text-amber-600', 'L2 → L2': 'text-primary' };
 
-    // Sort by most recent first, only filled with valid timestamps
-    const filled = deposits.filter(d => d.fillBlockTimestamp && d.depositBlockTimestamp && d.status === 'filled')
-      .sort((a, b) => new Date(b.depositBlockTimestamp).getTime() - new Date(a.depositBlockTimestamp).getTime());
-
-    // Bucket and take only the last 5 per route type for "current" time
-    const buckets = { 'L1 → L1': [], 'L1 → L2': [], 'L2 → L1': [], 'L2 → L2': [] };
-    const MAX_PER_BUCKET = 5;
-    for (const d of filled) {
-      const fromL1 = L1_CHAINS.has(d.originChainId);
-      const toL1 = L1_CHAINS.has(d.destinationChainId);
-      const key = `${fromL1 ? 'L1' : 'L2'} → ${toL1 ? 'L1' : 'L2'}`;
-      if (buckets[key].length >= MAX_PER_BUCKET) continue;
-      const secs = (new Date(d.fillBlockTimestamp).getTime() - new Date(d.depositBlockTimestamp).getTime()) / 1000;
-      if (secs > 0 && secs < 3600) buckets[key].push(secs);
-    }
-
-    const icons = { 'L1 → L1': 'sync_alt', 'L1 → L2': 'south_east', 'L2 → L1': 'north_east', 'L2 → L2': 'swap_horiz' };
-    const colors = { 'L1 → L1': 'text-on-surface-variant', 'L1 → L2': 'text-primary', 'L2 → L1': 'text-amber-600', 'L2 → L2': 'text-primary' };
-
-    el.innerHTML = Object.entries(buckets).map(([label, times]) => {
-      // Median of last 5 fills = best "current" estimate
-      const sorted = [...times].sort((a,b) => a - b);
-      const median = sorted.length > 0 ? sorted[Math.floor(sorted.length / 2)] : null;
-      const timeStr = median !== null ? (median < 60 ? '~' + median.toFixed(0) + 's' : '~' + (median / 60).toFixed(1) + 'm') : '--';
+  function renderTimes(data) {
+    el.innerHTML = ['L1 → L1','L1 → L2','L2 → L1','L2 → L2'].map(label => {
+      const median = data[label];
+      const timeStr = median !== null && median !== undefined ? (median < 60 ? '~' + Math.round(median) + 's' : '~' + (median / 60).toFixed(1) + 'm') : '--';
       return `<div class="flex items-center justify-between py-2.5 border-b border-outline-variant/10 last:border-0">
         <div class="flex items-center gap-3">
           <span class="material-symbols-outlined ${colors[label]} text-lg">${icons[label]}</span>
           <p class="text-sm font-bold text-on-background">${label}</p>
         </div>
-        <p class="text-lg font-black ${median !== null && median < 5 ? 'text-primary' : median !== null && median < 30 ? 'text-on-background' : 'text-on-surface-variant'}">${timeStr}</p>
+        <p class="text-lg font-black ${median != null && median < 5 ? 'text-primary' : median != null && median < 30 ? 'text-on-background' : 'text-on-surface-variant'}">${timeStr}</p>
       </div>`;
     }).join('');
-  } catch (e) {
-    console.warn('Bridge times failed:', e);
-    el.innerHTML = '<p class="text-sm text-on-surface-variant">Could not load</p>';
   }
+
+  // Show cached instantly
+  try { const c = JSON.parse(localStorage.getItem(cacheKey)); if (c) renderTimes(c); } catch {}
+
+  // Fetch fresh
+  try {
+    const res = await fetch('/api/bridge-times');
+    const data = await res.json();
+    if (!data.error) { renderTimes(data); try { localStorage.setItem(cacheKey, JSON.stringify(data)); } catch {} }
+  } catch (e) { console.warn('Bridge times failed:', e); }
 }
 </script>
 </body>
