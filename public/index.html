@@ -157,7 +157,7 @@ tailwind.config = {
             <span class="text-on-surface-variant text-2xl tracking-wide">Connect wallet to view</span>
           </h3>
           <p id="hero-change" class="text-sm text-primary font-bold mb-8"></p>
-          <div class="flex flex-wrap gap-3">
+          <div class="flex flex-wrap gap-3 items-center">
             <button onclick="window.location.href='swap.html'" class="flex items-center gap-2 px-6 py-3 bg-primary text-on-primary rounded-full font-bold text-sm active:scale-95 transition-transform">
               <span class="material-symbols-outlined text-lg">swap_horiz</span>
               Bridge
@@ -166,6 +166,22 @@ tailwind.config = {
               <span class="material-symbols-outlined text-lg">local_gas_station</span>
               Gas
             </button>
+            <!-- More dropdown -->
+            <div class="relative">
+              <button onclick="toggleMoreMenu()" class="flex items-center gap-1 px-4 py-3 bg-primary-container text-on-primary-container rounded-full font-bold text-sm hover:opacity-90 transition-opacity">
+                <span class="tracking-widest">···</span>
+              </button>
+              <div id="more-menu" class="hidden absolute left-0 bottom-full mb-2 bg-white rounded-2xl shadow-lg border border-outline-variant/10 overflow-hidden z-50 min-w-[200px]">
+                <a href="polymarket.html" class="flex items-center gap-3 px-4 py-3 text-sm font-medium text-on-surface hover:bg-surface-container-low transition-colors">
+                  <span class="material-symbols-outlined text-base text-primary">account_balance</span>
+                  Fund Polymarket account
+                </a>
+                <a href="transactions.html" class="flex items-center gap-3 px-4 py-3 text-sm font-medium text-on-surface hover:bg-surface-container-low transition-colors">
+                  <span class="material-symbols-outlined text-base text-primary">receipt_long</span>
+                  Transactions
+                </a>
+              </div>
+            </div>
           </div>
         </div>
         <div class="absolute -right-16 -top-16 w-64 h-64 bg-primary/5 rounded-full blur-3xl"></div>
@@ -327,6 +343,14 @@ function toggleWalletMenu() {
   }
 }
 function closeWalletMenu() { document.getElementById('wallet-menu').classList.add('hidden'); }
+
+function toggleMoreMenu() {
+  const menu = document.getElementById('more-menu');
+  menu.classList.toggle('hidden');
+  if (!menu.classList.contains('hidden')) {
+    setTimeout(() => document.addEventListener('click', () => menu.classList.add('hidden'), { once: true }), 0);
+  }
+}
 
 function copyAddress() {
   navigator.clipboard.writeText(walletAddress);
