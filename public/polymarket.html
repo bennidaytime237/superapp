@@ -14,7 +14,7 @@ tailwind.config = {
   theme: {
     extend: {
       colors: {
-        "pm-blue":"#0d2149","pm-blue-light":"#1a3a6e","pm-accent":"#3b82f6",
+        "pm-blue":"#0d2149","pm-blue-light":"#1a3a6e","pm-accent":"#325bff","pm-accent-light":"#eef1ff",
         "outline-variant":"#a3b899","on-surface":"#2f3a33","background":"#faf7f5",
         "on-primary":"#faf7f5","primary":"#667b68",
         "surface-container-lowest":"#ffffff","surface-container-high":"#dde6d5",
@@ -36,7 +36,7 @@ tailwind.config = {
   input[type=number] { -moz-appearance: textfield; }
 </style>
 </head>
-<body class="bg-background text-on-surface antialiased min-h-screen flex flex-col">
+<body class="bg-pm-accent-light text-on-surface antialiased min-h-screen flex flex-col">
 
 <!-- Header -->
 <header class="w-full max-w-xl mx-auto h-14 flex justify-between items-center px-6 flex-shrink-0">
@@ -70,13 +70,13 @@ tailwind.config = {
   <!-- Recipient -->
   <div class="mb-5">
     <label class="text-sm font-bold text-on-surface mb-2 block">Your Polymarket address</label>
-    <input id="pm-address" type="text" placeholder="0x..." class="w-full px-4 py-3 rounded-xl border border-outline-variant/15 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-pm-accent/30" oninput="validateAddr()"/>
+    <input id="pm-address" type="text" placeholder="0x..." class="w-full px-4 py-3 rounded-xl border border-pm-accent/20 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-pm-accent/40 bg-white" oninput="validateAddr()"/>
     <p id="addr-error" class="hidden text-xs text-error mt-1">Invalid address</p>
     <p class="text-xs text-on-surface-variant mt-1">Funds arrive as USDC on Polygon</p>
   </div>
 
   <!-- Source -->
-  <div class="bg-white rounded-2xl p-5 border border-outline-variant/10 mb-5">
+  <div class="bg-white rounded-2xl p-5 border border-pm-accent/10 mb-5">
     <p class="text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-3">You send</p>
     <div class="flex items-end justify-between gap-4">
       <button onclick="openPicker()" class="inline-flex items-center gap-2 bg-surface-container-low pl-1.5 pr-4 py-1.5 rounded-full border border-outline-variant/10 hover:bg-surface-container-high transition-colors">
@@ -90,22 +90,22 @@ tailwind.config = {
       <input id="input-amount" type="number" placeholder="0" class="flex-1 text-right text-4xl font-black border-none focus:ring-0 p-0 bg-transparent placeholder:text-on-surface-variant/15 min-w-0" oninput="onAmountChange()"/>
     </div>
     <div class="flex justify-end mt-2">
-      <span class="text-sm text-on-surface-variant">Balance: <button onclick="setMax()" class="font-bold hover:underline" id="from-balance">--</button></span>
+      <span class="text-sm text-on-surface-variant">Balance: <button onclick="setMax()" class="font-bold text-pm-accent hover:underline" id="from-balance">--</button></span>
     </div>
   </div>
 
   <!-- Output preview -->
-  <div class="bg-surface-container-low rounded-2xl p-5 border border-outline-variant/10 mb-5">
+  <div class="bg-white rounded-2xl p-5 border border-pm-accent/15 mb-5">
     <div class="flex items-center justify-between">
       <div class="flex items-center gap-2">
         <img src="https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48/logo.png" class="w-6 h-6 rounded-full"/>
         <span class="text-sm font-bold">USDC on Polygon</span>
       </div>
-      <span id="output-amount" class="text-lg font-black">--</span>
+      <span id="output-amount" class="text-lg font-black text-pm-accent">--</span>
     </div>
     <div class="flex justify-between mt-2 text-xs text-on-surface-variant">
       <span id="fee-display">--</span>
-      <span id="fee-time">~2 seconds via Across</span>
+      <span id="fee-time" class="text-pm-accent/70">~2 seconds via Across</span>
     </div>
   </div>
 
