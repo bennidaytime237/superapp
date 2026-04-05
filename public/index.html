@@ -76,6 +76,10 @@ tailwind.config = {
       <span class="material-symbols-outlined">local_gas_station</span>
       <span class="font-medium text-sm">Gas</span>
     </a>
+    <a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:text-primary hover:bg-white/50 rounded-full transition-all" href="sweep.html">
+      <span class="material-symbols-outlined">move_to_inbox</span>
+      <span class="font-medium text-sm">Sweep</span>
+    </a>
   </nav>
 
   <!-- Polymarket Promo -->
@@ -172,6 +176,10 @@ tailwind.config = {
                 <span class="tracking-widest">···</span>
               </button>
               <div id="more-menu" class="hidden absolute left-0 bottom-full mb-2 bg-white rounded-2xl shadow-lg border border-outline-variant/10 overflow-hidden z-50 min-w-[200px]">
+                <a href="sweep.html" class="flex items-center gap-3 px-4 py-3 text-sm font-medium text-on-surface hover:bg-surface-container-low transition-colors">
+                  <span class="material-symbols-outlined text-base text-primary">move_to_inbox</span>
+                  Sweep / Consolidate
+                </a>
                 <a href="polymarket.html" class="flex items-center gap-3 px-4 py-3 text-sm font-medium text-on-surface hover:bg-surface-container-low transition-colors">
                   <span class="material-symbols-outlined text-base text-primary">account_balance</span>
                   Fund Polymarket account
@@ -235,6 +243,18 @@ tailwind.config = {
               <div>
                 <p class="text-sm font-bold text-on-background">Gas top-up</p>
                 <p class="text-xs text-on-surface-variant">Distribute gas across chains</p>
+              </div>
+            </div>
+            <span class="material-symbols-outlined text-on-surface-variant">chevron_right</span>
+          </a>
+          <a href="sweep.html" class="p-4 bg-surface-container-lowest rounded-xl flex items-center justify-between cursor-pointer hover:bg-primary-container transition-colors">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-full bg-surface-container flex items-center justify-center">
+                <span class="material-symbols-outlined text-primary">move_to_inbox</span>
+              </div>
+              <div>
+                <p class="text-sm font-bold text-on-background">Sweep assets</p>
+                <p class="text-xs text-on-surface-variant">Consolidate to one chain</p>
               </div>
             </div>
             <span class="material-symbols-outlined text-on-surface-variant">chevron_right</span>
