@@ -82,14 +82,14 @@ tailwind.config = {
   </nav>
 
   <!-- Polymarket Promo -->
-  <a href="polymarket.html" class="block mb-3 p-3 bg-[#0d2149] rounded-2xl hover:brightness-110 transition-all">
-    <div class="flex items-center gap-2.5">
+  <a href="polymarket.html" class="block mb-3 p-3.5 bg-[#0d2149] rounded-2xl hover:brightness-110 transition-all">
+    <div class="flex items-center gap-3">
       <div class="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center flex-shrink-0">
         <span class="text-white text-lg font-black">P</span>
       </div>
-      <div>
-        <p class="text-xs font-bold text-white">Polymarket Deposit</p>
-        <p class="text-[10px] text-white/60">Bridge any token to your account</p>
+      <div class="leading-relaxed">
+        <p class="text-xs font-medium text-white">Polymarket Deposit</p>
+        <p class="text-[10px] text-white/50">Bridge any token to your account</p>
       </div>
     </div>
   </a>
@@ -628,8 +628,7 @@ function timeAgo(ts) {
 }
 
 (async function init() {
-  renderActivity();
-  await fetchPrices();
+  // Check wallet first so sidebar shows connected state immediately
   if (window.ethereum) {
     const accounts = await window.ethereum.request({ method: 'eth_accounts' });
     if (accounts.length > 0) {
@@ -642,6 +641,8 @@ function timeAgo(ts) {
       onConnected();
     });
   }
+  renderActivity();
+  fetchPrices();
 })();
 </script>
 </body>
