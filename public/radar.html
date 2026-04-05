@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html class="light" lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Radar - Sage</title>
+<link rel="icon" type="image/svg+xml" href="favicon.svg"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<script>
+tailwind.config = {
+  darkMode: "class",
+  theme: {
+    extend: {
+      colors: {
+        "surface-bright":"#faf7f5","surface":"#faf7f5","background":"#faf7f5",
+        "surface-container-lowest":"#ffffff","surface-container-low":"#f2f5ef",
+        "surface-container":"#eaefe5","surface-container-high":"#dde6d5",
+        "surface-container-highest":"#d3deca","surface-dim":"#dde6d5",
+        "surface-variant":"#dde6d5","surface-tint":"#667b68",
+        "primary":"#667b68","primary-dim":"#2f3a33","primary-fixed":"#dde6d5",
+        "primary-fixed-dim":"#a3b899","primary-container":"#dde6d5",
+        "on-primary":"#faf7f5","on-primary-container":"#2f3a33",
+        "on-primary-fixed":"#2f3a33","on-primary-fixed-variant":"#667b68",
+        "on-surface":"#2f3a33","on-surface-variant":"#667b68",
+        "on-background":"#1f2622",
+        "outline":"#667b68","outline-variant":"#a3b899",
+        "error":"#9e422c","error-container":"#f8d3c5",
+        "on-error":"#faf7f5","on-error-container":"#742410",
+        "inverse-surface":"#1f2622","inverse-on-surface":"#a3b899",
+        "inverse-primary":"#dde6d5",
+        "secondary":"#667b68","secondary-container":"#dde6d5",
+        "on-secondary":"#faf7f5","on-secondary-container":"#2f3a33",
+        "tertiary":"#667b68","tertiary-container":"#dde6d5",
+        "on-tertiary":"#faf7f5","on-tertiary-container":"#2f3a33",
+      },
+      fontFamily: { "headline":["Outfit"], "body":["Outfit"], "label":["Outfit"] },
+      borderRadius: { "DEFAULT":"1rem","lg":"2rem","xl":"3rem","full":"9999px" },
+    },
+  },
+}
+</script>
+<style>
+  .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+  body { font-family: 'Outfit', sans-serif; }
+  b, strong, .font-bold, .font-extrabold, .font-black, .font-semibold { letter-spacing: 0.01em; }
+  @keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
+  .skeleton {
+    background: linear-gradient(90deg, #eaefe5 25%, #f2f5ef 50%, #eaefe5 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+    border-radius: 0.5rem;
+  }
+  @keyframes pulse-dot { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+  .live-dot { animation: pulse-dot 2s ease-in-out infinite; }
+</style>
+</head>
+<body class="bg-surface text-on-surface selection:bg-primary-fixed selection:text-on-primary-fixed min-h-screen">
+
+<!-- Sidebar Navigation (Desktop) -->
+<aside class="hidden md:flex flex-col fixed left-0 top-0 h-full w-64 p-4 bg-surface-container-low z-40">
+  <a href="index.html" class="mb-10 px-4 py-2 flex items-center gap-2">
+    <img src="sage-wordmark.svg" alt="Sage" class="h-7"/>
+  </a>
+  <nav class="flex-1 space-y-1">
+    <a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:text-primary hover:bg-white/50 rounded-full transition-all" href="index.html">
+      <span class="material-symbols-outlined">grid_view</span>
+      <span class="font-medium text-sm">Dashboard</span>
+    </a>
+    <a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:text-primary hover:bg-white/50 rounded-full transition-all" href="swap.html">
+      <span class="material-symbols-outlined">swap_horiz</span>
+      <span class="font-medium text-sm">Bridge</span>
+    </a>
+    <a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:text-primary hover:bg-white/50 rounded-full transition-all" href="transactions.html">
+      <span class="material-symbols-outlined">receipt_long</span>
+      <span class="font-medium text-sm">Transactions</span>
+    </a>
+    <a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:text-primary hover:bg-white/50 rounded-full transition-all" href="gas.html">
+      <span class="material-symbols-outlined">local_gas_station</span>
+      <span class="font-medium text-sm">Gas</span>
+    </a>
+    <a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:text-primary hover:bg-white/50 rounded-full transition-all" href="sweep.html">
+      <span class="material-symbols-outlined">move_to_inbox</span>
+      <span class="font-medium text-sm">Sweep</span>
+    </a>
+    <a class="flex items-center gap-3 px-4 py-3 bg-surface-container-lowest text-primary rounded-full shadow-sm" href="radar.html">
+      <span class="material-symbols-outlined">radar</span>
+      <span class="font-medium text-sm">Radar</span>
+    </a>
+  </nav>
+</aside>
+
+<!-- Main -->
+<main class="md:ml-64 min-h-screen pb-24 md:pb-8">
+  <header class="flex justify-between items-center w-full px-6 py-4 bg-surface sticky top-0 z-30">
+    <div class="flex items-center gap-2">
+      <a href="index.html"><img src="sage-wordmark.svg" alt="Sage" class="h-6 md:hidden"/></a>
+      <h2 class="hidden md:block font-headline font-bold text-xl tracking-tight text-on-background">Radar</h2>
+    </div>
+    <div class="flex items-center gap-3">
+      <a href="index.html" class="md:hidden text-sm font-medium text-on-surface-variant hover:text-primary flex items-center gap-1">
+        <span class="material-symbols-outlined text-sm">arrow_back</span> Dashboard
+      </a>
+      <!-- Auto-refresh indicator -->
+      <div class="flex items-center gap-1.5 text-xs text-on-surface-variant">
+        <span class="w-1.5 h-1.5 rounded-full bg-primary live-dot"></span>
+        <span>Live</span>
+        <span class="text-outline-variant" id="countdown">30s</span>
+      </div>
+    </div>
+  </header>
+
+  <div class="px-6 lg:px-10 py-6 max-w-6xl">
+
+    <!-- Overview Stats -->
+    <section id="stats-section" class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-8">
+      <div class="bg-surface-container-lowest rounded-2xl p-5 border border-outline-variant/10">
+        <div class="flex items-center gap-2 mb-2">
+          <span class="material-symbols-outlined text-primary text-lg">payments</span>
+          <span class="text-xs font-medium text-on-surface-variant">Volume (1h)</span>
+        </div>
+        <div id="stat-volume" class="text-xl font-bold text-on-surface"><span class="skeleton inline-block w-24 h-6">&nbsp;</span></div>
+      </div>
+      <div class="bg-surface-container-lowest rounded-2xl p-5 border border-outline-variant/10">
+        <div class="flex items-center gap-2 mb-2">
+          <span class="material-symbols-outlined text-primary text-lg">receipt_long</span>
+          <span class="text-xs font-medium text-on-surface-variant">Transactions (1h)</span>
+        </div>
+        <div id="stat-txns" class="text-xl font-bold text-on-surface"><span class="skeleton inline-block w-16 h-6">&nbsp;</span></div>
+      </div>
+      <div class="bg-surface-container-lowest rounded-2xl p-5 border border-outline-variant/10">
+        <div class="flex items-center gap-2 mb-2">
+          <span class="material-symbols-outlined text-primary text-lg">timer</span>
+          <span class="text-xs font-medium text-on-surface-variant">Avg Bridge Time</span>
+        </div>
+        <div id="stat-time" class="text-xl font-bold text-on-surface"><span class="skeleton inline-block w-16 h-6">&nbsp;</span></div>
+      </div>
+      <div class="bg-surface-container-lowest rounded-2xl p-5 border border-outline-variant/10">
+        <div class="flex items-center gap-2 mb-2">
+          <span class="material-symbols-outlined text-primary text-lg">hub</span>
+          <span class="text-xs font-medium text-on-surface-variant">Active Chains</span>
+        </div>
+        <div id="stat-chains" class="text-xl font-bold text-on-surface"><span class="skeleton inline-block w-10 h-6">&nbsp;</span></div>
+      </div>
+    </section>
+
+    <!-- Leaderboards: Dest Chains + Routes -->
+    <section class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+
+      <!-- Top Destination Chains -->
+      <div class="bg-surface-container-lowest rounded-2xl border border-outline-variant/10 overflow-hidden">
+        <div class="flex items-center gap-2 px-5 py-4 border-b border-outline-variant/10">
+          <span class="material-symbols-outlined text-primary text-lg">leaderboard</span>
+          <h3 class="font-semibold text-sm text-on-surface">Top Destination Chains</h3>
+        </div>
+        <div id="dest-chains" class="divide-y divide-outline-variant/10">
+          <div class="p-5 space-y-3">
+            <div class="skeleton h-8 w-full">&nbsp;</div>
+            <div class="skeleton h-8 w-full">&nbsp;</div>
+            <div class="skeleton h-8 w-full">&nbsp;</div>
+            <div class="skeleton h-8 w-3/4">&nbsp;</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Top Routes -->
+      <div class="bg-surface-container-lowest rounded-2xl border border-outline-variant/10 overflow-hidden">
+        <div class="flex items-center gap-2 px-5 py-4 border-b border-outline-variant/10">
+          <span class="material-symbols-outlined text-primary text-lg">route</span>
+          <h3 class="font-semibold text-sm text-on-surface">Top Routes</h3>
+        </div>
+        <div id="top-routes" class="divide-y divide-outline-variant/10">
+          <div class="p-5 space-y-3">
+            <div class="skeleton h-8 w-full">&nbsp;</div>
+            <div class="skeleton h-8 w-full">&nbsp;</div>
+            <div class="skeleton h-8 w-full">&nbsp;</div>
+            <div class="skeleton h-8 w-3/4">&nbsp;</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Top Tokens + Recent Transactions -->
+    <section class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+
+      <!-- Top Tokens -->
+      <div class="bg-surface-container-lowest rounded-2xl border border-outline-variant/10 overflow-hidden">
+        <div class="flex items-center gap-2 px-5 py-4 border-b border-outline-variant/10">
+          <span class="material-symbols-outlined text-primary text-lg">token</span>
+          <h3 class="font-semibold text-sm text-on-surface">Top Tokens</h3>
+        </div>
+        <div id="top-tokens" class="divide-y divide-outline-variant/10">
+          <div class="p-5 space-y-3">
+            <div class="skeleton h-8 w-full">&nbsp;</div>
+            <div class="skeleton h-8 w-full">&nbsp;</div>
+            <div class="skeleton h-8 w-full">&nbsp;</div>
+            <div class="skeleton h-8 w-3/4">&nbsp;</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Recent Transactions -->
+      <div class="bg-surface-container-lowest rounded-2xl border border-outline-variant/10 overflow-hidden">
+        <div class="flex items-center gap-2 px-5 py-4 border-b border-outline-variant/10">
+          <span class="material-symbols-outlined text-primary text-lg">dynamic_feed</span>
+          <h3 class="font-semibold text-sm text-on-surface">Recent Transactions</h3>
+        </div>
+        <div id="recent-txns" class="divide-y divide-outline-variant/10">
+          <div class="p-5 space-y-3">
+            <div class="skeleton h-10 w-full">&nbsp;</div>
+            <div class="skeleton h-10 w-full">&nbsp;</div>
+            <div class="skeleton h-10 w-full">&nbsp;</div>
+            <div class="skeleton h-10 w-full">&nbsp;</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Powered by Across -->
+    <div class="flex items-center justify-center py-4">
+      <img src="powered-by-across.svg" alt="Powered by Across" class="h-5"/>
+    </div>
+
+  </div>
+</main>
+
+<!-- Mobile Bottom Nav -->
+<nav class="md:hidden fixed bottom-0 left-0 right-0 bg-surface-container-low border-t border-outline-variant/10 flex justify-around items-center py-2 z-40">
+  <a href="index.html" class="flex flex-col items-center gap-0.5 py-1 px-3 text-on-surface-variant">
+    <span class="material-symbols-outlined text-xl">grid_view</span>
+    <span class="text-[10px] font-medium">Home</span>
+  </a>
+  <a href="swap.html" class="flex flex-col items-center gap-0.5 py-1 px-3 text-on-surface-variant">
+    <span class="material-symbols-outlined text-xl">swap_horiz</span>
+    <span class="text-[10px] font-medium">Bridge</span>
+  </a>
+  <a href="transactions.html" class="flex flex-col items-center gap-0.5 py-1 px-3 text-on-surface-variant">
+    <span class="material-symbols-outlined text-xl">receipt_long</span>
+    <span class="text-[10px] font-medium">History</span>
+  </a>
+  <a href="radar.html" class="flex flex-col items-center gap-0.5 py-1 px-3 text-primary">
+    <span class="material-symbols-outlined text-xl">radar</span>
+    <span class="text-[10px] font-medium">Radar</span>
+  </a>
+</nav>
+
+<script>
+(function() {
+  "use strict";
+
+  let chainMap = {};
+  let tokenMap = {};
+  let refreshTimer = null;
+  let countdown = 30;
+  let countdownInterval = null;
+
+  // --- Helpers ---
+
+  function fmtUsd(n) {
+    if (n >= 1e6) return "$" + (n / 1e6).toFixed(2) + "M";
+    if (n >= 1e3) return "$" + (n / 1e3).toFixed(1) + "K";
+    return "$" + n.toFixed(2);
+  }
+
+  function fmtNum(n) {
+    return n.toLocaleString("en-US");
+  }
+
+  function fmtSecs(s) {
+    if (s < 60) return s.toFixed(0) + "s";
+    return (s / 60).toFixed(1) + "m";
+  }
+
+  function timeAgo(dateStr) {
+    const diff = (Date.now() - new Date(dateStr).getTime()) / 1000;
+    if (diff < 60) return Math.floor(diff) + "s ago";
+    if (diff < 3600) return Math.floor(diff / 60) + "m ago";
+    if (diff < 86400) return Math.floor(diff / 3600) + "h ago";
+    return Math.floor(diff / 86400) + "d ago";
+  }
+
+  function chainIcon(chain) {
+    if (chain && chain.logoUrl) return chain.logoUrl;
+    const name = chain ? chain.name.toLowerCase() : "unknown";
+    return "https://icons.llamao.fi/icons/chains/rsz_" + name + ".jpg";
+  }
+
+  function tokenIcon(token) {
+    if (token && token.logoUrl) return token.logoUrl;
+    return "";
+  }
+
+  function tokenKey(chainId, address) {
+    return chainId + "-" + (address || "").toLowerCase();
+  }
+
+  function depositUsdVolume(d) {
+    const tk = tokenMap[tokenKey(d.originChainId, d.inputToken)];
+    if (!tk) return 0;
+    try {
+      const raw = Number(BigInt(d.inputAmount));
+      return raw / Math.pow(10, tk.decimals) * tk.priceUsd;
+    } catch { return 0; }
+  }
+
+  function bridgeTime(d) {
+    if (!d.fillBlockTimestamp || !d.depositBlockTimestamp) return null;
+    const diff = (new Date(d.fillBlockTimestamp) - new Date(d.depositBlockTimestamp)) / 1000;
+    return diff > 0 ? diff : null;
+  }
+
+  function imgFallback(ev) {
+    ev.target.style.display = "none";
+  }
+
+  function statusBadge(status) {
+    const s = (status || "").toLowerCase();
+    if (s === "filled") return '<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-primary/10 text-primary">Filled</span>';
+    if (s === "pending") return '<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-yellow-100 text-yellow-700">Pending</span>';
+    if (s === "expired") return '<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-error-container text-error">Expired</span>';
+    return '<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-surface-container text-on-surface-variant">' + (status || "Unknown") + '</span>';
+  }
+
+  // --- Build token/chain maps ---
+
+  function buildMaps(data) {
+    chainMap = {};
+    tokenMap = {};
+    (data.chains || []).forEach(function(c) { chainMap[c.chainId] = c; });
+    (data.tokens || []).forEach(function(t) { tokenMap[tokenKey(t.chainId, t.address)] = t; });
+  }
+
+  // --- Filter deposits to last hour ---
+
+  function lastHourDeposits(deposits) {
+    const cutoff = Date.now() - 3600000;
+    return deposits.filter(function(d) {
+      return new Date(d.depositBlockTimestamp).getTime() >= cutoff;
+    });
+  }
+
+  // --- Render Stats ---
+
+  function renderStats(deposits) {
+    const recent = lastHourDeposits(deposits);
+    let totalVol = 0;
+    let totalTime = 0;
+    let timeCount = 0;
+    const activeChains = new Set();
+
+    recent.forEach(function(d) {
+      totalVol += depositUsdVolume(d);
+      activeChains.add(d.originChainId);
+      activeChains.add(d.destinationChainId);
+      const bt = bridgeTime(d);
+      if (bt !== null) { totalTime += bt; timeCount++; }
+    });
+
+    document.getElementById("stat-volume").textContent = fmtUsd(totalVol);
+    document.getElementById("stat-txns").textContent = fmtNum(recent.length);
+    document.getElementById("stat-time").textContent = timeCount > 0 ? fmtSecs(totalTime / timeCount) : "--";
+    document.getElementById("stat-chains").textContent = activeChains.size.toString();
+  }
+
+  // --- Render Destination Chains Leaderboard ---
+
+  function renderDestChains(deposits) {
+    const agg = {};
+    deposits.forEach(function(d) {
+      const id = d.destinationChainId;
+      if (!agg[id]) agg[id] = { vol: 0, count: 0, totalTime: 0, timeCount: 0 };
+      agg[id].vol += depositUsdVolume(d);
+      agg[id].count++;
+      const bt = bridgeTime(d);
+      if (bt !== null) { agg[id].totalTime += bt; agg[id].timeCount++; }
+    });
+
+    const sorted = Object.keys(agg).sort(function(a, b) { return agg[b].vol - agg[a].vol; }).slice(0, 8);
+    const container = document.getElementById("dest-chains");
+
+    if (sorted.length === 0) {
+      container.innerHTML = '<div class="p-5 text-center text-sm text-on-surface-variant">No data available</div>';
+      return;
+    }
+
+    container.innerHTML = sorted.map(function(id, i) {
+      const chain = chainMap[id] || { name: "Chain " + id };
+      const d = agg[id];
+      const avgTime = d.timeCount > 0 ? fmtSecs(d.totalTime / d.timeCount) : "--";
+      return '<div class="flex items-center gap-3 px-5 py-3">'
+        + '<span class="text-xs font-bold text-on-surface-variant w-4">' + (i + 1) + '</span>'
+        + '<img src="' + chainIcon(chain) + '" alt="" class="w-6 h-6 rounded-full bg-surface-container flex-shrink-0" onerror="this.style.display=\'none\'" />'
+        + '<div class="flex-1 min-w-0">'
+        + '<div class="text-sm font-semibold truncate">' + (chain.name || "Unknown") + '</div>'
+        + '<div class="text-[10px] text-on-surface-variant">' + fmtNum(d.count) + ' txns &middot; avg ' + avgTime + '</div>'
+        + '</div>'
+        + '<div class="text-sm font-bold text-right">' + fmtUsd(d.vol) + '</div>'
+        + '</div>';
+    }).join('');
+  }
+
+  // --- Render Top Routes ---
+
+  function renderRoutes(deposits) {
+    const agg = {};
+    deposits.forEach(function(d) {
+      const key = d.originChainId + "->" + d.destinationChainId;
+      if (!agg[key]) agg[key] = { origin: d.originChainId, dest: d.destinationChainId, vol: 0, count: 0 };
+      agg[key].vol += depositUsdVolume(d);
+      agg[key].count++;
+    });
+
+    const sorted = Object.keys(agg).sort(function(a, b) { return agg[b].vol - agg[a].vol; }).slice(0, 8);
+    const container = document.getElementById("top-routes");
+
+    if (sorted.length === 0) {
+      container.innerHTML = '<div class="p-5 text-center text-sm text-on-surface-variant">No data available</div>';
+      return;
+    }
+
+    container.innerHTML = sorted.map(function(key, i) {
+      const r = agg[key];
+      const oc = chainMap[r.origin] || { name: "Chain " + r.origin };
+      const dc = chainMap[r.dest] || { name: "Chain " + r.dest };
+      return '<div class="flex items-center gap-3 px-5 py-3">'
+        + '<span class="text-xs font-bold text-on-surface-variant w-4">' + (i + 1) + '</span>'
+        + '<div class="flex items-center gap-1 flex-shrink-0">'
+        + '<img src="' + chainIcon(oc) + '" alt="" class="w-5 h-5 rounded-full bg-surface-container" onerror="this.style.display=\'none\'" />'
+        + '<span class="material-symbols-outlined text-outline-variant text-xs">arrow_forward</span>'
+        + '<img src="' + chainIcon(dc) + '" alt="" class="w-5 h-5 rounded-full bg-surface-container" onerror="this.style.display=\'none\'" />'
+        + '</div>'
+        + '<div class="flex-1 min-w-0">'
+        + '<div class="text-sm font-semibold truncate">' + (oc.name || "?") + ' &rarr; ' + (dc.name || "?") + '</div>'
+        + '<div class="text-[10px] text-on-surface-variant">' + fmtNum(r.count) + ' txns</div>'
+        + '</div>'
+        + '<div class="text-sm font-bold text-right">' + fmtUsd(r.vol) + '</div>'
+        + '</div>';
+    }).join('');
+  }
+
+  // --- Render Top Tokens ---
+
+  function renderTokens(deposits) {
+    const agg = {};
+    deposits.forEach(function(d) {
+      const tk = tokenMap[tokenKey(d.originChainId, d.inputToken)];
+      if (!tk) return;
+      const sym = tk.symbol || "???";
+      if (!agg[sym]) agg[sym] = { symbol: sym, token: tk, vol: 0, count: 0 };
+      agg[sym].vol += depositUsdVolume(d);
+      agg[sym].count++;
+    });
+
+    const sorted = Object.keys(agg).sort(function(a, b) { return agg[b].vol - agg[a].vol; }).slice(0, 8);
+    const container = document.getElementById("top-tokens");
+
+    if (sorted.length === 0) {
+      container.innerHTML = '<div class="p-5 text-center text-sm text-on-surface-variant">No data available</div>';
+      return;
+    }
+
+    container.innerHTML = sorted.map(function(sym, i) {
+      const t = agg[sym];
+      const logoSrc = tokenIcon(t.token);
+      const imgTag = logoSrc
+        ? '<img src="' + logoSrc + '" alt="" class="w-6 h-6 rounded-full bg-surface-container flex-shrink-0" onerror="this.style.display=\'none\'" />'
+        : '<div class="w-6 h-6 rounded-full bg-surface-container flex-shrink-0 flex items-center justify-center text-[10px] font-bold text-on-surface-variant">' + sym.charAt(0) + '</div>';
+      return '<div class="flex items-center gap-3 px-5 py-3">'
+        + '<span class="text-xs font-bold text-on-surface-variant w-4">' + (i + 1) + '</span>'
+        + imgTag
+        + '<div class="flex-1 min-w-0">'
+        + '<div class="text-sm font-semibold">' + sym + '</div>'
+        + '<div class="text-[10px] text-on-surface-variant">' + fmtNum(t.count) + ' txns</div>'
+        + '</div>'
+        + '<div class="text-sm font-bold text-right">' + fmtUsd(t.vol) + '</div>'
+        + '</div>';
+    }).join('');
+  }
+
+  // --- Render Recent Transactions ---
+
+  function renderRecent(deposits) {
+    const sorted = deposits.slice().sort(function(a, b) {
+      return new Date(b.depositBlockTimestamp) - new Date(a.depositBlockTimestamp);
+    }).slice(0, 10);
+
+    const container = document.getElementById("recent-txns");
+
+    if (sorted.length === 0) {
+      container.innerHTML = '<div class="p-5 text-center text-sm text-on-surface-variant">No transactions yet</div>';
+      return;
+    }
+
+    container.innerHTML = sorted.map(function(d) {
+      const oc = chainMap[d.originChainId] || { name: "?" };
+      const dc = chainMap[d.destinationChainId] || { name: "?" };
+      const tk = tokenMap[tokenKey(d.originChainId, d.inputToken)];
+      const sym = tk ? tk.symbol : "???";
+      const decimals = tk ? tk.decimals : 18;
+      let amount;
+      try { amount = (Number(BigInt(d.inputAmount)) / Math.pow(10, decimals)); } catch { amount = 0; }
+      const amtStr = amount >= 1000 ? fmtNum(Math.floor(amount)) : amount.toFixed(amount < 1 ? 4 : 2);
+      const bt = bridgeTime(d);
+      const btStr = bt !== null ? fmtSecs(bt) : "--";
+      const ago = timeAgo(d.depositBlockTimestamp);
+
+      return '<div class="flex items-center gap-3 px-5 py-3">'
+        + '<div class="flex flex-col items-center flex-shrink-0 w-10">'
+        + '<span class="text-[10px] text-on-surface-variant">' + ago + '</span>'
+        + '</div>'
+        + '<div class="flex items-center gap-1 flex-shrink-0">'
+        + '<img src="' + chainIcon(oc) + '" alt="" class="w-4 h-4 rounded-full bg-surface-container" onerror="this.style.display=\'none\'" />'
+        + '<span class="material-symbols-outlined text-outline-variant text-[10px]">arrow_forward</span>'
+        + '<img src="' + chainIcon(dc) + '" alt="" class="w-4 h-4 rounded-full bg-surface-container" onerror="this.style.display=\'none\'" />'
+        + '</div>'
+        + '<div class="flex-1 min-w-0">'
+        + '<div class="text-xs font-semibold truncate">' + amtStr + ' ' + sym + '</div>'
+        + '<div class="text-[10px] text-on-surface-variant">' + (oc.name || "?") + ' &rarr; ' + (dc.name || "?") + '</div>'
+        + '</div>'
+        + '<div class="flex flex-col items-end gap-0.5 flex-shrink-0">'
+        + statusBadge(d.status)
+        + '<span class="text-[10px] text-on-surface-variant">' + btStr + '</span>'
+        + '</div>'
+        + '</div>';
+    }).join('');
+  }
+
+  // --- Fetch and render all ---
+
+  async function fetchAndRender() {
+    try {
+      const res = await fetch("/api/radar");
+      if (!res.ok) throw new Error("HTTP " + res.status);
+      const data = await res.json();
+
+      buildMaps(data);
+      const deposits = data.deposits || [];
+
+      renderStats(deposits);
+      renderDestChains(deposits);
+      renderRoutes(deposits);
+      renderTokens(deposits);
+      renderRecent(deposits);
+    } catch (err) {
+      console.error("Radar fetch error:", err);
+    }
+  }
+
+  // --- Countdown timer ---
+
+  function startCountdown() {
+    countdown = 30;
+    clearInterval(countdownInterval);
+    countdownInterval = setInterval(function() {
+      countdown--;
+      var el = document.getElementById("countdown");
+      if (el) el.textContent = countdown + "s";
+      if (countdown <= 0) {
+        countdown = 30;
+        fetchAndRender();
+      }
+    }, 1000);
+  }
+
+  // --- Init ---
+
+  fetchAndRender();
+  startCountdown();
+
+})();
+</script>
+</body>
+</html>
