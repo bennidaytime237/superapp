@@ -353,14 +353,8 @@ function render(resetPage) {
     const isHL = tx.toChain === 'Hyperliquid';
     const recipientLabel = isHL ? 'Hyperliquid Bridge2' : recipientShort;
 
-    // Net fee (input - output, only meaningful for same-token or stablecoin bridges)
-    const inNum = parseFloat((tx.amount||'0').replace(/,/g,''));
-    const outNum = parseFloat((tx.outputAmount||'0').replace(/,/g,''));
-    let feeHtml = '--';
-    if (inNum > 0 && outNum > 0 && tx.fromToken === tx.toToken) {
-      const fee = inNum - outNum;
-      feeHtml = fee > 0 ? `${fee.toFixed(fee < 0.01 ? 6 : fee < 1 ? 4 : 2)} ${tx.fromToken}` : '<0.01';
-    }
+    // Net fee from API
+    const feeHtml = tx.totalFeeUsd ? `$${parseFloat(tx.totalFeeUsd).toFixed(2)}` : '--';
 
     return `<div class="bg-surface-container-lowest rounded-xl border border-outline-variant/10 mb-3 overflow-hidden">
       <!-- Header row: date + badges -->

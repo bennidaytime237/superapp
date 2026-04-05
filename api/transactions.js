@@ -98,14 +98,6 @@ export default async function handler(req, res) {
 
   const rawDeposits = Array.isArray(data) ? data : (data.deposits || data.results || []);
 
-  // Debug: log first deposit keys
-  if (rawDeposits.length > 0) {
-    console.log('Across deposit sample keys:', Object.keys(rawDeposits[0]));
-    console.log('Across deposit sample:', JSON.stringify(rawDeposits[0]).slice(0, 500));
-  } else {
-    console.log('Across returned empty deposits. Raw data keys:', Object.keys(data));
-  }
-
   const deposits = rawDeposits.map(d => {
     const inToken = resolveToken(d.inputToken || d.sourceToken);
     const outToken = resolveToken(d.outputToken || d.destinationToken);
@@ -120,23 +112,20 @@ export default async function handler(req, res) {
     const inputNum = parseFloat((inputAmt || '0').replace(/,/g, ''));
     const outputNum = parseFloat((outputAmt || '0').replace(/,/g, ''));
 
-    // Compute timestamps — try every known field
-    const rawTs = d.depositTime || d.quoteTimestamp || d.updatedAt || d.createdAt || d.timestamp || 0;
-    const depositTs = typeof rawTs === 'string' ? new Date(rawTs).getTime()
-      : rawTs > 1e12 ? rawTs
-      : rawTs > 0 ? rawTs * 1000
-      : d.depositDate ? new Date(d.depositDate).getTime()
-      : 0;
-    const fillTs = d.fillTime ? (d.fillTime > 1e12 ? d.fillTime : d.fillTime * 1000) : 0;
-    const fillDuration = (fillTs && depositTs && fillTs > depositTs) ? Math.floor((fillTs - depositTs) / 1000) : null;
+    // Timestamps from Across API
+    const rawDeposit = d.depositBlockTimestamp || d.quoteTimestamp || 0;
+    const depositMs = rawDeposit > 1e12 ? rawDeposit : rawDeposit * 1000;
+    const rawFill = d.fillBlockTimestamp || 0;
+    const fillMs = rawFill > 1e12 ? rawFill : rawFill * 1000;
+    const fillDuration = (fillMs && depositMs && fillMs > depositMs) ? Math.round((fillMs - depositMs) / 1000) : null;
 
     // Detect Sage transactions via depositor metadata or known patterns
     const isSage = !!(d.message && d.message !== '0x') || false;
 
     return {
       type: 'bridge',
-      depositTxHash: d.depositTxHash || d.transactionHash || d.txHash || null,
-      fillTxHash: d.fillTxHash || null,
+      depositTxHash: d.depositTxHash || null,
+      fillTxHash: d.fillTx || d.fillTxHash || null,
       fromToken: inToken.symbol,
       toToken: outToken.symbol,
       amount: inputAmt,
@@ -147,9 +136,12 @@ export default async function handler(req, res) {
       toChainId,
       depositor: d.depositor || null,
       recipient: d.recipient || null,
-      timestamp: depositTs,
+      timestamp: depositMs,
       fillDuration,
       status: d.status || 'filled',
+      bridgeFeeUsd: d.bridgeFeeUsd || null,
+      swapFeeUsd: d.swapFeeUsd || null,
+      totalFeeUsd: ((parseFloat(d.bridgeFeeUsd)||0) + (parseFloat(d.swapFeeUsd)||0)) || null,
       isSage,
     };
   });
