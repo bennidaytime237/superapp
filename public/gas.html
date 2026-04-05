@@ -184,7 +184,7 @@ const DEST_CHAINS = [
   { chainId:232,      name:'Lens',        slug:'lens%20network',        gas:'ETH', gasWrap:'0x4200000000000000000000000000000000000006', selected:false },
   // Non-ETH gas
   { chainId:137,      name:'Polygon',     slug:'polygon',     gas:'POL', gasWrap:'0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270', selected:false },
-  { chainId:56,       name:'BNB Chain',   slug:'bsc',     gas:'BNB', gasWrap:'0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c', selected:false },
+
 ];
 
 let sourceTokenIdx = 1; // USDC default
@@ -244,9 +244,8 @@ async function fetchPrices() {
       USDC:1, USDT:1, DAI:1,
       WBTC:raw['wrapped-bitcoin']?.usd||0,
       POL:raw['matic-network']?.usd||0, MATIC:raw['matic-network']?.usd||0,
-      BNB:raw.binancecoin?.usd||0,
     };
-  } catch { prices = { ETH:2500, WETH:2500, USDC:1, USDT:1, DAI:1, POL:0.4, BNB:600 }; }
+  } catch { prices = { ETH:2500, WETH:2500, USDC:1, USDT:1, DAI:1, POL:0.4 }; }
 }
 
 function updateSourceDisplay() {
