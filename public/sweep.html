@@ -323,7 +323,9 @@ async function sendTx(tx){
     try{await window.ethereum.request({method:'wallet_switchEthereumChain',params:[{chainId:hex}]});}
     catch(e){if(e.code===4902)throw new Error('Add chain to wallet');throw e;}
   }
-  return window.ethereum.request({method:'eth_sendTransaction',params:[{from:walletAddress,to:tx.to,data:tx.data,value:tx.value&&tx.value!=='0'?'0x'+BigInt(tx.value).toString(16):'0x0',chainId:hex}]});
+  const params={from:walletAddress,to:tx.to,data:tx.data,value:tx.value&&tx.value!=='0'?'0x'+BigInt(tx.value).toString(16):'0x0',chainId:hex};
+  if(tx.gas)params.gas='0x'+BigInt(tx.gas).toString(16);
+  return window.ethereum.request({method:'eth_sendTransaction',params:[params]});
 }
 
 function fmt(n){if(n>=1000)return n.toLocaleString('en-US',{maximumFractionDigits:2});if(n>=1)return n.toLocaleString('en-US',{maximumFractionDigits:4});return n.toLocaleString('en-US',{maximumFractionDigits:6});}

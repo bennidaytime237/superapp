@@ -91,6 +91,7 @@ tailwind.config = {
     </div>
     <div class="flex justify-between mt-2">
       <p id="min-error" class="hidden text-xs text-red-400">Minimum deposit is $5 USDC</p>
+      <p id="l2-hint" class="hidden text-xs text-amber-400">⚡ Use Base or Arbitrum as source for sub-cent gas fees</p>
       <span class="flex-1"></span>
       <span class="text-sm text-white/40">Balance: <button onclick="setMax()" class="font-bold hover:text-hl-green transition-colors" id="from-balance">--</button></span>
     </div>
@@ -235,6 +236,7 @@ function updateDisplay(){
   document.getElementById('from-token-icon').src=TOKEN_ICONS[t.symbol]||'';
   document.getElementById('from-chain-icon').src=chainIcon(c.id);
   document.getElementById('from-label').textContent=`${t.symbol} on ${c.name}`;
+  document.getElementById('l2-hint').classList.toggle('hidden',c.id!==1);
 }
 
 function updateBtn(){
@@ -340,7 +342,9 @@ async function sendTx(tx){
     try{await window.ethereum.request({method:'wallet_switchEthereumChain',params:[{chainId:chainHex}]});}
     catch(e){if(e.code===4902)throw new Error('Add chain to wallet');throw e;}
   }
-  return window.ethereum.request({method:'eth_sendTransaction',params:[{from:walletAddress,to:tx.to,data:tx.data,value:tx.value&&tx.value!=='0'?'0x'+BigInt(tx.value).toString(16):'0x0',chainId:chainHex}]});
+  const params={from:walletAddress,to:tx.to,data:tx.data,value:tx.value&&tx.value!=='0'?'0x'+BigInt(tx.value).toString(16):'0x0',chainId:chainHex};
+  if(tx.gas)params.gas='0x'+BigInt(tx.gas).toString(16);
+  return window.ethereum.request({method:'eth_sendTransaction',params:[params]});
 }
 
 function setMax(){if(fromBal!=null){document.getElementById('input-amount').value=fromBal;onAmountChange();}}

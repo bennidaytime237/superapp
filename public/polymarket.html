@@ -73,6 +73,7 @@ tailwind.config = {
     <input id="pm-address" type="text" placeholder="0x..." class="w-full px-4 py-3 rounded-xl border border-pm-accent/20 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-pm-accent/40 bg-white" oninput="validateAddr()"/>
     <p id="addr-error" class="hidden text-xs text-error mt-1">Invalid address</p>
     <p class="text-xs text-on-surface-variant mt-1">Funds arrive as USDC on Polygon</p>
+    <p id="l2-hint" class="hidden text-xs text-amber-600 mt-1">⚡ Bridging from Ethereum mainnet has higher gas — use Base or Arbitrum for sub-cent fees</p>
     <div id="saved-addrs" class="hidden mt-2 flex flex-wrap gap-2"></div>
   </div>
 
@@ -236,6 +237,7 @@ function updateDisplay() {
   document.getElementById('from-token-icon').src=TOKEN_ICONS[t.symbol]||'';
   document.getElementById('from-chain-icon').src=chainIcon(c.id);
   document.getElementById('from-label').textContent=`${t.symbol} on ${c.name}`;
+  document.getElementById('l2-hint').classList.toggle('hidden', c.id!==1);
 }
 
 function validateAddr() {
@@ -342,7 +344,9 @@ async function sendTx(tx) {
     try{await window.ethereum.request({method:'wallet_switchEthereumChain',params:[{chainId:chainHex}]});}
     catch(e){if(e.code===4902)throw new Error('Add chain to wallet');throw e;}
   }
-  return window.ethereum.request({method:'eth_sendTransaction',params:[{from:walletAddress,to:tx.to,data:tx.data,value:tx.value&&tx.value!=='0'?'0x'+BigInt(tx.value).toString(16):'0x0',chainId:chainHex}]});
+  const params={from:walletAddress,to:tx.to,data:tx.data,value:tx.value&&tx.value!=='0'?'0x'+BigInt(tx.value).toString(16):'0x0',chainId:chainHex};
+  if(tx.gas)params.gas='0x'+BigInt(tx.gas).toString(16);
+  return window.ethereum.request({method:'eth_sendTransaction',params:[params]});
 }
 
 function setMax(){if(fromBal!=null){document.getElementById('input-amount').value=fromBal;onAmountChange();}}

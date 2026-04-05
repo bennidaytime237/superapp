@@ -1273,15 +1273,15 @@ async function sendTx(tx) {
     }
   }
 
+  const txParams = {
+    from: walletAddress, to: tx.to, data: tx.data,
+    value: tx.value && tx.value !== '0' ? '0x' + BigInt(tx.value).toString(16) : '0x0',
+    chainId: targetChainHex,
+  };
+  if (tx.gas) txParams.gas = '0x' + BigInt(tx.gas).toString(16);
   const txHash = await window.ethereum.request({
     method: 'eth_sendTransaction',
-    params: [{
-      from: walletAddress,
-      to: tx.to,
-      data: tx.data,
-      value: tx.value && tx.value !== '0' ? '0x' + BigInt(tx.value).toString(16) : '0x0',
-      chainId: targetChainHex,
-    }],
+    params: [txParams],
   });
   return txHash;
 }
