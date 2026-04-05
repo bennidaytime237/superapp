@@ -107,24 +107,39 @@ export default async function handler(req, res) {
     let toChain = CHAIN_NAMES[toChainId] || `Chain ${toChainId}`;
     if (recipient === BRIDGE2) toChain = 'Hyperliquid';
 
+    const inputAmt = formatAmount(d.inputAmount || d.amount, inToken.decimals);
+    const outputAmt = formatAmount(d.outputAmount, outToken.decimals);
+    const inputNum = parseFloat((inputAmt || '0').replace(/,/g, ''));
+    const outputNum = parseFloat((outputAmt || '0').replace(/,/g, ''));
+
+    // Compute fill duration in seconds
+    const depositTs = d.depositTime ? d.depositTime
+      : d.depositDate ? Math.floor(new Date(d.depositDate).getTime() / 1000)
+      : d.quoteTimestamp || 0;
+    const fillTs = d.fillTime || 0;
+    const fillDuration = (fillTs && depositTs && fillTs > depositTs) ? fillTs - depositTs : null;
+
+    // Detect Sage transactions via depositor metadata or known patterns
+    const isSage = !!(d.message && d.message !== '0x') || false;
+
     return {
       type: 'bridge',
       depositTxHash: d.depositTxHash || d.transactionHash || d.txHash || null,
       fillTxHash: d.fillTxHash || null,
       fromToken: inToken.symbol,
       toToken: outToken.symbol,
-      amount: formatAmount(d.inputAmount || d.amount, inToken.decimals),
-      outputAmount: formatAmount(d.outputAmount, outToken.decimals),
+      amount: inputAmt,
+      outputAmount: outputAmt,
       fromChain: CHAIN_NAMES[fromChainId] || `Chain ${fromChainId}`,
       toChain,
       fromChainId,
       toChainId,
-      timestamp: d.depositTime ? d.depositTime * 1000
-        : d.depositDate ? new Date(d.depositDate).getTime()
-        : d.quoteTimestamp ? d.quoteTimestamp * 1000
-        : d.timestamp || 0,
-      fillTime: d.fillTime || d.fillDeadline || null,
+      depositor: d.depositor || null,
+      recipient: d.recipient || null,
+      timestamp: depositTs * 1000 || 0,
+      fillDuration,
       status: d.status || 'filled',
+      isSage,
     };
   });
 

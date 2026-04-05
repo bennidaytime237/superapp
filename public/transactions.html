@@ -200,6 +200,8 @@ const EXP = {
   534352:'https://scrollscan.com/tx/',7777777:'https://explorer.zora.energy/tx/',
 };
 
+function shortAddr(a) { return a ? a.slice(0,6)+'…'+a.slice(-4) : '--'; }
+
 function render() {
   const list = document.getElementById('tx-list');
   let history = [...txData];
@@ -212,33 +214,94 @@ function render() {
 
   list.innerHTML = history.map(tx => {
     const date = new Date(tx.timestamp);
-    const dateStr = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-    const timeStr = date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
-    const url = tx.depositTxHash && tx.fromChainId ? (EXP[tx.fromChainId] || 'https://etherscan.io/tx/') + tx.depositTxHash : null;
-    const tag = url ? 'a' : 'div';
-    const attrs = url ? `href="${url}" target="_blank" rel="noopener"` : '';
-    const statusBadge = tx.status === 'filled'
-      ? '<span class="text-[10px] font-bold text-primary bg-primary-container px-2 py-0.5 rounded-full">Filled</span>'
-      : tx.status === 'pending'
-      ? '<span class="text-[10px] font-bold text-amber-600 bg-amber-100 px-2 py-0.5 rounded-full">Pending</span>'
-      : '';
+    const dateStr = date.toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' });
+    const timeStr = date.toLocaleTimeString('en-US', { hour:'2-digit', minute:'2-digit' });
 
-    return `<${tag} ${attrs} class="flex items-center gap-4 px-2 py-4 border-b border-outline-variant/10 ${url ? 'hover:bg-surface-container-low cursor-pointer transition-colors' : ''}">
-      <div class="w-11 h-11 rounded-full bg-primary-container flex items-center justify-center flex-shrink-0">
-        <span class="material-symbols-outlined text-primary text-lg">layers</span>
-      </div>
-      <div class="flex-1 min-w-0">
-        <div class="flex justify-between gap-2">
-          <p class="text-sm font-bold text-on-background truncate">${tx.amount} ${tx.fromToken} → ${tx.outputAmount || ''} ${tx.toToken}</p>
-          ${statusBadge}
+    const depositUrl = tx.depositTxHash && tx.fromChainId ? (EXP[tx.fromChainId] || 'https://etherscan.io/tx/') + tx.depositTxHash : null;
+    const fillUrl = tx.fillTxHash && tx.toChainId ? (EXP[tx.toChainId] || 'https://etherscan.io/tx/') + tx.fillTxHash : null;
+
+    // Status + fill time
+    let statusHtml = '';
+    if (tx.status === 'filled') {
+      const dur = tx.fillDuration;
+      statusHtml = `<span class="text-[10px] font-bold text-primary bg-primary-container px-2 py-0.5 rounded-full">Filled${dur ? ' · ' + (dur < 60 ? dur + 's' : Math.floor(dur/60) + 'm ' + (dur%60) + 's') : ''}</span>`;
+    } else if (tx.status === 'pending') {
+      statusHtml = '<span class="text-[10px] font-bold text-amber-600 bg-amber-100 px-2 py-0.5 rounded-full">Pending</span>';
+    }
+
+    // Sage badge
+    const sageBadge = tx.isSage ? '<span class="text-[10px] font-bold text-on-primary bg-primary px-2 py-0.5 rounded-full">Sage</span>' : '';
+
+    // Recipient display
+    const recipientShort = shortAddr(tx.recipient);
+    const isHL = tx.toChain === 'Hyperliquid';
+    const recipientLabel = isHL ? 'Hyperliquid Bridge2' : recipientShort;
+
+    // Net fee (input - output, only meaningful for same-token or stablecoin bridges)
+    const inNum = parseFloat((tx.amount||'0').replace(/,/g,''));
+    const outNum = parseFloat((tx.outputAmount||'0').replace(/,/g,''));
+    let feeHtml = '--';
+    if (inNum > 0 && outNum > 0 && tx.fromToken === tx.toToken) {
+      const fee = inNum - outNum;
+      feeHtml = fee > 0 ? `${fee.toFixed(fee < 0.01 ? 6 : fee < 1 ? 4 : 2)} ${tx.fromToken}` : '<0.01';
+    }
+
+    return `<div class="bg-surface-container-lowest rounded-xl border border-outline-variant/10 mb-3 overflow-hidden">
+      <!-- Header row: date + badges -->
+      <div class="flex items-center justify-between px-5 pt-4 pb-2">
+        <div class="flex items-center gap-2">
+          <p class="text-xs text-on-surface-variant">${dateStr} · ${timeStr}</p>
+          ${sageBadge}
         </div>
-        <div class="flex justify-between gap-2">
-          <p class="text-xs text-on-surface-variant">${tx.fromChain} → ${tx.toChain}</p>
-          <p class="text-xs text-on-surface-variant">${dateStr} ${timeStr}</p>
+        <div class="flex items-center gap-2">
+          ${statusHtml}
         </div>
       </div>
-      ${url ? '<span class="material-symbols-outlined text-on-surface-variant text-base flex-shrink-0">open_in_new</span>' : ''}
-    </${tag}>`;
+
+      <!-- Main content -->
+      <div class="px-5 pb-4">
+        <!-- Sent → Received -->
+        <div class="flex items-center gap-3 mb-3">
+          <div class="flex-1">
+            <p class="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider mb-0.5">Sent</p>
+            <p class="text-lg font-black text-on-background">${tx.amount} <span class="text-sm font-bold text-on-surface-variant">${tx.fromToken}</span></p>
+            <p class="text-xs text-on-surface-variant">${tx.fromChain}</p>
+          </div>
+          <span class="material-symbols-outlined text-on-surface-variant/40 text-xl flex-shrink-0">arrow_forward</span>
+          <div class="flex-1">
+            <p class="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider mb-0.5">Received</p>
+            <p class="text-lg font-black text-on-background">${tx.outputAmount || '--'} <span class="text-sm font-bold text-on-surface-variant">${tx.toToken}</span></p>
+            <p class="text-xs text-on-surface-variant">${tx.toChain}</p>
+          </div>
+        </div>
+
+        <!-- Details grid -->
+        <div class="grid grid-cols-3 gap-3 pt-3 border-t border-outline-variant/10">
+          <!-- Recipient -->
+          <div>
+            <p class="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider mb-0.5">Recipient</p>
+            <p class="text-xs font-mono text-on-surface truncate" title="${tx.recipient || ''}">${recipientLabel}</p>
+          </div>
+          <!-- Transactions -->
+          <div>
+            <p class="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider mb-0.5">Transactions</p>
+            <div class="flex flex-col gap-0.5">
+              ${depositUrl
+                ? `<a href="${depositUrl}" target="_blank" rel="noopener" class="text-xs text-primary font-bold hover:underline inline-flex items-center gap-0.5">Deposit <span class="material-symbols-outlined text-[10px]">open_in_new</span></a>`
+                : '<span class="text-xs text-on-surface-variant">--</span>'}
+              ${fillUrl
+                ? `<a href="${fillUrl}" target="_blank" rel="noopener" class="text-xs text-primary font-bold hover:underline inline-flex items-center gap-0.5">Fill <span class="material-symbols-outlined text-[10px]">open_in_new</span></a>`
+                : ''}
+            </div>
+          </div>
+          <!-- Net Fee -->
+          <div>
+            <p class="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider mb-0.5">Net Fee</p>
+            <p class="text-xs font-bold text-on-surface">${feeHtml}</p>
+          </div>
+        </div>
+      </div>
+    </div>`;
   }).join('');
 }
 
