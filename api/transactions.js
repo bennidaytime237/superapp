@@ -136,7 +136,7 @@ export default async function handler(req, res) {
       toChainId,
       depositor: d.depositor || null,
       recipient: d.recipient || null,
-      timestamp: depositTs * 1000 || 0,
+      timestamp: depositTs > 1e12 ? depositTs : depositTs * 1000 || 0,
       fillDuration,
       status: d.status || 'filled',
       isSage,
