@@ -126,6 +126,8 @@ tailwind.config = {
 <script>
 let walletAddress = null;
 let txData = [];
+let visibleCount = 10;
+const PAGE_SIZE = 10;
 
 function populateFilters() {
   const chains = new Set();
@@ -191,20 +193,43 @@ function showEmpty(msg) {
   </div>`;
 }
 
-async function loadTransactions() {
-  const list = document.getElementById('tx-list');
-  list.innerHTML = '<div class="flex items-center justify-center gap-2 py-16 text-sm text-on-surface-variant"><div class="w-4 h-4 rounded-full border-2 border-primary border-t-transparent animate-spin"></div>Loading transactions...</div>';
+function cacheKey() { return 'sage_txcache_' + (walletAddress||'').toLowerCase(); }
 
+async function loadTransactions() {
+  visibleCount = PAGE_SIZE;
+  const list = document.getElementById('tx-list');
+
+  // Show cached data instantly
+  try {
+    const cached = JSON.parse(localStorage.getItem(cacheKey()) || 'null');
+    if (cached && cached.length > 0) {
+      txData = cached;
+      populateFilters();
+      render();
+    } else {
+      list.innerHTML = '<div class="flex items-center justify-center gap-2 py-16 text-sm text-on-surface-variant"><div class="w-4 h-4 rounded-full border-2 border-primary border-t-transparent animate-spin"></div>Loading transactions...</div>';
+    }
+  } catch { /* no cache */ }
+
+  // Fetch fresh in background
   try {
     const res = await fetch(`/api/transactions?address=${walletAddress}`);
     const data = await res.json();
     txData = data.deposits || [];
+    try { localStorage.setItem(cacheKey(), JSON.stringify(txData)); } catch {}
     populateFilters();
     render();
   } catch (e) {
     console.error('Failed to load transactions:', e);
-    list.innerHTML = '<div class="text-center py-16"><p class="text-on-surface-variant">Failed to load transactions</p><button onclick="loadTransactions()" class="mt-4 px-6 py-3 bg-primary text-on-primary rounded-full font-bold text-sm">Retry</button></div>';
+    if (!txData.length) {
+      list.innerHTML = '<div class="text-center py-16"><p class="text-on-surface-variant">Failed to load transactions</p><button onclick="loadTransactions()" class="mt-4 px-6 py-3 bg-primary text-on-primary rounded-full font-bold text-sm">Retry</button></div>';
+    }
   }
+}
+
+function showMore() {
+  visibleCount += PAGE_SIZE;
+  render(false);
 }
 
 const EXP = {
@@ -216,7 +241,8 @@ const EXP = {
 
 function shortAddr(a) { return a ? a.slice(0,6)+'…'+a.slice(-4) : '--'; }
 
-function render() {
+function render(resetPage) {
+  if (resetPage !== false) visibleCount = PAGE_SIZE;
   const list = document.getElementById('tx-list');
   const q = (document.getElementById('search-input').value || '').toLowerCase().trim();
   const chainFilter = document.getElementById('filter-chain').value;
@@ -239,7 +265,7 @@ function render() {
     return;
   }
 
-  list.innerHTML = history.map(tx => {
+  const cards = history.map(tx => {
     const date = new Date(tx.timestamp);
     const dateStr = date.toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' });
     const timeStr = date.toLocaleTimeString('en-US', { hour:'2-digit', minute:'2-digit' });
@@ -329,7 +355,15 @@ function render() {
         </div>
       </div>
     </div>`;
-  }).join('');
+  });
+
+  const visible = cards.slice(0, visibleCount);
+  const remaining = cards.length - visibleCount;
+
+  list.innerHTML = visible.join('')
+    + (remaining > 0
+      ? `<button onclick="showMore()" class="w-full py-3 mt-2 bg-surface-container-low text-on-surface-variant rounded-xl font-bold text-sm hover:bg-surface-container-high transition-colors">Show ${Math.min(remaining, PAGE_SIZE)} more of ${remaining} remaining</button>`
+      : '');
 }
 
 initWallet();
