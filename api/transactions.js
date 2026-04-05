@@ -60,7 +60,7 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'Invalid address' });
   }
 
-  const url = `https://app.across.to/api/deposits?address=${address}&limit=50&offset=0`;
+  const url = `https://app.across.to/api/deposits?address=${address.toLowerCase()}&limit=25&offset=0&status=filled`;
   let data = null;
   let lastErr = null;
 
@@ -79,7 +79,11 @@ export default async function handler(req, res) {
         lastErr = `429 rate limited (attempt ${attempt + 1})`;
         continue;
       }
-      if (!response.ok) { lastErr = `${response.status}`; break; }
+      if (!response.ok) {
+        const errBody = await response.text().catch(() => '');
+        lastErr = `${response.status}: ${errBody.slice(0, 200)}`;
+        break;
+      }
       data = await response.json();
       break;
     } catch (e) {
