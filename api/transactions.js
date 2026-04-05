@@ -97,7 +97,10 @@ export default async function handler(req, res) {
   }
 
   const rawDeposits = Array.isArray(data) ? data : (data.deposits || data.results || []);
-  console.log('Data type:', typeof data, 'isArray:', Array.isArray(data), 'keys:', Object.keys(data), 'rawDeposits count:', rawDeposits.length);
+  if (rawDeposits.length > 0) {
+    const d = rawDeposits[0];
+    console.log('Timestamp fields:', { depositBlockTimestamp: d.depositBlockTimestamp, quoteTimestamp: d.quoteTimestamp, fillBlockTimestamp: d.fillBlockTimestamp, typeof_dbt: typeof d.depositBlockTimestamp });
+  }
 
   const deposits = rawDeposits.map(d => {
     const inToken = resolveToken(d.inputToken || d.sourceToken);
