@@ -418,7 +418,21 @@ function copyAddress() {
 function disconnect() {
   closeWalletMenu();
   walletAddress = null;
-  location.reload();
+  localStorage.setItem('sage_disconnected', '1');
+  // Reset header button
+  document.getElementById('connect-label').textContent = 'Connect Wallet';
+  document.getElementById('connect-btn').onclick = connectWallet;
+  document.getElementById('connect-btn').className = 'flex items-center gap-2 px-4 py-2 bg-primary text-on-primary rounded-full text-sm font-bold tracking-wide active:scale-95 transition-transform';
+  // Reset sidebar
+  document.getElementById('sidebar-disconnected').classList.remove('hidden');
+  document.getElementById('sidebar-connected').classList.add('hidden');
+  // Reset hero
+  document.getElementById('hero-balance').innerHTML = '<span class="text-on-surface-variant text-2xl tracking-wide">Connect wallet to view</span>';
+  document.getElementById('hero-change').textContent = '';
+  document.getElementById('hero-chain-count').classList.add('hidden');
+  document.getElementById('chain-breakdown').innerHTML = '<p class="text-sm text-on-surface-variant px-2 py-3">Connect wallet to view chain balances</p>';
+  document.getElementById('assets-grid').innerHTML = '<p class="text-sm text-on-surface-variant col-span-2">Connect wallet to view your assets</p>';
+  renderActivity();
 }
 
 async function connectWallet() {
@@ -427,6 +441,7 @@ async function connectWallet() {
     return;
   }
   try {
+    localStorage.removeItem('sage_disconnected');
     const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
     walletAddress = accounts[0];
     onConnected();
@@ -713,15 +728,16 @@ function timeAgo(ts) {
 }
 
 (async function init() {
-  // Check wallet first so sidebar shows connected state immediately
   if (window.ethereum) {
     const accounts = await window.ethereum.request({ method: 'eth_accounts' });
-    if (accounts.length > 0) {
+    const userDisconnected = localStorage.getItem('sage_disconnected') === '1';
+    if (accounts.length > 0 && !userDisconnected) {
       walletAddress = accounts[0];
       onConnected();
     }
     window.ethereum.on('accountsChanged', (accs) => {
-      if (accs.length === 0) { location.reload(); return; }
+      if (accs.length === 0) { disconnect(); return; }
+      localStorage.removeItem('sage_disconnected');
       walletAddress = accs[0];
       onConnected();
     });
