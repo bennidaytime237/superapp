@@ -566,7 +566,7 @@ function setChainFilter(chainId) {
 }
 
 // Chains where Uniswap is available (has router + RPC)
-function isUniswapChain(chainId) { return !!(SWAP_ROUTERS[chainId] && UNI_RPCS[chainId]); }
+function isUniswapChain(chainId) { return !!(SWAP_ROUTERS[chainId]?.addr && UNI_RPCS[chainId]); }
 
 function buildTokenList() {
   allModalRows = [];
@@ -1360,19 +1360,22 @@ async function ensureApproval(tokenAddr, spender, amountWei, chainId) {
   });
 }
 
-// SwapRouter02 — simpler, proven, deployed everywhere
+// SwapRouter02 — two versions:
+// "old" (0x68b3...) uses 0x414bf389 exactInputSingle with deadline in struct
+// "new" (chain-specific) uses 0x04e45aaf without deadline, needs multicall wrapper
 const SWAP_ROUTERS = {
-  1:    '0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45',
-  10:   '0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45',
-  56:   '0xB971eF87ede563556b2ED4b1C0b0019111Dd85d2',
-  137:  '0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45',
-  8453: '0x2626664c2603336E57B271c5C0b26F421741e481',
-  42161:'0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45',
-  81457:'0x549FEB8c9bd4c12Ad2AB27022dA12492aC452B66',
-  534352:'0xfc30937f5cDe93Df8d48aCAF7e6f5D8D8ACf1DaB',
+  1:    { addr:'0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45', version:'old' },
+  10:   { addr:'0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45', version:'old' },
+  137:  { addr:'0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45', version:'old' },
+  42161:{ addr:'0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45', version:'old' },
+  8453: { addr:'0x2626664c2603336E57B271c5C0b26F421741e481', version:'new' },
+  56:   { addr:'0xB971eF87ede563556b2ED4b1C0b0019111Dd85d2', version:'new' },
+  81457:{ addr:'0x549FEB8c9bd4c12Ad2AB27022dA12492aC452B66', version:'new' },
+  534352:{ addr:'0xfc30937f5cDe93Df8d48aCAF7e6f5D8D8ACf1DaB', version:'new' },
 };
 
-function getSwapRouter(chainId) { return SWAP_ROUTERS[chainId] || '0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45'; }
+function getSwapRouter(chainId) { return SWAP_ROUTERS[chainId]?.addr || '0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45'; }
+function getSwapVersion(chainId) { return SWAP_ROUTERS[chainId]?.version || 'old'; }
 
 async function executeUniswapSwap(q) {
   const pAddr = (a) => a.toLowerCase().replace('0x','').padStart(64,'0');
@@ -1385,34 +1388,64 @@ async function executeUniswapSwap(q) {
   const chainHex = '0x' + q.chainId.toString(16);
   const value = fromToken.native ? '0x' + BigInt(q.amountWei).toString(16) : '0x0';
 
-  // SwapRouter02.exactInputSingle((address,address,uint24,address,uint256,uint256,uint256,uint160))
-  // selector: 0x414bf389 (includes deadline in struct)
+  const version = getSwapVersion(q.chainId);
   const recipient = toToken.native ? router : walletAddress;
-  const swapData = '0x414bf389'
-    + pAddr(q.tokenIn)
-    + pAddr(q.tokenOut)
-    + pUint(q.fee)
-    + pAddr(recipient)
-    + pUint(deadline)
-    + pUint(q.amountWei)
-    + pUint(amountOutMin)
-    + pUint(0); // sqrtPriceLimitX96
+  let swapData;
+
+  if (version === 'old') {
+    // 0x414bf389: exactInputSingle with deadline in struct
+    swapData = '0x414bf389'
+      + pAddr(q.tokenIn) + pAddr(q.tokenOut) + pUint(q.fee)
+      + pAddr(recipient) + pUint(deadline)
+      + pUint(q.amountWei) + pUint(amountOutMin) + pUint(0);
+  } else {
+    // 0x04e45aaf: exactInputSingle without deadline (new SwapRouter02)
+    swapData = '0x04e45aaf'
+      + pAddr(q.tokenIn) + pAddr(q.tokenOut) + pUint(q.fee)
+      + pAddr(recipient)
+      + pUint(q.amountWei) + pUint(amountOutMin) + pUint(0);
+  }
 
   if (toToken.native) {
-    // multicall(bytes[]) — swap then unwrapWETH9
-    // unwrapWETH9(uint256,address) selector: 0x49404b7c
     const unwrapData = '0x49404b7c' + pUint(amountOutMin) + pAddr(walletAddress);
-    const data = encodeMulticall([swapData, unwrapData]);
+    const calls = version === 'new'
+      ? encodeMulticallDeadline(deadline, [swapData, unwrapData])
+      : encodeMulticall([swapData, unwrapData]);
     return window.ethereum.request({
       method: 'eth_sendTransaction',
-      params: [{ from: walletAddress, to: router, data, value, chainId: chainHex }],
+      params: [{ from: walletAddress, to: router, data: calls, value, chainId: chainHex }],
     });
   }
 
+  // New version needs deadline via multicall even for simple swaps
+  const data = version === 'new'
+    ? encodeMulticallDeadline(deadline, [swapData])
+    : swapData;
+
   return window.ethereum.request({
     method: 'eth_sendTransaction',
-    params: [{ from: walletAddress, to: router, data: swapData, value, chainId: chainHex }],
+    params: [{ from: walletAddress, to: router, data, value, chainId: chainHex }],
   });
+}
+
+// Encode multicall(uint256 deadline, bytes[] data) — selector 0x5ae401dc
+function encodeMulticallDeadline(deadline, calls) {
+  const pUint = (v) => BigInt(v).toString(16).padStart(64,'0');
+  let offsets = '', bodies = '';
+  let running = calls.length * 32;
+  for (const c of calls) {
+    offsets += pUint(running);
+    const raw = c.startsWith('0x') ? c.slice(2) : c;
+    const len = raw.length / 2;
+    const padded = raw + '0'.repeat((Math.ceil(len / 32) * 32 - len) * 2);
+    bodies += pUint(len) + padded;
+    running += 32 + Math.ceil(len / 32) * 32;
+  }
+  return '0x5ae401dc'
+    + pUint(deadline)
+    + pUint(64)              // offset to bytes[]
+    + pUint(calls.length)
+    + offsets + bodies;
 }
 
 // Encode multicall(bytes[] data) — selector 0xac9650d8
