@@ -1,34 +1,64 @@
-const L1 = new Set([1]);
+const BASE = 'https://app.across.to/api/suggested-fees';
+
+// Representative routes for each category
+const ROUTES = [
+  { label: 'L1 → L1', originChainId: 1, destinationChainId: 1,
+    inputToken: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48',
+    outputToken: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48',
+    amount: '1000000000' }, // 1000 USDC
+  { label: 'L1 → L2', originChainId: 1, destinationChainId: 42161,
+    inputToken: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48',
+    outputToken: '0xaf88d065e77c8cC2239327C5EDb3A432268e5831',
+    amount: '1000000000' },
+  { label: 'L2 → L1', originChainId: 42161, destinationChainId: 1,
+    inputToken: '0xaf88d065e77c8cC2239327C5EDb3A432268e5831',
+    outputToken: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48',
+    amount: '1000000000' },
+  { label: 'L2 → L2', originChainId: 8453, destinationChainId: 42161,
+    inputToken: '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913',
+    outputToken: '0xaf88d065e77c8cC2239327C5EDb3A432268e5831',
+    amount: '1000000000' },
+];
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Cache-Control', 'public, s-maxage=30, stale-while-revalidate=60');
 
-  try {
-    const r = await fetch('https://app.across.to/api/deposits?limit=50&status=filled');
-    if (!r.ok) throw new Error(r.status);
-    const deposits = await r.json();
+  const result = {};
 
-    const buckets = { 'L1 → L1': [], 'L1 → L2': [], 'L2 → L1': [], 'L2 → L2': [] };
-    for (const d of deposits) {
-      if (!d.fillBlockTimestamp || !d.depositBlockTimestamp) continue;
-      const secs = (new Date(d.fillBlockTimestamp) - new Date(d.depositBlockTimestamp)) / 1000;
-      if (secs <= 0 || secs > 3600) continue;
-      const fromL1 = L1.has(d.originChainId);
-      const toL1 = L1.has(d.destinationChainId);
-      const key = `${fromL1 ? 'L1' : 'L2'} → ${toL1 ? 'L1' : 'L2'}`;
-      if (buckets[key].length < 5) buckets[key].push(secs);
+  await Promise.all(ROUTES.map(async (route) => {
+    try {
+      const params = new URLSearchParams({
+        inputToken: route.inputToken,
+        outputToken: route.outputToken,
+        originChainId: route.originChainId,
+        destinationChainId: route.destinationChainId,
+        amount: route.amount,
+      });
+      const ctrl = new AbortController();
+      const t = setTimeout(() => ctrl.abort(), 8000);
+      const r = await fetch(`${BASE}?${params}`, { signal: ctrl.signal });
+      clearTimeout(t);
+      if (!r.ok) { result[route.label] = null; return; }
+      const data = await r.json();
+      // Log first response to discover field names
+      if (route.label === 'L1 → L2') {
+        console.log('suggested-fees keys:', Object.keys(data));
+        console.log('suggested-fees sample:', JSON.stringify(data).slice(0, 500));
+      }
+      // Try known field names for estimated fill time
+      const secs = data.estimatedFillTimeSec
+        || data.estimatedFillTime
+        || data.expectedFillTimeSec
+        || data.expectedFillTime
+        || data.fillTime
+        || data.estimatedTime
+        || null;
+      result[route.label] = secs;
+    } catch (e) {
+      result[route.label] = null;
     }
+  }));
 
-    const result = {};
-    for (const [key, times] of Object.entries(buckets)) {
-      const sorted = times.sort((a, b) => a - b);
-      result[key] = sorted.length > 0 ? sorted[Math.floor(sorted.length / 2)] : null;
-    }
-
-    return res.json(result);
-  } catch (e) {
-    console.error('Bridge times error:', e.message);
-    return res.status(502).json({ error: e.message });
-  }
+  return res.json(result);
 }
