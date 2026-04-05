@@ -54,15 +54,11 @@ tailwind.config = {
     </a>
     <a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:text-primary hover:bg-white/50 rounded-full transition-all" href="swap.html">
       <span class="material-symbols-outlined">swap_horiz</span>
-      <span class="font-medium text-sm">Swap & Bridge</span>
+      <span class="font-medium text-sm">Bridge</span>
     </a>
     <a class="flex items-center gap-3 px-4 py-3 bg-surface-container-lowest text-primary rounded-full shadow-sm" href="transactions.html">
       <span class="material-symbols-outlined">receipt_long</span>
       <span class="font-medium text-sm">Transactions</span>
-    </a>
-    <a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:text-primary hover:bg-white/50 rounded-full transition-all" href="buysell.html">
-      <span class="material-symbols-outlined">paid</span>
-      <span class="font-medium text-sm">Buy & Sell</span>
     </a>
     <a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:text-primary hover:bg-white/50 rounded-full transition-all" href="gas.html">
       <span class="material-symbols-outlined">local_gas_station</span>
@@ -88,7 +84,6 @@ tailwind.config = {
     <div class="flex gap-2 mb-6">
       <button onclick="setFilter('all')" id="f-all" class="px-4 py-2 rounded-full text-sm font-bold bg-primary text-on-primary">All</button>
       <button onclick="setFilter('bridge')" id="f-bridge" class="px-4 py-2 rounded-full text-sm font-bold bg-surface-container-low text-on-surface-variant hover:bg-surface-container-high">Bridges</button>
-      <button onclick="setFilter('swap')" id="f-swap" class="px-4 py-2 rounded-full text-sm font-bold bg-surface-container-low text-on-surface-variant hover:bg-surface-container-high">Swaps</button>
     </div>
 
     <!-- Transaction list -->
@@ -104,7 +99,7 @@ tailwind.config = {
   </a>
   <a class="flex flex-col items-center justify-center text-on-surface-variant p-3 active:scale-90" href="swap.html">
     <span class="material-symbols-outlined">swap_horiz</span>
-    <span class="font-headline text-[10px] font-bold uppercase mt-1">Swap</span>
+    <span class="font-headline text-[10px] font-bold uppercase mt-1">Bridge</span>
   </a>
   <a class="flex flex-col items-center justify-center bg-primary-container text-primary rounded-full p-3 active:scale-90" href="transactions.html">
     <span class="material-symbols-outlined">receipt_long</span>
@@ -117,7 +112,7 @@ let filter = 'all';
 
 function setFilter(f) {
   filter = f;
-  ['all','bridge','swap'].forEach(k => {
+  ['all','bridge'].forEach(k => {
     const el = document.getElementById('f-' + k);
     el.className = k === f
       ? 'px-4 py-2 rounded-full text-sm font-bold bg-primary text-on-primary'
@@ -149,8 +144,8 @@ function render() {
   if (history.length === 0) {
     list.innerHTML = `<div class="text-center py-16">
       <span class="material-symbols-outlined text-5xl text-on-surface-variant/20 mb-3">receipt_long</span>
-      <p class="text-on-surface-variant">No ${filter === 'all' ? '' : filter + ' '}transactions yet</p>
-      <a href="swap.html" class="inline-block mt-4 px-6 py-3 bg-primary text-on-primary rounded-full font-bold text-sm">Make your first ${filter === 'all' ? 'transaction' : filter}</a>
+      <p class="text-on-surface-variant">No transactions yet</p>
+      <a href="swap.html" class="inline-block mt-4 px-6 py-3 bg-primary text-on-primary rounded-full font-bold text-sm">Make your first bridge</a>
     </div>`;
     return;
   }
@@ -163,8 +158,8 @@ function render() {
   };
 
   list.innerHTML = history.map(tx => {
-    const icon = tx.type === 'bridge' ? 'layers' : 'swap_horiz';
-    const label = tx.type === 'bridge' ? 'Bridge' : 'Swap';
+    const icon = 'layers';
+    const label = 'Bridge';
     const date = new Date(tx.timestamp);
     const dateStr = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
     const timeStr = date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });

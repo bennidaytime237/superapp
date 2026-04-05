@@ -66,15 +66,11 @@ tailwind.config = {
     </a>
     <a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:text-primary hover:bg-white/50 rounded-full transition-all" href="swap.html">
       <span class="material-symbols-outlined">swap_horiz</span>
-      <span class="font-medium text-sm">Swap & Bridge</span>
+      <span class="font-medium text-sm">Bridge</span>
     </a>
     <a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:text-primary hover:bg-white/50 rounded-full transition-all" href="transactions.html">
       <span class="material-symbols-outlined">receipt_long</span>
       <span class="font-medium text-sm">Transactions</span>
-    </a>
-    <a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:text-primary hover:bg-white/50 rounded-full transition-all" href="buysell.html">
-      <span class="material-symbols-outlined">paid</span>
-      <span class="font-medium text-sm">Buy & Sell</span>
     </a>
     <a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:text-primary hover:bg-white/50 rounded-full transition-all" href="gas.html">
       <span class="material-symbols-outlined">local_gas_station</span>
@@ -117,7 +113,7 @@ tailwind.config = {
         <p id="sidebar-total" class="text-sm font-black text-on-surface tracking-wide">$0.00</p>
       </div>
       <button onclick="window.location.href='swap.html'" class="w-full py-3 px-4 bg-primary text-on-primary rounded-full text-sm font-bold shadow-sm active:scale-[0.98] transition-transform">
-        Swap & Bridge
+        Bridge
       </button>
     </div>
   </div>
@@ -166,11 +162,7 @@ tailwind.config = {
           <div class="flex flex-wrap gap-3">
             <button onclick="window.location.href='swap.html'" class="flex items-center gap-2 px-6 py-3 bg-primary text-on-primary rounded-full font-bold text-sm active:scale-95 transition-transform">
               <span class="material-symbols-outlined text-lg">swap_horiz</span>
-              Swap / Bridge
-            </button>
-            <button onclick="window.location.href='buysell.html'" class="flex items-center gap-2 px-6 py-3 bg-primary-container text-on-primary-container rounded-full font-bold text-sm hover:opacity-90 transition-opacity">
-              <span class="material-symbols-outlined text-lg">paid</span>
-              Buy / Sell
+              Bridge
             </button>
             <button onclick="window.location.href='gas.html'" class="flex items-center gap-2 px-6 py-3 bg-primary-container text-on-primary-container rounded-full font-bold text-sm hover:opacity-90 transition-opacity">
               <span class="material-symbols-outlined text-lg">local_gas_station</span>
@@ -209,18 +201,6 @@ tailwind.config = {
       <section class="bg-surface-container-low rounded-xl p-6">
         <h4 class="text-lg font-bold text-on-background mb-4">Get Started</h4>
         <div class="space-y-3">
-          <a href="buysell.html" class="p-4 bg-surface-container-lowest rounded-xl flex items-center justify-between cursor-pointer hover:bg-primary-container transition-colors">
-            <div class="flex items-center gap-3">
-              <div class="w-10 h-10 rounded-full bg-surface-container flex items-center justify-center">
-                <span class="material-symbols-outlined text-primary">paid</span>
-              </div>
-              <div>
-                <p class="text-sm font-bold text-on-background">Onramp</p>
-                <p class="text-xs text-on-surface-variant">Buy or sell crypto with fiat</p>
-              </div>
-            </div>
-            <span class="material-symbols-outlined text-on-surface-variant">chevron_right</span>
-          </a>
           <a href="swap.html" class="p-4 bg-surface-container-lowest rounded-xl flex items-center justify-between cursor-pointer hover:bg-primary-container transition-colors">
             <div class="flex items-center gap-3">
               <div class="w-10 h-10 rounded-full bg-surface-container flex items-center justify-center">
@@ -228,7 +208,7 @@ tailwind.config = {
               </div>
               <div>
                 <p class="text-sm font-bold text-on-background">Go crosschain</p>
-                <p class="text-xs text-on-surface-variant">Bridge or swap any token, any chain</p>
+                <p class="text-xs text-on-surface-variant">Bridge any token, any chain</p>
               </div>
             </div>
             <span class="material-symbols-outlined text-on-surface-variant">chevron_right</span>
@@ -261,8 +241,8 @@ tailwind.config = {
       <div class="p-6 bg-primary text-on-primary rounded-xl relative overflow-hidden">
         <div class="relative z-10">
           <img src="sage-logo.svg" alt="Sage" class="w-8 h-8 mb-3 brightness-200"/>
-          <h5 class="text-lg font-bold mb-2 leading-tight">Powered by Across, Uniswap & MoonPay</h5>
-          <p class="text-sm opacity-80">Crosschain bridges in ~2 seconds. Same-chain swaps via Uniswap. Fiat on/off ramps via MoonPay.</p>
+          <h5 class="text-lg font-bold mb-2 leading-tight">Powered by Across Protocol</h5>
+          <p class="text-sm opacity-80">Crosschain bridges in ~2 seconds. Any token, any chain.</p>
         </div>
         <div class="absolute -bottom-8 -right-8 w-32 h-32 bg-white/10 rounded-full blur-2xl"></div>
       </div>
@@ -278,7 +258,7 @@ tailwind.config = {
   </a>
   <a class="flex flex-col items-center justify-center text-on-surface-variant p-3 active:scale-90" href="swap.html">
     <span class="material-symbols-outlined">swap_horiz</span>
-    <span class="font-headline text-[10px] font-bold uppercase mt-1">Swap</span>
+    <span class="font-headline text-[10px] font-bold uppercase mt-1">Bridge</span>
   </a>
 </nav>
 
@@ -627,8 +607,8 @@ function renderActivity() {
 
   const EXP = {1:'https://etherscan.io/tx/',42161:'https://arbiscan.io/tx/',8453:'https://basescan.org/tx/',10:'https://optimistic.etherscan.io/tx/',137:'https://polygonscan.com/tx/',324:'https://explorer.zksync.io/tx/',59144:'https://lineascan.build/tx/'};
   feed.innerHTML = '<div class="space-y-4">' + history.slice(0, 5).map(tx => {
-    const icon = tx.type === 'bridge' ? 'layers' : 'swap_horiz';
-    const label = tx.type === 'bridge' ? 'Bridged' : 'Swapped';
+    const icon = 'layers';
+    const label = 'Bridged';
     const ago = timeAgo(tx.timestamp);
     const url = tx.txHash && tx.fromChainId ? (EXP[tx.fromChainId] || 'https://etherscan.io/tx/') + tx.txHash : null;
     const tag = url ? 'a' : 'div';

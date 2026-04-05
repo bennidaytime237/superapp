@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<title>Swap & Bridge - Sage</title>
+<title>Bridge - Sage</title>
 <link rel="icon" type="image/svg+xml" href="favicon.svg"/>
 <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&display=swap" rel="stylesheet"/>
@@ -36,7 +36,7 @@ tailwind.config = {
   body { font-family: 'Outfit', sans-serif; }
   b, strong, .font-bold, .font-extrabold, .font-black, .font-semibold { letter-spacing: 0.01em; }
   .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
-  .tab-active { background: white; color: #2f3a33; box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
+
   input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
   input[type=number] { -moz-appearance: textfield; }
   html { height: 100%; }
@@ -64,13 +64,10 @@ tailwind.config = {
 <!-- Main -->
 <main class="w-full max-w-[640px] mx-auto px-8 py-6 flex-1 flex flex-col justify-center min-h-0">
 
-  <!-- Mode Tabs -->
+  <!-- Title -->
   <div class="flex items-center justify-between mb-5">
-    <div class="inline-flex bg-surface-container-low rounded-full p-1 gap-1">
-      <button id="tab-swap" onclick="setMode('swap')" class="tab-active px-6 py-2 rounded-full text-sm font-bold transition-all">Swap</button>
-      <button id="tab-bridge" onclick="setMode('bridge')" class="px-6 py-2 rounded-full text-sm font-bold text-on-surface-variant transition-all">Bridge</button>
-    </div>
-    <span id="mode-badge" class="text-xs text-on-surface-variant">via Uniswap</span>
+    <h2 class="text-xl font-black text-on-background">Bridge</h2>
+    <span id="mode-badge" class="text-xs text-on-surface-variant">via Across</span>
   </div>
 
   <!-- Rate pill — right aligned -->
@@ -338,48 +335,8 @@ function isHyperliquidDest() {
   return dest?.virtual && (dest.id === 'hl-spot' || dest.id === 'hl-perp');
 }
 
-// ── Uniswap Quoter V2 per chain ──
-const UNI_QUOTERS = {
-  1:    '0x61fFE014bA17989E743c5F6cB21bF9697530B21e',
-  10:   '0x61fFE014bA17989E743c5F6cB21bF9697530B21e',
-  137:  '0x61fFE014bA17989E743c5F6cB21bF9697530B21e',
-  8453: '0x3d4e44Eb1374240CE5F1B871ab261CD16335B76a',
-  42161:'0x61fFE014bA17989E743c5F6cB21bF9697530B21e',
-  56:   '0x78D78E420Da98ad378D7799bE8f4AF69033EB077',
-  81457:'0x6Cdcd65e03c1CEc3730AeeCd45bc140D57A25C77',
-  534352:'0x2c3c9162cB08a0e47bF115D52B5a84E0a996e37a',
-};
-const UNI_RPCS = {
-  1:'https://eth.drpc.org', 42161:'https://arb1.arbitrum.io/rpc',
-  8453:'https://mainnet.base.org', 10:'https://mainnet.optimism.io', 137:'https://polygon-rpc.com',
-  56:'https://bsc-dataseed.binance.org', 81457:'https://rpc.blast.io',
-  534352:'https://rpc.scroll.io',
-};
-// QuoterV2.quoteExactInputSingle(QuoteExactInputSingleParams)
-// Static-only tuple is encoded inline (no offset pointer needed)
-function encodeQuoteExactInputSingle(tokenIn, tokenOut, amountIn, fee) {
-  const pAddr = (a) => a.toLowerCase().replace('0x','').padStart(64,'0');
-  const pUint = (v) => BigInt(v).toString(16).padStart(64,'0');
-  return '0xc6a5026a'
-    + pAddr(tokenIn)
-    + pAddr(tokenOut)
-    + pUint(amountIn)
-    + pUint(fee)
-    + pUint(0);              // sqrtPriceLimitX96
-}
-async function uniRpcCall(chainId, to, data) {
-  const url = UNI_RPCS[chainId];
-  if (!url) return null;
-  const res = await fetch(url, {
-    method: 'POST', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ jsonrpc:'2.0', id:1, method:'eth_call', params:[{ to, data }, 'latest'] }),
-  });
-  const json = await res.json();
-  return json.result;
-}
-
 // ── State ──
-let mode = 'swap'; // 'swap' = same-chain Uniswap, 'bridge' = crosschain Across
+let mode = 'bridge';
 let fromChainIdx = 0, toChainIdx = 1;
 let fromTokenIdx = 0, toTokenIdx = 1;
 let slippage = 'auto';
@@ -527,8 +484,6 @@ let showAllChains = false;
 function buildChainGrid(chainsToShow) {
   const grid = document.getElementById('chain-grid');
   let defaultList = CHAINS.filter(c => !c.virtual);
-  // In swap mode, only show chains where Uniswap is available
-  if (mode === 'swap') defaultList = defaultList.filter(c => isUniswapChain(c.id));
   const list = chainsToShow || (showAllChains ? defaultList : defaultList.slice(0, 11));
   grid.innerHTML = `<button onclick="setChainFilter(null)" class="flex flex-col items-center justify-center w-12 h-12 rounded-xl text-[10px] font-bold transition-colors ${modalChainFilter === null ? 'bg-primary text-on-primary' : 'bg-surface-container-low text-on-surface-variant hover:bg-surface-container-high'}">All</button>` +
     list.map(c => {
@@ -557,29 +512,14 @@ function filterChainGrid() {
 
 function setChainFilter(chainId) {
   modalChainFilter = chainId;
-  // In swap mode, switching chain in picker changes the from chain
-  if (mode === 'swap' && chainId !== null) {
-    const idx = CHAINS.findIndex(c => c.id === chainId);
-    if (idx >= 0) { fromChainIdx = idx; toChainIdx = idx; }
-  }
   buildChainGrid();
   buildTokenList();
 }
-
-// Chains where Uniswap is available (has router + RPC)
-function isUniswapChain(chainId) { return !!(SWAP_ROUTERS[chainId]?.addr && UNI_RPCS[chainId]); }
 
 function buildTokenList() {
   allModalRows = [];
   CHAINS.forEach((chain) => {
     if (chain.virtual) return;
-    // In swap mode, only show tokens on the current from-chain (same-chain swap)
-    if (mode === 'swap') {
-      const currentChainId = CHAINS[fromChainIdx].id;
-      if (chain.id !== currentChainId) return;
-      // Skip if Uniswap not available on this chain
-      if (!isUniswapChain(chain.id)) return;
-    }
     TOKENS.forEach((token, tIdx) => {
       if (!token.symbol) return;
       const hasAddr = token.native
@@ -659,20 +599,14 @@ function selectToken(tokenIdx, chainId) {
   if (pickerSide === 'from') {
     fromTokenIdx = tokenIdx;
     if (chainIdx >= 0) fromChainIdx = chainIdx;
-    // Swap mode: force same chain on both sides
-    if (mode === 'swap') toChainIdx = fromChainIdx;
     if (fromTokenIdx === toTokenIdx && fromChainIdx === toChainIdx) {
       toTokenIdx = (toTokenIdx + 1) % TOKENS.length;
     }
   } else {
     toTokenIdx = tokenIdx;
     if (chainIdx >= 0) toChainIdx = chainIdx;
-    // Swap mode: force same chain on both sides
-    if (mode === 'swap') fromChainIdx = toChainIdx;
-    // Bridge mode: can't be same chain+token
     if (fromTokenIdx === toTokenIdx && fromChainIdx === toChainIdx) {
-      if (mode === 'bridge') toChainIdx = (toChainIdx + 1) % CHAINS.length;
-      else toTokenIdx = (toTokenIdx + 1) % TOKENS.length;
+      toChainIdx = (toChainIdx + 1) % CHAINS.length;
     }
   }
   closeTokenModal();
@@ -733,41 +667,8 @@ function updateRate() {
 
 function isSameChain() { return !CHAINS[toChainIdx]?.virtual && fromChainIdx === toChainIdx; }
 
-function setMode(m) {
-  mode = m;
-  history.replaceState(null, '', m === 'bridge' ? '#bridge' : '#swap');
-  document.getElementById('tab-swap').className = m === 'swap'
-    ? 'tab-active px-6 py-2 rounded-full text-sm font-bold transition-all'
-    : 'px-6 py-2 rounded-full text-sm font-bold text-on-surface-variant transition-all';
-  document.getElementById('tab-bridge').className = m === 'bridge'
-    ? 'tab-active px-6 py-2 rounded-full text-sm font-bold transition-all'
-    : 'px-6 py-2 rounded-full text-sm font-bold text-on-surface-variant transition-all';
-  document.getElementById('mode-badge').textContent = m === 'swap' ? 'via Uniswap' : 'via Across';
-  // In swap mode, force same chain; switch to Ethereum if current chain has no Uniswap
-  if (m === 'swap') {
-    if (!isUniswapChain(CHAINS[fromChainIdx].id)) {
-      fromChainIdx = 0; // Ethereum
-    }
-    toChainIdx = fromChainIdx;
-  }
-  // In bridge mode, ensure different chains
-  if (m === 'bridge' && fromChainIdx === toChainIdx) {
-    toChainIdx = (fromChainIdx + 1) % CHAINS.length;
-    if (CHAINS[toChainIdx]?.virtual) toChainIdx = (toChainIdx + 1) % CHAINS.length;
-  }
-  updateTokenDisplay();
-  updateRoute();
-  updateRecipientVisibility();
-  updateBalance();
-  onAmountChange();
-}
-
 function updateRoute() {
-  if (mode === 'swap') {
-    document.getElementById('fee-route').textContent = `${CHAINS[fromChainIdx].name} · Uniswap`;
-  } else {
-    document.getElementById('fee-route').textContent = `${CHAINS[fromChainIdx].name} → ${CHAINS[toChainIdx].name} · Across`;
-  }
+  document.getElementById('fee-route').textContent = `${CHAINS[fromChainIdx].name} → ${CHAINS[toChainIdx].name} · Across`;
 }
 
 let routeAvailable = false;
@@ -788,7 +689,7 @@ function updateActionBtn() {
     btn.className = 'w-full py-4 bg-surface-container-high text-on-surface-variant/50 rounded-full font-black text-lg cursor-not-allowed';
     btn.disabled = true;
   } else {
-    btn.textContent = isHyperliquidDest() ? 'Deposit to Hyperliquid' : mode === 'swap' ? 'Swap' : 'Bridge';
+    btn.textContent = isHyperliquidDest() ? 'Deposit to Hyperliquid' : 'Bridge';
     btn.className = 'w-full py-4 bg-primary text-on-primary rounded-full font-black text-lg active:scale-[0.98] transition-transform';
     btn.disabled = false;
   }
@@ -843,7 +744,7 @@ function validateRecipient() {
 }
 
 function updateRecipientVisibility() {
-  document.getElementById('recipient-row').classList.toggle('hidden', mode === 'swap');
+  document.getElementById('recipient-row').classList.remove('hidden');
 }
 
 function setMax() {
@@ -891,11 +792,11 @@ function onAmountChange() {
   }
   // Fetch best route
   document.getElementById('fee-display').textContent = '...';
-  document.getElementById('fee-route').textContent = mode === 'swap' ? 'Fetching Uniswap quote...' : 'Fetching Across quote...';
+  document.getElementById('fee-route').textContent = 'Fetching Across quote...';
   quoteTimer = setTimeout(() => fetchBestQuote(val), 300);
 }
 
-// ── Unified quote fetcher: Uniswap + Across ──
+// ── Quote fetcher ──
 async function fetchBestQuote(amount) {
   try {
   const fromToken = TOKENS[fromTokenIdx];
@@ -909,27 +810,16 @@ async function fetchBestQuote(amount) {
 
   const candidates = [];
 
-  if (mode === 'swap') {
-    // Same-chain only via Uniswap
-    if (fromToken.symbol !== toToken.symbol) {
-      try {
-        const uniResult = await fetchUniswapQuote(originChain, fromToken, toToken, amountWei);
-        if (uniResult) candidates.push(uniResult);
-      } catch (e) { console.warn('Uniswap quote failed:', e); }
-    }
+  if (isHyperliquidDest()) {
+    try {
+      const hlResult = await fetchHyperliquidQuote(originChain, fromToken, amountWei);
+      if (hlResult) candidates.push(hlResult);
+    } catch (e) { console.warn('Hyperliquid quote failed:', e); }
   } else {
-    // Bridge mode — Across only
-    if (isHyperliquidDest()) {
-      try {
-        const hlResult = await fetchHyperliquidQuote(originChain, fromToken, amountWei);
-        if (hlResult) candidates.push(hlResult);
-      } catch (e) { console.warn('Hyperliquid quote failed:', e); }
-    } else {
-      try {
-        const acrossResult = await fetchAcrossQuote(originChain, destChain, fromToken, toToken, amountWei);
-        if (acrossResult) candidates.push(acrossResult);
-      } catch (e) { console.warn('Across quote failed:', e); }
-    }
+    try {
+      const acrossResult = await fetchAcrossQuote(originChain, destChain, fromToken, toToken, amountWei);
+      if (acrossResult) candidates.push(acrossResult);
+    } catch (e) { console.warn('Across quote failed:', e); }
   }
 
 
@@ -969,55 +859,6 @@ async function fetchBestQuote(amount) {
     document.getElementById('fee-display').textContent = 'Quote error';
     document.getElementById('fee-route').textContent = '';
   }
-}
-
-// ── Uniswap on-chain quote ──
-async function fetchUniswapQuote(chainId, fromToken, toToken, amountWei) {
-  const tokenIn = fromToken.native ? fromToken.wrapAddresses?.[chainId] : fromToken.addresses[chainId];
-  const tokenOut = toToken.native ? toToken.wrapAddresses?.[chainId] : toToken.addresses[chainId];
-  const quoter = UNI_QUOTERS[chainId];
-  if (!tokenIn || !tokenOut || !UNI_RPCS[chainId] || !quoter) return null;
-
-  const fees = [500, 3000, 10000];
-  let bestOutput = null;
-  let bestFee = 0;
-
-  const results = await Promise.allSettled(
-    fees.map(async (fee) => {
-      const calldata = encodeQuoteExactInputSingle(tokenIn, tokenOut, amountWei, fee);
-      const result = await uniRpcCall(chainId, quoter, calldata);
-      if (result && result !== '0x' && result.length >= 66) {
-        return { fee, output: BigInt('0x' + result.slice(2, 66)) };
-      }
-      return null;
-    })
-  );
-
-  for (const r of results) {
-    if (r.status === 'fulfilled' && r.value) {
-      if (!bestOutput || r.value.output > bestOutput) {
-        bestOutput = r.value.output;
-        bestFee = r.value.fee;
-      }
-    }
-  }
-
-  if (!bestOutput || bestOutput === 0n) return null;
-  const outputNum = Number(bestOutput) / 10 ** toToken.decimals;
-  const feePercent = bestFee / 10000;
-  const chainName = CHAINS.find(c => c.id === chainId)?.name || chainId;
-
-  return {
-    outputNum,
-    provider: 'Uniswap',
-    route: `${fromToken.symbol} → ${toToken.symbol} on ${chainName}`,
-    feeDisplay: `${feePercent}% pool fee`,
-    time: '~15 seconds',
-    type: 'uniswap',
-    quote: {
-      tokenIn, tokenOut, amountWei, fee: bestFee, chainId, outputWei: bestOutput.toString(),
-    },
-  };
 }
 
 // ── Across crosschain quote ──
@@ -1162,7 +1003,7 @@ function showTxSuccess(summary, elapsedSec, txHash, chainId) {
     const historyKey = 'sage_tx_' + (walletAddress || 'unknown').toLowerCase();
     const history = JSON.parse(localStorage.getItem(historyKey) || '[]');
     history.unshift({
-      type: mode === 'bridge' ? 'bridge' : 'swap',
+      type: 'bridge',
       summary,
       time: elapsedSec,
       fromToken: TOKENS[fromTokenIdx].symbol,
@@ -1254,30 +1095,7 @@ async function executeSwap() {
     const routeType = lastQuote._routeType;
     const provider = lastQuote._provider;
 
-    if (routeType === 'uniswap') {
-      // Uniswap same-chain swap
-      showTxScreen('Confirm in wallet...', `${amount} ${fromSym} → ${toSym} via Uniswap`, false);
-      document.getElementById('tx-timer').textContent = '';
-      const q = lastQuote;
-      // Build swap tx via Universal Router
-      // For native ETH input, send value; for ERC20, need approval first
-      const fromToken = TOKENS[fromTokenIdx];
-      if (!fromToken.native) {
-        // Check allowance and approve if needed
-        showTxScreen('Approving...', `Approve ${fromSym}`, false);
-        document.getElementById('tx-timer').textContent = '';
-        await ensureApproval(q.tokenIn, getSwapRouter(q.chainId), q.amountWei, q.chainId);
-      }
-      showTxScreen('Confirm in wallet...', `${amount} ${fromSym} → ${toSym}`, false);
-      document.getElementById('tx-timer').textContent = '';
-      const hash = await executeUniswapSwap(q);
-      showTxScreen('Swapping...', `via Uniswap on ${fromChainName}`, true);
-      // Wait for tx confirmation
-      await waitForTx(hash, q.chainId);
-      const elapsed = (Date.now() - txStartTime) / 1000;
-      showTxSuccess(`${amount} ${fromSym} → ${toSym} on ${fromChainName}`, elapsed, hash, q.chainId);
-
-    } else if (routeType === 'across') {
+    if (routeType === 'across') {
       // Standard Across bridge
       if (lastQuote.approvalTxns?.length) {
         showTxScreen('Approving...', `Approve ${fromSym} for bridging`, false);
@@ -1342,131 +1160,6 @@ async function sendTx(tx) {
     }],
   });
   return txHash;
-}
-
-async function ensureApproval(tokenAddr, spender, amountWei, chainId) {
-  // Check current allowance
-  const owner = walletAddress;
-  const allowanceData = '0xdd62ed3e' + owner.slice(2).padStart(64,'0') + spender.slice(2).padStart(64,'0');
-  const chainHex = '0x' + chainId.toString(16);
-  const allowance = await window.ethereum.request({
-    method: 'eth_call', params: [{ to: tokenAddr, data: allowanceData }, 'latest'],
-  });
-  if (BigInt((!allowance || allowance === '0x') ? '0x0' : allowance) >= BigInt(amountWei)) return;
-  // Send approval tx
-  const approveData = '0x095ea7b3' + spender.slice(2).padStart(64,'0') + BigInt(amountWei).toString(16).padStart(64,'0');
-  await window.ethereum.request({
-    method: 'eth_sendTransaction',
-    params: [{ from: owner, to: tokenAddr, data: approveData, chainId: chainHex }],
-  });
-}
-
-// SwapRouter02 — two versions:
-// "old" (0x68b3...) uses 0x414bf389 exactInputSingle with deadline in struct
-// "new" (chain-specific) uses 0x04e45aaf without deadline, needs multicall wrapper
-const SWAP_ROUTERS = {
-  1:    { addr:'0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45', version:'old' },
-  10:   { addr:'0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45', version:'old' },
-  137:  { addr:'0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45', version:'old' },
-  42161:{ addr:'0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45', version:'old' },
-  8453: { addr:'0x2626664c2603336E57B271c5C0b26F421741e481', version:'new' },
-  56:   { addr:'0xB971eF87ede563556b2ED4b1C0b0019111Dd85d2', version:'new' },
-  81457:{ addr:'0x549FEB8c9bd4c12Ad2AB27022dA12492aC452B66', version:'new' },
-  534352:{ addr:'0xfc30937f5cDe93Df8d48aCAF7e6f5D8D8ACf1DaB', version:'new' },
-};
-
-function getSwapRouter(chainId) { return SWAP_ROUTERS[chainId]?.addr || '0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45'; }
-function getSwapVersion(chainId) { return SWAP_ROUTERS[chainId]?.version || 'old'; }
-
-async function executeUniswapSwap(q) {
-  const pAddr = (a) => a.toLowerCase().replace('0x','').padStart(64,'0');
-  const pUint = (v) => BigInt(v).toString(16).padStart(64,'0');
-  const fromToken = TOKENS[fromTokenIdx];
-  const toToken = TOKENS[toTokenIdx];
-  const amountOutMin = BigInt(q.outputWei) * 95n / 100n;
-  const router = getSwapRouter(q.chainId);
-  const deadline = BigInt(Math.floor(Date.now() / 1000) + 1800);
-  const chainHex = '0x' + q.chainId.toString(16);
-  const value = fromToken.native ? '0x' + BigInt(q.amountWei).toString(16) : '0x0';
-
-  const version = getSwapVersion(q.chainId);
-  const recipient = toToken.native ? router : walletAddress;
-  let swapData;
-
-  if (version === 'old') {
-    // 0x414bf389: exactInputSingle with deadline in struct
-    swapData = '0x414bf389'
-      + pAddr(q.tokenIn) + pAddr(q.tokenOut) + pUint(q.fee)
-      + pAddr(recipient) + pUint(deadline)
-      + pUint(q.amountWei) + pUint(amountOutMin) + pUint(0);
-  } else {
-    // 0x04e45aaf: exactInputSingle without deadline (new SwapRouter02)
-    swapData = '0x04e45aaf'
-      + pAddr(q.tokenIn) + pAddr(q.tokenOut) + pUint(q.fee)
-      + pAddr(recipient)
-      + pUint(q.amountWei) + pUint(amountOutMin) + pUint(0);
-  }
-
-  if (toToken.native) {
-    const unwrapData = '0x49404b7c' + pUint(amountOutMin) + pAddr(walletAddress);
-    const calls = version === 'new'
-      ? encodeMulticallDeadline(deadline, [swapData, unwrapData])
-      : encodeMulticall([swapData, unwrapData]);
-    return window.ethereum.request({
-      method: 'eth_sendTransaction',
-      params: [{ from: walletAddress, to: router, data: calls, value, chainId: chainHex }],
-    });
-  }
-
-  // New version needs deadline via multicall even for simple swaps
-  const data = version === 'new'
-    ? encodeMulticallDeadline(deadline, [swapData])
-    : swapData;
-
-  return window.ethereum.request({
-    method: 'eth_sendTransaction',
-    params: [{ from: walletAddress, to: router, data, value, chainId: chainHex }],
-  });
-}
-
-// Encode multicall(uint256 deadline, bytes[] data) — selector 0x5ae401dc
-function encodeMulticallDeadline(deadline, calls) {
-  const pUint = (v) => BigInt(v).toString(16).padStart(64,'0');
-  let offsets = '', bodies = '';
-  let running = calls.length * 32;
-  for (const c of calls) {
-    offsets += pUint(running);
-    const raw = c.startsWith('0x') ? c.slice(2) : c;
-    const len = raw.length / 2;
-    const padded = raw + '0'.repeat((Math.ceil(len / 32) * 32 - len) * 2);
-    bodies += pUint(len) + padded;
-    running += 32 + Math.ceil(len / 32) * 32;
-  }
-  return '0x5ae401dc'
-    + pUint(deadline)
-    + pUint(64)              // offset to bytes[]
-    + pUint(calls.length)
-    + offsets + bodies;
-}
-
-// Encode multicall(bytes[] data) — selector 0xac9650d8
-function encodeMulticall(calls) {
-  const pUint = (v) => BigInt(v).toString(16).padStart(64,'0');
-  // bytes[] is: offset_to_array, array_length, [offsets...], [len+data...]
-  let offsets = '', bodies = '';
-  let running = calls.length * 32;
-  for (const c of calls) {
-    offsets += pUint(running);
-    const raw = c.startsWith('0x') ? c.slice(2) : c;
-    const len = raw.length / 2;
-    const padded = raw + '0'.repeat((Math.ceil(len / 32) * 32 - len) * 2);
-    bodies += pUint(len) + padded;
-    running += 32 + Math.ceil(len / 32) * 32;
-  }
-  return '0xac9650d8'
-    + pUint(32)              // offset to bytes[]
-    + pUint(calls.length)    // array length
-    + offsets + bodies;
 }
 
 async function waitForTx(hash, chainId) {
@@ -1548,10 +1241,14 @@ async function loadRoutes() {
 
 // ── Init ──
 (async function init() {
-  // Restore tab from URL hash
-  if (window.location.hash === '#bridge') setMode('bridge');
+  // Ensure different chains for bridge
+  if (fromChainIdx === toChainIdx) {
+    toChainIdx = (fromChainIdx + 1) % CHAINS.length;
+    if (CHAINS[toChainIdx]?.virtual) toChainIdx = (toChainIdx + 1) % CHAINS.length;
+  }
   updateTokenDisplay();
   updateRecipientVisibility();
+  updateRoute();
   updateActionBtn();
   await Promise.all([fetchPrices(), loadRoutes()]);
   onAmountChange();
