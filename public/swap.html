@@ -427,10 +427,12 @@ async function connectWallet() {
     walletAddress = accs[0];
     const short = walletAddress.slice(0,6) + '...' + walletAddress.slice(-4);
     document.getElementById('connect-label').textContent = short;
+    resolveWalletENS();
     updateBalance();
     updateActionBtn();
   } catch(e) { console.error(e); }
 }
+function resolveWalletENS(){if(!walletAddress)return;fetch(`/api/ens?address=${walletAddress}`).then(r=>r.json()).then(d=>{if(d.name)document.getElementById('connect-label').textContent=d.name;}).catch(()=>{});}
 
 async function updateBalance() {
   if (!walletAddress) return;
@@ -1387,7 +1389,7 @@ async function loadRoutes() {
     window.ethereum.on('accountsChanged', (a) => {
       walletAddress = a[0] || null;
       if (walletAddress) {
-        document.getElementById('connect-label').textContent = walletAddress.slice(0,6)+'...'+walletAddress.slice(-4);
+        document.getElementById('connect-label').textContent = walletAddress.slice(0,6)+'...'+walletAddress.slice(-4);resolveWalletENS();
       } else {
         document.getElementById('connect-label').textContent = 'Connect';
       }
@@ -1396,6 +1398,7 @@ async function loadRoutes() {
     });
     if (walletAddress) {
       document.getElementById('connect-label').textContent = walletAddress.slice(0,6)+'...'+walletAddress.slice(-4);
+      resolveWalletENS();
       updateBalance();
     }
     updateActionBtn();

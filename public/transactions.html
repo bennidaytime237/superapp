@@ -210,11 +210,13 @@ function toggleDrop(key) {
   }
 }
 
+function resolveWalletENS(){if(!walletAddress)return;fetch(`/api/ens?address=${walletAddress}`).then(r=>r.json()).then(d=>{if(d.name)document.getElementById('connect-label').textContent=d.name;}).catch(()=>{});}
 function updateConnectBtn() {
   const label = document.getElementById('connect-label');
   const btn = document.getElementById('connect-btn');
   if (walletAddress) {
     label.textContent = walletAddress.slice(0,6) + '...' + walletAddress.slice(-4);
+    resolveWalletENS();
     btn.className = 'flex items-center gap-2 px-3 py-1.5 bg-surface-container-high text-on-surface rounded-full text-xs font-bold active:scale-95 transition-transform';
   } else {
     label.textContent = 'Connect';

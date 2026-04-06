@@ -160,6 +160,7 @@ async function connectWallet(){
   const accs=await window.ethereum.request({method:'eth_requestAccounts'});
   walletAddress=accs[0];
   document.getElementById('connect-label').textContent=walletAddress.slice(0,6)+'...'+walletAddress.slice(-4);
+  resolveWalletENS();
   loadBalances();
 }
 
@@ -328,6 +329,7 @@ async function sendTx(tx){
   return window.ethereum.request({method:'eth_sendTransaction',params:[params]});
 }
 
+function resolveWalletENS(){if(!walletAddress)return;fetch(`/api/ens?address=${walletAddress}`).then(r=>r.json()).then(d=>{if(d.name)document.getElementById('connect-label').textContent=d.name;}).catch(()=>{});}
 function fmt(n){if(n>=1000)return n.toLocaleString('en-US',{maximumFractionDigits:2});if(n>=1)return n.toLocaleString('en-US',{maximumFractionDigits:4});return n.toLocaleString('en-US',{maximumFractionDigits:6});}
 
 (async function(){
@@ -335,7 +337,7 @@ function fmt(n){if(n>=1000)return n.toLocaleString('en-US',{maximumFractionDigit
   updateBtn();
   if(window.ethereum){
     const accs=await window.ethereum.request({method:'eth_accounts'});
-    if(accs.length>0){walletAddress=accs[0];document.getElementById('connect-label').textContent=walletAddress.slice(0,6)+'...'+walletAddress.slice(-4);loadBalances();}
+    if(accs.length>0){walletAddress=accs[0];document.getElementById('connect-label').textContent=walletAddress.slice(0,6)+'...'+walletAddress.slice(-4);resolveWalletENS();loadBalances();}
     window.ethereum.on('accountsChanged',a=>{walletAddress=a[0]||null;document.getElementById('connect-label').textContent=walletAddress?walletAddress.slice(0,6)+'...'+walletAddress.slice(-4):'Connect';if(walletAddress)loadBalances();else{sweepItems=[];renderAssets();updateSummary();}});
   }
 })();
