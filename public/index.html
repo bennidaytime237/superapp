@@ -158,7 +158,7 @@ tailwind.config = {
         <span class="material-symbols-outlined text-lg">account_balance_wallet</span>
         <span id="connect-label">Connect Wallet</span>
       </button>
-      <div id="wallet-menu" class="hidden absolute right-0 top-full mt-2 bg-white rounded-xl shadow-lg border border-outline-variant/10 overflow-hidden z-50 min-w-[180px]">
+      <div id="wallet-menu" class="hidden absolute right-0 top-full mt-2 bg-white rounded-lg shadow-lg border border-outline-variant/10 overflow-hidden z-50 min-w-[180px]">
         <button onclick="copyAddress()" class="w-full px-4 py-3 text-sm font-medium text-on-surface hover:bg-surface-container-low transition-colors text-left flex items-center gap-2">
           <span class="material-symbols-outlined text-base">content_copy</span>Copy Address
         </button>
@@ -205,7 +205,7 @@ tailwind.config = {
                 Deposit
                 <span class="material-symbols-outlined text-base">expand_more</span>
               </button>
-              <div id="deposit-menu" class="hidden absolute left-0 top-full mt-2 bg-white rounded-2xl shadow-lg border border-outline-variant/10 overflow-hidden z-50 min-w-[210px]">
+              <div id="deposit-menu" class="hidden absolute left-0 top-full mt-2 bg-white rounded-lg shadow-lg border border-outline-variant/10 overflow-hidden z-50 min-w-[210px]">
                 <a href="hyperliquid.html" class="flex items-center gap-3 px-4 py-3 text-sm font-medium text-on-surface hover:bg-surface-container-low transition-colors">
                   <img src="hyperliquid-logo.svg" class="w-5 h-5 rounded-md"/>
                   Hyperliquid
@@ -221,7 +221,7 @@ tailwind.config = {
               <button onclick="toggleMoreMenu()" class="flex items-center gap-1 px-4 py-3 bg-primary-container text-on-primary-container rounded-full font-bold text-sm hover:opacity-90 transition-opacity">
                 <span class="tracking-widest">···</span>
               </button>
-              <div id="more-menu" class="hidden absolute left-0 top-full mt-2 bg-white rounded-2xl shadow-lg border border-outline-variant/10 overflow-hidden z-50 min-w-[200px]">
+              <div id="more-menu" class="hidden absolute left-0 top-full mt-2 bg-white rounded-lg shadow-lg border border-outline-variant/10 overflow-hidden z-50 min-w-[200px]">
                 <a href="sweep.html" class="flex items-center gap-3 px-4 py-3 text-sm font-medium text-on-surface hover:bg-surface-container-low transition-colors">
                   <span class="material-symbols-outlined text-base text-primary">move_to_inbox</span>
                   Sweep
@@ -733,7 +733,7 @@ function toggleAssetDrop(symbol) {
   const overlay = document.createElement('div');
   overlay.id = 'asset-overlay';
   overlay.dataset.symbol = symbol;
-  overlay.className = 'fixed z-50 bg-white rounded-xl shadow-2xl border border-outline-variant/10 overflow-hidden';
+  overlay.className = 'fixed z-50 bg-white rounded-lg shadow-2xl border border-outline-variant/10 overflow-hidden';
   overlay.style.cssText = `left:${rect.left}px;width:${rect.width}px;top:${rect.bottom + 4}px;max-height:300px;overflow-y:auto;`;
   overlay.innerHTML = rows || '<p class="px-4 py-3 text-sm text-on-surface-variant">No balances</p>';
   document.body.appendChild(overlay);
@@ -772,7 +772,7 @@ function toggleChainDrop(chainId) {
   const overlay = document.createElement('div');
   overlay.id = 'chain-overlay';
   overlay.dataset.chainId = chainId;
-  overlay.className = 'fixed z-50 bg-white rounded-xl shadow-2xl border border-outline-variant/10 overflow-hidden';
+  overlay.className = 'fixed z-50 bg-white rounded-lg shadow-2xl border border-outline-variant/10 overflow-hidden';
   overlay.style.cssText = `left:${rect.left}px;width:${Math.max(rect.width, 220)}px;top:${rect.bottom + 4}px;max-height:250px;overflow-y:auto;`;
   overlay.innerHTML = rows || '<p class="px-4 py-3 text-sm text-on-surface-variant">Empty</p>';
   document.body.appendChild(overlay);
