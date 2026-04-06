@@ -57,11 +57,11 @@ tailwind.config = {
 <body class="bg-surface text-on-surface selection:bg-primary-fixed selection:text-on-primary-fixed min-h-screen">
 
 <!-- Sidebar Navigation (Desktop) -->
-<aside class="hidden md:flex flex-col fixed left-0 top-0 h-full w-64 px-4 pt-3 pb-4 bg-surface-container-low z-40">
-  <a href="index.html" class="mb-3 px-4 py-1 flex items-center gap-2">
-    <img src="sage-wordmark.svg" alt="Sage" class="h-6"/>
+<aside class="hidden md:flex flex-col fixed left-0 top-0 h-full w-64 px-4 pt-4 pb-4 bg-surface-container-low z-40">
+  <a href="index.html" class="mb-6 px-4 py-1 flex items-center gap-2">
+    <img src="sage-wordmark.svg" alt="Sage" class="h-7"/>
   </a>
-  <nav class="flex-1 space-y-0.5">
+  <nav class="flex-1 space-y-1">
     <a class="flex items-center gap-3 px-4 py-2 bg-surface-container-lowest text-primary rounded-full shadow-sm" href="index.html">
       <span class="material-symbols-outlined">grid_view</span>
       <span class="font-medium text-sm">Dashboard</span>
@@ -148,7 +148,7 @@ tailwind.config = {
 <!-- Main Content -->
 <main class="md:ml-64 min-h-screen pb-24 md:pb-8">
   <!-- Top Bar -->
-  <header class="flex justify-between items-center w-full px-6 py-2 bg-surface sticky top-0 z-30">
+  <header class="flex justify-between items-center w-full px-6 py-3 bg-surface sticky top-0 z-30">
     <div class="flex items-center gap-2">
       <a href="index.html"><img src="sage-wordmark.svg" alt="Sage" class="h-6 md:hidden"/></a>
       <h2 class="hidden md:block font-headline font-bold text-xl tracking-tight text-on-background">Portfolio Overview</h2>
@@ -169,13 +169,13 @@ tailwind.config = {
     </div>
   </header>
 
-  <div class="px-6 lg:px-8 py-2 max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-3">
+  <div class="px-6 lg:px-10 py-4 max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-5">
 
     <!-- Primary Column -->
-    <div class="lg:col-span-8 space-y-3">
+    <div class="lg:col-span-8 space-y-5">
 
       <!-- Hero Balance -->
-      <section class="relative px-5 py-4 rounded-xl bg-surface-container-lowest shadow-[0_4px_40px_rgba(42,52,52,0.02)]">
+      <section class="relative px-6 py-5 rounded-xl bg-surface-container-lowest shadow-[0_4px_40px_rgba(42,52,52,0.02)]">
         <div class="relative z-10">
           <div class="flex items-center gap-3 mb-1">
             <p class="text-on-surface-variant text-sm font-medium">Total Balance</p>
@@ -184,7 +184,7 @@ tailwind.config = {
           <h3 id="hero-balance" class="text-4xl md:text-5xl font-black text-on-background tracking-normal mb-2">
             <span class="text-on-surface-variant text-2xl tracking-wide">Connect wallet to view</span>
           </h3>
-          <p id="hero-change" class="text-sm text-primary font-bold mb-3"></p>
+          <p id="hero-change" class="text-sm text-primary font-bold mb-5"></p>
           <div class="flex flex-wrap gap-3 items-center">
             <button onclick="window.location.href='send.html'" class="flex items-center gap-2 px-6 py-3 bg-primary text-on-primary rounded-full font-bold text-sm active:scale-95 transition-transform">
               <span class="material-symbols-outlined text-lg">send</span>
@@ -240,7 +240,7 @@ tailwind.config = {
       <!-- Active Chains Overview -->
       <section>
         <div class="flex justify-between items-center mb-2">
-          <h4 class="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Chain Breakdown</h4>
+          <h4 class="text-sm font-bold text-on-surface-variant uppercase tracking-wider">Chain Breakdown</h4>
           <div class="flex gap-1">
             <button onclick="scrollChains(-1)" class="w-6 h-6 rounded-full bg-surface-container-low flex items-center justify-center hover:bg-surface-container-high transition-colors">
               <span class="material-symbols-outlined text-on-surface-variant text-sm">chevron_left</span>
@@ -257,20 +257,20 @@ tailwind.config = {
 
       <!-- Assets Grid -->
       <section>
-        <div class="flex justify-between items-end mb-2">
+        <div class="flex justify-between items-end mb-3">
           <h4 class="text-sm font-bold text-on-background">Assets</h4>
         </div>
-        <div id="assets-grid" class="grid grid-cols-1 md:grid-cols-2 gap-2.5 items-start">
+        <div id="assets-grid" class="grid grid-cols-1 md:grid-cols-2 gap-3 items-start">
           <p class="text-sm text-on-surface-variant col-span-2">Connect wallet to view your assets</p>
         </div>
       </section>
     </div>
 
     <!-- Secondary Column -->
-    <div class="lg:col-span-4 space-y-2">
+    <div class="lg:col-span-4 space-y-4">
 
       <!-- Bridge Times -->
-      <section class="bg-surface-container-lowest rounded-lg px-4 py-3">
+      <section class="bg-surface-container-lowest rounded-xl px-5 py-4">
         <div class="flex items-center justify-between mb-3">
           <h4 class="text-sm font-bold text-on-background">Bridge Times</h4>
           <a href="radar.html" class="text-[10px] font-bold text-primary hover:underline">Radar →</a>
@@ -283,10 +283,10 @@ tailwind.config = {
       </section>
 
       <!-- Get Started -->
-      <section class="bg-surface-container-low rounded-lg p-3">
-        <h4 class="text-xs font-bold text-on-background mb-2">Get Started</h4>
-        <div class="space-y-1.5">
-          <a href="swap.html" class="px-3 py-2.5 bg-surface-container-lowest rounded-lg flex items-center justify-between cursor-pointer hover:bg-primary-container transition-colors">
+      <section class="bg-surface-container-low rounded-xl p-4">
+        <h4 class="text-sm font-bold text-on-background mb-3">Get Started</h4>
+        <div class="space-y-2">
+          <a href="swap.html" class="px-4 py-3 bg-surface-container-lowest rounded-xl flex items-center justify-between cursor-pointer hover:bg-primary-container transition-colors">
             <div class="flex items-center gap-2.5">
               <div class="w-8 h-8 rounded-full bg-surface-container flex items-center justify-center flex-shrink-0">
                 <span class="material-symbols-outlined text-primary text-base">swap_horiz</span>
@@ -298,7 +298,7 @@ tailwind.config = {
             </div>
             <span class="material-symbols-outlined text-on-surface-variant text-base">chevron_right</span>
           </a>
-          <a href="gas.html" class="px-3 py-2.5 bg-surface-container-lowest rounded-lg flex items-center justify-between cursor-pointer hover:bg-primary-container transition-colors">
+          <a href="gas.html" class="px-4 py-3 bg-surface-container-lowest rounded-xl flex items-center justify-between cursor-pointer hover:bg-primary-container transition-colors">
             <div class="flex items-center gap-2.5">
               <div class="w-8 h-8 rounded-full bg-surface-container flex items-center justify-center flex-shrink-0">
                 <span class="material-symbols-outlined text-primary text-base">local_gas_station</span>
@@ -310,7 +310,7 @@ tailwind.config = {
             </div>
             <span class="material-symbols-outlined text-on-surface-variant text-base">chevron_right</span>
           </a>
-          <a href="sweep.html" class="px-3 py-2.5 bg-surface-container-lowest rounded-lg flex items-center justify-between cursor-pointer hover:bg-primary-container transition-colors">
+          <a href="sweep.html" class="px-4 py-3 bg-surface-container-lowest rounded-xl flex items-center justify-between cursor-pointer hover:bg-primary-container transition-colors">
             <div class="flex items-center gap-2.5">
               <div class="w-8 h-8 rounded-full bg-surface-container flex items-center justify-center flex-shrink-0">
                 <span class="material-symbols-outlined text-primary text-base">move_to_inbox</span>
@@ -327,7 +327,7 @@ tailwind.config = {
 
       <!-- Activity -->
       <section>
-        <div class="flex justify-between items-center mb-2 px-2">
+        <div class="flex justify-between items-center mb-3 px-2">
           <h4 class="text-sm font-bold text-on-background">Activity</h4>
           <a href="transactions.html" class="text-sm font-bold text-primary hover:underline">Show more</a>
         </div>
@@ -672,7 +672,7 @@ function renderPortfolio(balancesByChain) {
           <p class="text-[11px] text-on-surface-variant truncate">${info.total.toLocaleString('en-US',{maximumFractionDigits:4})} ${symbol}</p>
         </div>
       </div>
-      <div id="asset-drop-${symbol}" class="hidden absolute left-0 right-0 top-full z-20 bg-surface-container-lowest rounded-lg shadow-lg border border-outline-variant/10"></div>
+      <div id="asset-drop-${symbol}" class="hidden absolute left-0 right-0 top-full mt-1 z-30 bg-white rounded-xl shadow-xl border border-outline-variant/10"></div>
     </div>`;
   });
 
@@ -702,8 +702,9 @@ function scrollChains(dir) {
 function toggleAssetDrop(symbol) {
   const el = document.getElementById('asset-drop-' + symbol);
   if (!el) return;
+  // Close all other dropdowns first
+  document.querySelectorAll('[id^="asset-drop-"]').forEach(d => { if (d !== el) d.classList.add('hidden'); });
   if (!el.classList.contains('hidden')) { el.classList.add('hidden'); return; }
-  // Build content: per-chain breakdown for this token
   if (!portfolioData) return;
   let rows = '';
   for (const [chainId, tokens] of Object.entries(portfolioData)) {
@@ -711,9 +712,9 @@ function toggleAssetDrop(symbol) {
     if (!bal || bal <= 0) continue;
     const c = CHAINS[chainId] || { name: 'Chain ' + chainId };
     const p = prices[symbol]?.usd || 0;
-    rows += `<div class="flex items-center justify-between px-6 py-3">
-      <div class="flex items-center gap-3">
-        <img src="${chainIcon(Number(chainId))}" class="w-6 h-6 rounded-full"/>
+    rows += `<div class="flex items-center justify-between px-4 py-2.5">
+      <div class="flex items-center gap-2.5">
+        <img src="${chainIcon(Number(chainId))}" class="w-5 h-5 rounded-full"/>
         <span class="text-sm text-on-surface">${c.name}</span>
       </div>
       <div class="text-right">
@@ -722,8 +723,12 @@ function toggleAssetDrop(symbol) {
       </div>
     </div>`;
   }
-  el.innerHTML = '<div class="border-t border-outline-variant/10">' + (rows || '<p class="px-6 py-3 text-sm text-on-surface-variant">No balances</p>') + '</div>';
+  el.innerHTML = rows || '<p class="px-4 py-3 text-sm text-on-surface-variant">No balances</p>';
   el.classList.remove('hidden');
+  // Close on outside click
+  setTimeout(() => document.addEventListener('click', function close(e) {
+    if (!el.contains(e.target) && !e.target.closest('.asset-card')) { el.classList.add('hidden'); document.removeEventListener('click', close); }
+  }), 0);
 }
 
 function toggleChainDrop(chainId) {
