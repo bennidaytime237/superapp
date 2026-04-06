@@ -655,7 +655,7 @@ function renderPortfolio(balancesByChain) {
       ? info.chains.length + ' chains'
       : (CHAINS[info.chains[0]]?.name || 'Chain ' + info.chains[0]);
     const icon = tokenIcon(symbol);
-    return `<div class="asset-card bg-surface-container-lowest rounded-lg relative">
+    return `<div class="asset-card bg-surface-container-lowest rounded-lg" data-symbol="${symbol}">
       <div class="p-3.5 cursor-pointer" onclick="toggleAssetDrop('${symbol}')">
         <div class="flex items-center gap-3 mb-2">
           <img src="${icon}" alt="${symbol}" class="w-9 h-9 rounded-full bg-surface-container flex-shrink-0" onerror="this.outerHTML='<div class=\\'w-9 h-9 rounded-full bg-surface-container flex items-center justify-center flex-shrink-0\\'><span class=\\'text-sm font-black text-on-surface-variant\\'>${symbol[0]}</span></div>'"/>
@@ -672,7 +672,6 @@ function renderPortfolio(balancesByChain) {
           <p class="text-[11px] text-on-surface-variant truncate">${info.total.toLocaleString('en-US',{maximumFractionDigits:4})} ${symbol}</p>
         </div>
       </div>
-      <div id="asset-drop-${symbol}" class="hidden absolute left-0 right-0 top-full mt-1 z-30 bg-white rounded-xl shadow-xl border border-outline-variant/10"></div>
     </div>`;
   });
 
@@ -699,13 +698,19 @@ function scrollChains(dir) {
   el.scrollBy({ left: dir * 200, behavior: 'smooth' });
 }
 
+function closeAssetDrop() {
+  const existing = document.getElementById('asset-overlay');
+  if (existing) existing.remove();
+}
+
 function toggleAssetDrop(symbol) {
-  const el = document.getElementById('asset-drop-' + symbol);
-  if (!el) return;
-  // Close all other dropdowns first
-  document.querySelectorAll('[id^="asset-drop-"]').forEach(d => { if (d !== el) d.classList.add('hidden'); });
-  if (!el.classList.contains('hidden')) { el.classList.add('hidden'); return; }
+  const existing = document.getElementById('asset-overlay');
+  if (existing) { const prev = existing.dataset.symbol; existing.remove(); if (prev === symbol) return; }
   if (!portfolioData) return;
+  const card = document.querySelector(`.asset-card[data-symbol="${symbol}"]`);
+  if (!card) return;
+  const rect = card.getBoundingClientRect();
+
   let rows = '';
   for (const [chainId, tokens] of Object.entries(portfolioData)) {
     const bal = tokens[symbol];
@@ -723,11 +728,17 @@ function toggleAssetDrop(symbol) {
       </div>
     </div>`;
   }
-  el.innerHTML = rows || '<p class="px-4 py-3 text-sm text-on-surface-variant">No balances</p>';
-  el.classList.remove('hidden');
-  // Close on outside click
+
+  const overlay = document.createElement('div');
+  overlay.id = 'asset-overlay';
+  overlay.dataset.symbol = symbol;
+  overlay.className = 'fixed z-50 bg-white rounded-xl shadow-2xl border border-outline-variant/10 overflow-hidden';
+  overlay.style.cssText = `left:${rect.left}px;width:${rect.width}px;top:${rect.bottom + 4}px;max-height:300px;overflow-y:auto;`;
+  overlay.innerHTML = rows || '<p class="px-4 py-3 text-sm text-on-surface-variant">No balances</p>';
+  document.body.appendChild(overlay);
+
   setTimeout(() => document.addEventListener('click', function close(e) {
-    if (!el.contains(e.target) && !e.target.closest('.asset-card')) { el.classList.add('hidden'); document.removeEventListener('click', close); }
+    if (!overlay.contains(e.target) && !card.contains(e.target)) { overlay.remove(); document.removeEventListener('click', close); }
   }), 0);
 }
 
