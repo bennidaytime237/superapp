@@ -148,7 +148,7 @@ tailwind.config = {
 <!-- Main Content -->
 <main class="md:ml-64 min-h-screen pb-24 md:pb-8">
   <!-- Top Bar -->
-  <header class="flex justify-between items-center w-full px-6 py-3 bg-surface sticky top-0 z-30">
+  <header class="flex justify-between items-center w-full px-6 py-4 bg-surface sticky top-0 z-30">
     <div class="flex items-center gap-2">
       <a href="index.html"><img src="sage-wordmark.svg" alt="Sage" class="h-6 md:hidden"/></a>
       <h2 class="hidden md:block font-headline font-bold text-xl tracking-tight text-on-background">Portfolio Overview</h2>
@@ -177,14 +177,14 @@ tailwind.config = {
       <!-- Hero Balance -->
       <section class="relative px-7 py-6 rounded-xl bg-surface-container-lowest shadow-[0_4px_40px_rgba(42,52,52,0.02)]">
         <div class="relative z-10">
-          <div class="flex items-center gap-3 mb-2">
+          <div class="flex items-center gap-3 mb-4">
             <p class="text-on-surface-variant text-sm font-medium">Total Balance</p>
             <span id="hero-chain-count" class="text-xs font-bold text-primary bg-primary-container px-2 py-0.5 rounded-full hidden">0 chains</span>
           </div>
-          <h3 id="hero-balance" class="text-5xl md:text-6xl font-black text-on-background tracking-tight mb-3">
+          <h3 id="hero-balance" class="text-5xl md:text-6xl font-black text-on-background tracking-tight mb-1">
             <span class="text-on-surface-variant text-2xl tracking-wide">Connect wallet to view</span>
           </h3>
-          <p id="hero-change" class="text-sm text-primary font-bold mb-6"></p>
+          <p id="hero-change" class="text-sm text-primary font-bold mb-4"></p>
           <div class="flex flex-wrap gap-3 items-center">
             <button onclick="window.location.href='send.html'" class="flex items-center gap-2 px-6 py-3 bg-primary text-on-primary rounded-full font-bold text-sm active:scale-95 transition-transform">
               <span class="material-symbols-outlined text-lg">send</span>
@@ -260,7 +260,7 @@ tailwind.config = {
         <div class="flex justify-between items-end mb-3">
           <h4 class="text-sm font-bold text-on-background">Assets</h4>
         </div>
-        <div id="assets-grid" class="grid grid-cols-1 md:grid-cols-2 gap-3 items-start">
+        <div id="assets-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 items-start">
           <p class="text-sm text-on-surface-variant col-span-2">Connect wallet to view your assets</p>
         </div>
       </section>
@@ -655,25 +655,22 @@ function renderPortfolio(balancesByChain) {
       ? info.chains.length + ' chains'
       : (CHAINS[info.chains[0]]?.name || 'Chain ' + info.chains[0]);
     const icon = tokenIcon(symbol);
-    return `<div class="asset-card bg-surface-container-lowest rounded-lg" data-symbol="${symbol}">
-      <div class="p-3.5 cursor-pointer" onclick="toggleAssetDrop('${symbol}')">
-        <div class="flex items-center gap-3 mb-2">
-          <img src="${icon}" alt="${symbol}" class="w-9 h-9 rounded-full bg-surface-container flex-shrink-0" onerror="this.outerHTML='<div class=\\'w-9 h-9 rounded-full bg-surface-container flex items-center justify-center flex-shrink-0\\'><span class=\\'text-sm font-black text-on-surface-variant\\'>${symbol[0]}</span></div>'"/>
+    return `<div class="asset-card bg-surface-container-lowest rounded-xl cursor-pointer hover:shadow-md transition-shadow" data-symbol="${symbol}" onclick="toggleAssetDrop('${symbol}')">
+      <div class="p-4">
+        <div class="flex items-center gap-3 mb-3">
+          <img src="${icon}" alt="${symbol}" class="w-10 h-10 rounded-full bg-surface-container flex-shrink-0" onerror="this.outerHTML='<div class=\\'w-10 h-10 rounded-full bg-surface-container flex items-center justify-center flex-shrink-0\\'><span class=\\'text-sm font-black text-on-surface-variant\\'>${symbol[0]}</span></div>'"/>
           <div class="flex-1 min-w-0">
-            <div class="flex items-center justify-between gap-1">
-              <p class="text-sm font-black text-on-background truncate">${symbol}</p>
-              ${changeBadge}
-            </div>
-            <p class="text-xs text-on-surface-variant truncate">${chainLabel}</p>
+            <p class="text-sm font-black text-on-background">${symbol}</p>
+            <p class="text-xs text-on-surface-variant">${chainLabel}</p>
           </div>
+          ${changeBadge}
         </div>
-        <div class="flex items-center justify-between gap-2">
-          <p class="text-lg font-black text-on-background">${usd(info.usdValue)}</p>
-          <div class="flex items-center gap-1">
-            <p class="text-[11px] text-on-surface-variant truncate">${info.total.toLocaleString('en-US',{maximumFractionDigits:4})} ${symbol}</p>
-            <span class="material-symbols-outlined text-on-surface-variant/40 text-sm">expand_more</span>
-          </div>
-        </div>
+        <p class="text-xl font-black text-on-background mb-0.5">${usd(info.usdValue)}</p>
+        <p class="text-xs text-on-surface-variant">${info.total.toLocaleString('en-US',{maximumFractionDigits:4})} ${symbol}</p>
+      </div>
+      <div class="flex items-center justify-center gap-1 py-2 border-t border-outline-variant/10 text-on-surface-variant hover:text-primary transition-colors">
+        <span class="text-xs font-bold">View chains</span>
+        <span class="material-symbols-outlined text-sm">expand_more</span>
       </div>
     </div>`;
   });
@@ -684,7 +681,7 @@ function renderPortfolio(balancesByChain) {
 
   grid.innerHTML = visible.join('')
     + (remaining > 0 && !assetsExpanded
-      ? `<button onclick="expandAssets()" class="col-span-1 md:col-span-2 py-3 bg-surface-container-low text-on-surface-variant rounded-xl font-bold text-sm hover:bg-surface-container-high transition-colors">Show ${remaining} more asset${remaining > 1 ? 's' : ''}</button>`
+      ? `<button onclick="expandAssets()" class="col-span-1 sm:col-span-2 lg:col-span-3 py-3 bg-surface-container-low text-on-surface-variant rounded-xl font-bold text-sm hover:bg-surface-container-high transition-colors">Show ${remaining} more asset${remaining > 1 ? 's' : ''}</button>`
       : '');
 }
 
