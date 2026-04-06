@@ -111,6 +111,11 @@ tailwind.config = {
     </div>
   </header>
 
+  <div id="initial-load-note" class="mx-6 lg:mx-10 mt-4 px-4 py-3 bg-surface-container-low rounded-lg flex items-center gap-2 text-sm text-on-surface-variant">
+    <span class="material-symbols-outlined text-base">info</span>
+    Initial load may take 5–10 seconds while fetching live data from Across Protocol. Subsequent visits load instantly from cache.
+  </div>
+
   <div class="px-6 lg:px-10 py-6 max-w-6xl">
 
     <!-- Overview Stats -->
@@ -543,6 +548,8 @@ tailwind.config = {
       renderRoutes(deposits);
       renderTokens(deposits);
       renderRecent(deposits);
+      const note = document.getElementById('initial-load-note');
+      if (note) note.remove();
     } catch (err) {
       console.error("Radar fetch error:", err);
     }
