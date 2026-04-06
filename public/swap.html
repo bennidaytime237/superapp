@@ -158,8 +158,8 @@ tailwind.config = {
   </div>
 
   <!-- ═══ FEE BREAKDOWN ═══ -->
-  <div class="mt-4 mb-4">
-    <button onclick="toggleFeeBreakdown()" class="w-full flex items-center justify-between py-3 text-left">
+  <div class="mt-2 mb-2">
+    <button onclick="toggleFeeBreakdown()" class="w-full flex items-center justify-between py-2 text-left">
       <div class="flex items-center gap-2">
         <span id="fee-display" class="text-sm font-bold text-on-surface">--</span>
         <span id="fee-label" class="text-sm text-on-surface-variant">total fee</span>
@@ -169,11 +169,11 @@ tailwind.config = {
         <span id="fee-chevron" class="material-symbols-outlined text-on-surface-variant text-base transition-transform">expand_more</span>
       </div>
     </button>
-    <div id="fee-breakdown" class="hidden space-y-2 pb-3 text-sm">
+    <div id="fee-breakdown" class="hidden space-y-1.5 pb-2 text-sm">
       <div class="flex justify-between"><span class="text-on-surface-variant">Route</span><span id="bd-route" class="text-on-surface font-medium">--</span></div>
       <div class="flex justify-between"><span class="text-on-surface-variant">Provider</span><span id="bd-provider" class="text-on-surface font-medium">--</span></div>
       <div class="flex justify-between"><span class="text-on-surface-variant">Fee</span><span id="bd-fee" class="text-on-surface font-medium">--</span></div>
-      <div class="flex justify-between"><span class="text-on-surface-variant">Estimated time</span><span id="bd-time" class="text-on-surface font-medium">--</span></div>
+      <div class="flex justify-between"><span class="text-on-surface-variant">Est. time</span><span id="bd-time" class="text-on-surface font-medium">--</span></div>
       <div class="flex justify-between"><span class="text-on-surface-variant">Slippage</span><span id="bd-slip" class="text-on-surface font-medium">Auto</span></div>
     </div>
   </div>
