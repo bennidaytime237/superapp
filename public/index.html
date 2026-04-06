@@ -286,41 +286,41 @@ tailwind.config = {
       <section class="bg-surface-container-low rounded-xl p-4">
         <h4 class="text-sm font-bold text-on-background mb-3">Get Started</h4>
         <div class="space-y-2">
-          <a href="swap.html" class="px-4 py-3 bg-surface-container-lowest rounded-xl flex items-center justify-between cursor-pointer hover:bg-primary-container transition-colors">
-            <div class="flex items-center gap-2.5">
-              <div class="w-8 h-8 rounded-full bg-surface-container flex items-center justify-center flex-shrink-0">
-                <span class="material-symbols-outlined text-primary text-base">swap_horiz</span>
+          <a href="swap.html" class="p-4 bg-surface-container-lowest rounded-xl flex items-center justify-between cursor-pointer hover:bg-primary-container transition-colors">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-full bg-surface-container flex items-center justify-center flex-shrink-0">
+                <span class="material-symbols-outlined text-primary">swap_horiz</span>
               </div>
               <div>
-                <p class="text-xs font-bold text-on-background">Go crosschain</p>
-                <p class="text-[10px] text-on-surface-variant">Bridge any token, any chain</p>
+                <p class="text-sm font-bold text-on-background">Go crosschain</p>
+                <p class="text-xs text-on-surface-variant">Bridge any token, any chain</p>
               </div>
             </div>
-            <span class="material-symbols-outlined text-on-surface-variant text-base">chevron_right</span>
+            <span class="material-symbols-outlined text-on-surface-variant">chevron_right</span>
           </a>
-          <a href="gas.html" class="px-4 py-3 bg-surface-container-lowest rounded-xl flex items-center justify-between cursor-pointer hover:bg-primary-container transition-colors">
-            <div class="flex items-center gap-2.5">
-              <div class="w-8 h-8 rounded-full bg-surface-container flex items-center justify-center flex-shrink-0">
-                <span class="material-symbols-outlined text-primary text-base">local_gas_station</span>
+          <a href="gas.html" class="p-4 bg-surface-container-lowest rounded-xl flex items-center justify-between cursor-pointer hover:bg-primary-container transition-colors">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-full bg-surface-container flex items-center justify-center flex-shrink-0">
+                <span class="material-symbols-outlined text-primary">local_gas_station</span>
               </div>
               <div>
-                <p class="text-xs font-bold text-on-background">Gas top-up</p>
-                <p class="text-[10px] text-on-surface-variant">Distribute gas across chains</p>
+                <p class="text-sm font-bold text-on-background">Gas top-up</p>
+                <p class="text-xs text-on-surface-variant">Distribute gas across chains</p>
               </div>
             </div>
-            <span class="material-symbols-outlined text-on-surface-variant text-base">chevron_right</span>
+            <span class="material-symbols-outlined text-on-surface-variant">chevron_right</span>
           </a>
-          <a href="sweep.html" class="px-4 py-3 bg-surface-container-lowest rounded-xl flex items-center justify-between cursor-pointer hover:bg-primary-container transition-colors">
-            <div class="flex items-center gap-2.5">
-              <div class="w-8 h-8 rounded-full bg-surface-container flex items-center justify-center flex-shrink-0">
-                <span class="material-symbols-outlined text-primary text-base">move_to_inbox</span>
+          <a href="sweep.html" class="p-4 bg-surface-container-lowest rounded-xl flex items-center justify-between cursor-pointer hover:bg-primary-container transition-colors">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-full bg-surface-container flex items-center justify-center flex-shrink-0">
+                <span class="material-symbols-outlined text-primary">move_to_inbox</span>
               </div>
               <div>
-                <p class="text-xs font-bold text-on-background">Sweep assets</p>
-                <p class="text-[10px] text-on-surface-variant">Consolidate to one chain</p>
+                <p class="text-sm font-bold text-on-background">Sweep assets</p>
+                <p class="text-xs text-on-surface-variant">Consolidate to one chain</p>
               </div>
             </div>
-            <span class="material-symbols-outlined text-on-surface-variant text-base">chevron_right</span>
+            <span class="material-symbols-outlined text-on-surface-variant">chevron_right</span>
           </a>
         </div>
       </section>
@@ -626,10 +626,11 @@ function renderPortfolio(balancesByChain) {
         return `<div class="flex-shrink-0 min-w-[160px]">
           <button onclick="toggleChainDrop(${cid})" class="w-full px-4 py-3 bg-surface-container-lowest rounded-xl flex items-center gap-3 hover:bg-surface-container transition-colors">
             <img src="${icon}" alt="${c.name}" class="w-8 h-8 rounded-full" onerror="this.style.display='none'"/>
-            <div>
+            <div class="flex-1">
               <p class="text-xs text-on-surface-variant">${c.name}</p>
               <p class="text-sm font-bold">${usd(val)}</p>
             </div>
+            <span class="material-symbols-outlined text-on-surface-variant/40 text-sm">expand_more</span>
           </button>
           <div id="chain-drop-${cid}" class="hidden mt-1 bg-surface-container-lowest rounded-lg border border-outline-variant/10 shadow-sm"></div>
         </div>`;
@@ -667,9 +668,12 @@ function renderPortfolio(balancesByChain) {
             <p class="text-xs text-on-surface-variant truncate">${chainLabel}</p>
           </div>
         </div>
-        <div class="flex items-baseline justify-between gap-2">
+        <div class="flex items-center justify-between gap-2">
           <p class="text-lg font-black text-on-background">${usd(info.usdValue)}</p>
-          <p class="text-[11px] text-on-surface-variant truncate">${info.total.toLocaleString('en-US',{maximumFractionDigits:4})} ${symbol}</p>
+          <div class="flex items-center gap-1">
+            <p class="text-[11px] text-on-surface-variant truncate">${info.total.toLocaleString('en-US',{maximumFractionDigits:4})} ${symbol}</p>
+            <span class="material-symbols-outlined text-on-surface-variant/40 text-sm">expand_more</span>
+          </div>
         </div>
       </div>
     </div>`;
