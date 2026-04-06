@@ -495,6 +495,14 @@ async function onConnected() {
   document.getElementById('sidebar-connected').classList.remove('hidden');
   document.getElementById('sidebar-addr').textContent = short;
 
+  // Resolve ENS name in background
+  fetch(`/api/ens?address=${walletAddress}`).then(r=>r.json()).then(d=>{
+    if(d.name){
+      document.getElementById('connect-label').textContent=d.name;
+      document.getElementById('sidebar-addr').textContent=d.name;
+    }
+  }).catch(()=>{});
+
   renderActivity();
 
   // Kick off both fetches immediately in parallel
