@@ -675,7 +675,7 @@ function renderPortfolio(balancesByChain) {
     </div>`;
   });
 
-  const ASSET_LIMIT = 4;
+  const ASSET_LIMIT = 6;
   const visible = cards.slice(0, assetsExpanded ? cards.length : ASSET_LIMIT);
   const remaining = cards.length - ASSET_LIMIT;
 
@@ -698,13 +698,14 @@ function scrollChains(dir) {
   el.scrollBy({ left: dir * 200, behavior: 'smooth' });
 }
 
-function closeAssetDrop() {
+function closeAllOverlays() {
   const a = document.getElementById('asset-overlay'); if (a) a.remove();
   const c = document.getElementById('chain-overlay'); if (c) c.remove();
 }
+window.addEventListener('scroll', closeAllOverlays, true);
 
 function toggleAssetDrop(symbol) {
-  const ch = document.getElementById('chain-overlay'); if (ch) ch.remove();
+  closeAllOverlays();
   const existing = document.getElementById('asset-overlay');
   if (existing) { const prev = existing.dataset.symbol; existing.remove(); if (prev === symbol) return; }
   if (!portfolioData) return;
@@ -747,7 +748,7 @@ function toggleChainDrop(chainId) {
   const existing = document.getElementById('chain-overlay');
   if (existing) { const prev = existing.dataset.chainId; existing.remove(); if (prev == chainId) return; }
   // Also close any asset overlay
-  closeAssetDrop();
+  closeAllOverlays();
   if (!portfolioData) return;
   const card = document.querySelector(`[data-chain="${chainId}"]`);
   if (!card) return;
