@@ -62,26 +62,26 @@ tailwind.config = {
 </header>
 
 <!-- Main -->
-<main class="w-full max-w-[640px] mx-auto px-8 py-6 flex-1 flex flex-col justify-center min-h-0">
+<main class="w-full max-w-[640px] mx-auto px-8 py-4 flex-1 flex flex-col justify-center min-h-0">
 
   <!-- Title -->
-  <div class="flex items-center justify-between mb-5">
+  <div class="flex items-center justify-between mb-3">
     <h2 class="text-xl font-black text-on-background">Bridge</h2>
     <span id="mode-badge" class="text-xs text-on-surface-variant">via Across</span>
   </div>
 
   <!-- Rate pill — right aligned -->
-  <div class="flex justify-end mb-5">
-    <button class="bg-surface-container-low px-5 py-2.5 rounded-full text-sm font-bold text-on-surface flex items-center gap-2 border border-outline-variant/10 shadow-sm hover:bg-surface-container-high transition-colors">
+  <div class="flex justify-end mb-3">
+    <button class="bg-surface-container-low px-5 py-2 rounded-full text-sm font-bold text-on-surface flex items-center gap-2 border border-outline-variant/10 shadow-sm hover:bg-surface-container-high transition-colors">
       <span id="rate-display">--</span>
       <span class="material-symbols-outlined text-base">chevron_right</span>
     </button>
   </div>
 
   <!-- ═══ FROM ═══ -->
-  <div class="mb-3">
-    <p class="text-base text-on-surface-variant mb-3">From <span id="from-wallet-label" class="font-bold text-on-surface">Wallet</span></p>
-    <div class="flex items-end justify-between gap-6">
+  <div class="mb-2">
+    <p class="text-sm text-on-surface-variant mb-2">From <span id="from-wallet-label" class="font-bold text-on-surface">Wallet</span></p>
+    <div class="flex items-end justify-between gap-4">
       <button onclick="cycleToken('from')" class="inline-flex items-center gap-2 bg-surface-container-low pl-1.5 pr-4 py-1.5 rounded-full border border-outline-variant/10 hover:bg-surface-container-high transition-colors">
         <div class="relative">
           <img id="from-token-icon" src="" alt="" class="w-8 h-8 rounded-full"/>
@@ -90,10 +90,10 @@ tailwind.config = {
         <span id="from-token-label" class="font-bold text-base ml-1">ETH</span>
         <span class="material-symbols-outlined text-base text-on-surface-variant">expand_more</span>
       </button>
-      <input id="input-amount" class="flex-1 text-right text-5xl md:text-6xl font-black text-on-background border-none focus:ring-0 p-0 bg-transparent placeholder:text-on-surface-variant/15 min-w-0 leading-none" placeholder="0" type="number" oninput="onAmountChange()"/>
+      <input id="input-amount" class="flex-1 text-right text-4xl font-black text-on-background border-none focus:ring-0 p-0 bg-transparent placeholder:text-on-surface-variant/15 min-w-0 leading-none" placeholder="0" type="number" oninput="onAmountChange()"/>
     </div>
     <!-- Balance / warning -->
-    <div id="balance-warning" class="flex justify-end mt-3">
+    <div id="balance-warning" class="flex justify-end mt-2">
       <div id="balance-normal" class="inline-flex items-center gap-2 text-sm text-on-surface-variant">
         <span>Balance: <button onclick="setMax()" class="font-bold hover:underline underline-offset-2" id="from-balance">--</button></span>
       </div>
@@ -105,16 +105,16 @@ tailwind.config = {
   </div>
 
   <!-- ═══ DIVIDER + SWAP ═══ -->
-  <div class="relative h-px bg-outline-variant/15 w-full my-5">
+  <div class="relative h-px bg-outline-variant/15 w-full my-3">
     <button onclick="swapTokens()" class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-11 h-11 bg-white border border-outline-variant/10 shadow-md rounded-full flex items-center justify-center text-on-surface-variant hover:text-primary hover:rotate-180 transition-all duration-300">
       <span class="material-symbols-outlined text-xl">swap_vert</span>
     </button>
   </div>
 
   <!-- ═══ TO ═══ -->
-  <div class="mb-3">
-    <p class="text-base text-on-surface-variant mb-3">To <span class="font-bold text-on-surface" id="to-label">Wallet</span></p>
-    <div class="flex items-end justify-between gap-6">
+  <div class="mb-2">
+    <p class="text-sm text-on-surface-variant mb-2">To <span class="font-bold text-on-surface" id="to-label">Wallet</span></p>
+    <div class="flex items-end justify-between gap-4">
       <button onclick="cycleToken('to')" class="inline-flex items-center gap-2 bg-surface-container-low pl-1.5 pr-4 py-1.5 rounded-full border border-outline-variant/10 hover:bg-surface-container-high transition-colors">
         <div class="relative">
           <img id="to-token-icon" src="" alt="" class="w-8 h-8 rounded-full"/>
@@ -123,7 +123,7 @@ tailwind.config = {
         <span id="to-token-label" class="font-bold text-base ml-1">USDC</span>
         <span class="material-symbols-outlined text-base text-on-surface-variant">expand_more</span>
       </button>
-      <span id="output-amount" class="flex-1 text-right text-5xl md:text-6xl font-black text-on-background leading-none min-w-0 select-text">--</span>
+      <span id="output-amount" class="flex-1 text-right text-4xl font-black text-on-background leading-none min-w-0 select-text">--</span>
     </div>
     <div class="flex justify-end mt-1">
       <span id="output-usd" class="text-sm text-on-surface-variant"></span>
@@ -183,8 +183,8 @@ tailwind.config = {
     Review
   </button>
 
-  <div class="flex justify-center mt-6 opacity-40 hover:opacity-70 transition-opacity">
-    <a href="https://across.to" target="_blank" rel="noopener"><img src="powered-by-across.svg" alt="Powered by Across" class="h-5"/></a>
+  <div class="flex justify-center mt-4 opacity-40 hover:opacity-70 transition-opacity">
+    <a href="https://across.to" target="_blank" rel="noopener"><img src="powered-by-across.svg" alt="Powered by Across" class="h-4"/></a>
   </div>
 
 </main>
