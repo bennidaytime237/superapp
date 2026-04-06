@@ -148,7 +148,7 @@ tailwind.config = {
 <!-- Main Content -->
 <main class="md:ml-64 min-h-screen pb-24 md:pb-8">
   <!-- Top Bar -->
-  <header class="flex justify-between items-center w-full px-6 py-4 bg-surface sticky top-0 z-30">
+  <header class="flex justify-between items-center w-full px-6 py-2 bg-surface sticky top-0 z-30">
     <div class="flex items-center gap-2">
       <a href="index.html"><img src="sage-wordmark.svg" alt="Sage" class="h-6 md:hidden"/></a>
       <h2 class="hidden md:block font-headline font-bold text-xl tracking-tight text-on-background">Portfolio Overview</h2>
@@ -169,10 +169,10 @@ tailwind.config = {
     </div>
   </header>
 
-  <div class="px-6 lg:px-10 py-6 max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-8">
+  <div class="px-6 lg:px-10 py-3 max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-4">
 
     <!-- Primary Column -->
-    <div class="lg:col-span-8 space-y-8">
+    <div class="lg:col-span-8 space-y-4">
 
       <!-- Hero Balance -->
       <section class="relative p-8 rounded-xl bg-surface-container-lowest shadow-[0_4px_40px_rgba(42,52,52,0.02)]">
@@ -267,7 +267,7 @@ tailwind.config = {
     </div>
 
     <!-- Secondary Column -->
-    <div class="lg:col-span-4 space-y-4">
+    <div class="lg:col-span-4 space-y-2">
 
       <!-- Bridge Times -->
       <section class="bg-surface-container-lowest rounded-xl px-5 py-4">
@@ -283,8 +283,8 @@ tailwind.config = {
       </section>
 
       <!-- Get Started -->
-      <section class="bg-surface-container-low rounded-xl p-6">
-        <h4 class="text-lg font-bold text-on-background mb-4">Get Started</h4>
+      <section class="bg-surface-container-low rounded-xl p-4">
+        <h4 class="text-sm font-bold text-on-background mb-3">Get Started</h4>
         <div class="space-y-3">
           <a href="swap.html" class="p-4 bg-surface-container-lowest rounded-xl flex items-center justify-between cursor-pointer hover:bg-primary-container transition-colors">
             <div class="flex items-center gap-3">
@@ -327,8 +327,8 @@ tailwind.config = {
 
       <!-- Activity -->
       <section>
-        <div class="flex justify-between items-center mb-4 px-2">
-          <h4 class="text-lg font-bold text-on-background">Activity</h4>
+        <div class="flex justify-between items-center mb-2 px-2">
+          <h4 class="text-sm font-bold text-on-background">Activity</h4>
           <a href="transactions.html" class="text-sm font-bold text-primary hover:underline">Show more</a>
         </div>
         <div id="activity-feed"></div>
