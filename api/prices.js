@@ -1,4 +1,4 @@
-const COINGECKO_IDS = 'ethereum,bitcoin,usd-coin,dai,wrapped-bitcoin,matic-network,binancecoin,uma,across-protocol,pooltogether-v2,havven';
+const COINGECKO_IDS = 'ethereum,bitcoin,usd-coin,dai,wrapped-bitcoin,matic-network,polygon-ecosystem-token,binancecoin,uma,across-protocol,pooltogether-v2,havven';
 
 async function fetchCoinGecko(signal) {
   const url = `https://api.coingecko.com/api/v3/simple/price?ids=${COINGECKO_IDS}&vs_currencies=usd&include_24hr_change=true`;
@@ -13,6 +13,7 @@ async function fetchDeFiLlama(signal) {
     'coingecko:ethereum',
     'coingecko:bitcoin',
     'coingecko:matic-network',
+    'coingecko:polygon-ecosystem-token',
     'coingecko:wrapped-bitcoin',
     'coingecko:binancecoin',
     'coingecko:uma',
@@ -30,6 +31,7 @@ async function fetchDeFiLlama(signal) {
     'coingecko:ethereum': 'ethereum',
     'coingecko:bitcoin': 'bitcoin',
     'coingecko:matic-network': 'matic-network',
+    'coingecko:polygon-ecosystem-token': 'polygon-ecosystem-token',
     'coingecko:wrapped-bitcoin': 'wrapped-bitcoin',
     'coingecko:binancecoin': 'binancecoin',
     'coingecko:uma': 'uma',

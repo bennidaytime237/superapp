@@ -174,7 +174,7 @@ async function loadBalances(){
     ]);
     cachedBalances=await bRes.json();
     const raw=await pRes.json();
-    prices={ETH:raw.ethereum?.usd||0,WETH:raw.ethereum?.usd||0,WBTC:raw['wrapped-bitcoin']?.usd||0,USDC:1,USDT:1,DAI:1,POL:raw['matic-network']?.usd||0,UMA:raw.uma?.usd||0,ACX:raw['across-protocol']?.usd||0};
+    prices={ETH:raw.ethereum?.usd||0,WETH:raw.ethereum?.usd||0,WBTC:raw['wrapped-bitcoin']?.usd||0,USDC:1,USDT:1,DAI:1,POL:raw['polygon-ecosystem-token']?.usd||raw['matic-network']?.usd||0,UMA:raw.uma?.usd||0,ACX:raw['across-protocol']?.usd||0};
     buildSweepItems();
   }catch(e){document.getElementById('assets-list').innerHTML='<div class="py-8 text-center text-sm text-error">Failed to load balances</div>';}
 }
