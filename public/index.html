@@ -57,9 +57,9 @@ tailwind.config = {
 <body class="bg-surface text-on-surface selection:bg-primary-fixed selection:text-on-primary-fixed min-h-screen">
 
 <!-- Sidebar Navigation (Desktop) -->
-<aside class="hidden md:flex flex-col fixed left-0 top-0 h-full w-64 p-4 bg-surface-container-low z-40">
-  <a href="index.html" class="mb-4 px-4 py-1 flex items-center gap-2">
-    <img src="sage-wordmark.svg" alt="Sage" class="h-7"/>
+<aside class="hidden md:flex flex-col fixed left-0 top-0 h-full w-64 px-4 pt-3 pb-4 bg-surface-container-low z-40">
+  <a href="index.html" class="mb-3 px-4 py-1 flex items-center gap-2">
+    <img src="sage-wordmark.svg" alt="Sage" class="h-6"/>
   </a>
   <nav class="flex-1 space-y-0.5">
     <a class="flex items-center gap-3 px-4 py-2 bg-surface-container-lowest text-primary rounded-full shadow-sm" href="index.html">
@@ -169,13 +169,13 @@ tailwind.config = {
     </div>
   </header>
 
-  <div class="px-6 lg:px-10 py-3 max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-4">
+  <div class="px-6 lg:px-8 py-2 max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-3">
 
     <!-- Primary Column -->
     <div class="lg:col-span-8 space-y-3">
 
       <!-- Hero Balance -->
-      <section class="relative p-5 rounded-xl bg-surface-container-lowest shadow-[0_4px_40px_rgba(42,52,52,0.02)]">
+      <section class="relative px-5 py-4 rounded-xl bg-surface-container-lowest shadow-[0_4px_40px_rgba(42,52,52,0.02)]">
         <div class="relative z-10">
           <div class="flex items-center gap-3 mb-1">
             <p class="text-on-surface-variant text-sm font-medium">Total Balance</p>
@@ -184,7 +184,7 @@ tailwind.config = {
           <h3 id="hero-balance" class="text-4xl md:text-5xl font-black text-on-background tracking-normal mb-2">
             <span class="text-on-surface-variant text-2xl tracking-wide">Connect wallet to view</span>
           </h3>
-          <p id="hero-change" class="text-sm text-primary font-bold mb-4"></p>
+          <p id="hero-change" class="text-sm text-primary font-bold mb-3"></p>
           <div class="flex flex-wrap gap-3 items-center">
             <button onclick="window.location.href='send.html'" class="flex items-center gap-2 px-6 py-3 bg-primary text-on-primary rounded-full font-bold text-sm active:scale-95 transition-transform">
               <span class="material-symbols-outlined text-lg">send</span>
@@ -239,18 +239,18 @@ tailwind.config = {
 
       <!-- Active Chains Overview -->
       <section>
-        <div class="flex justify-between items-center mb-4">
-          <h4 class="text-sm font-bold text-on-surface-variant uppercase tracking-wider">Chain Breakdown</h4>
+        <div class="flex justify-between items-center mb-2">
+          <h4 class="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Chain Breakdown</h4>
           <div class="flex gap-1">
-            <button onclick="scrollChains(-1)" class="w-7 h-7 rounded-full bg-surface-container-low flex items-center justify-center hover:bg-surface-container-high transition-colors">
-              <span class="material-symbols-outlined text-on-surface-variant text-base">chevron_left</span>
+            <button onclick="scrollChains(-1)" class="w-6 h-6 rounded-full bg-surface-container-low flex items-center justify-center hover:bg-surface-container-high transition-colors">
+              <span class="material-symbols-outlined text-on-surface-variant text-sm">chevron_left</span>
             </button>
-            <button onclick="scrollChains(1)" class="w-7 h-7 rounded-full bg-surface-container-low flex items-center justify-center hover:bg-surface-container-high transition-colors">
-              <span class="material-symbols-outlined text-on-surface-variant text-base">chevron_right</span>
+            <button onclick="scrollChains(1)" class="w-6 h-6 rounded-full bg-surface-container-low flex items-center justify-center hover:bg-surface-container-high transition-colors">
+              <span class="material-symbols-outlined text-on-surface-variant text-sm">chevron_right</span>
             </button>
           </div>
         </div>
-        <div id="chain-breakdown" class="flex gap-3 overflow-x-auto -mx-2 px-2 scrollbar-hide">
+        <div id="chain-breakdown" class="flex gap-2 overflow-x-auto -mx-2 px-2 scrollbar-hide">
           <p class="text-sm text-on-surface-variant px-2 py-3">Connect wallet to view chain balances</p>
         </div>
       </section>
@@ -270,7 +270,7 @@ tailwind.config = {
     <div class="lg:col-span-4 space-y-2">
 
       <!-- Bridge Times -->
-      <section class="bg-surface-container-lowest rounded-xl px-5 py-4">
+      <section class="bg-surface-container-lowest rounded-lg px-4 py-3">
         <div class="flex items-center justify-between mb-3">
           <h4 class="text-sm font-bold text-on-background">Bridge Times</h4>
           <a href="radar.html" class="text-[10px] font-bold text-primary hover:underline">Radar →</a>
@@ -283,44 +283,44 @@ tailwind.config = {
       </section>
 
       <!-- Get Started -->
-      <section class="bg-surface-container-low rounded-xl p-4">
-        <h4 class="text-sm font-bold text-on-background mb-3">Get Started</h4>
-        <div class="space-y-3">
-          <a href="swap.html" class="p-4 bg-surface-container-lowest rounded-xl flex items-center justify-between cursor-pointer hover:bg-primary-container transition-colors">
-            <div class="flex items-center gap-3">
-              <div class="w-10 h-10 rounded-full bg-surface-container flex items-center justify-center">
-                <span class="material-symbols-outlined text-primary">swap_horiz</span>
+      <section class="bg-surface-container-low rounded-lg p-3">
+        <h4 class="text-xs font-bold text-on-background mb-2">Get Started</h4>
+        <div class="space-y-1.5">
+          <a href="swap.html" class="px-3 py-2.5 bg-surface-container-lowest rounded-lg flex items-center justify-between cursor-pointer hover:bg-primary-container transition-colors">
+            <div class="flex items-center gap-2.5">
+              <div class="w-8 h-8 rounded-full bg-surface-container flex items-center justify-center flex-shrink-0">
+                <span class="material-symbols-outlined text-primary text-base">swap_horiz</span>
               </div>
               <div>
-                <p class="text-sm font-bold text-on-background">Go crosschain</p>
-                <p class="text-xs text-on-surface-variant">Bridge any token, any chain</p>
+                <p class="text-xs font-bold text-on-background">Go crosschain</p>
+                <p class="text-[10px] text-on-surface-variant">Bridge any token, any chain</p>
               </div>
             </div>
-            <span class="material-symbols-outlined text-on-surface-variant">chevron_right</span>
+            <span class="material-symbols-outlined text-on-surface-variant text-base">chevron_right</span>
           </a>
-          <a href="gas.html" class="p-4 bg-surface-container-lowest rounded-xl flex items-center justify-between cursor-pointer hover:bg-primary-container transition-colors">
-            <div class="flex items-center gap-3">
-              <div class="w-10 h-10 rounded-full bg-surface-container flex items-center justify-center">
-                <span class="material-symbols-outlined text-primary">local_gas_station</span>
+          <a href="gas.html" class="px-3 py-2.5 bg-surface-container-lowest rounded-lg flex items-center justify-between cursor-pointer hover:bg-primary-container transition-colors">
+            <div class="flex items-center gap-2.5">
+              <div class="w-8 h-8 rounded-full bg-surface-container flex items-center justify-center flex-shrink-0">
+                <span class="material-symbols-outlined text-primary text-base">local_gas_station</span>
               </div>
               <div>
-                <p class="text-sm font-bold text-on-background">Gas top-up</p>
-                <p class="text-xs text-on-surface-variant">Distribute gas across chains</p>
+                <p class="text-xs font-bold text-on-background">Gas top-up</p>
+                <p class="text-[10px] text-on-surface-variant">Distribute gas across chains</p>
               </div>
             </div>
-            <span class="material-symbols-outlined text-on-surface-variant">chevron_right</span>
+            <span class="material-symbols-outlined text-on-surface-variant text-base">chevron_right</span>
           </a>
-          <a href="sweep.html" class="p-4 bg-surface-container-lowest rounded-xl flex items-center justify-between cursor-pointer hover:bg-primary-container transition-colors">
-            <div class="flex items-center gap-3">
-              <div class="w-10 h-10 rounded-full bg-surface-container flex items-center justify-center">
-                <span class="material-symbols-outlined text-primary">move_to_inbox</span>
+          <a href="sweep.html" class="px-3 py-2.5 bg-surface-container-lowest rounded-lg flex items-center justify-between cursor-pointer hover:bg-primary-container transition-colors">
+            <div class="flex items-center gap-2.5">
+              <div class="w-8 h-8 rounded-full bg-surface-container flex items-center justify-center flex-shrink-0">
+                <span class="material-symbols-outlined text-primary text-base">move_to_inbox</span>
               </div>
               <div>
-                <p class="text-sm font-bold text-on-background">Sweep assets</p>
-                <p class="text-xs text-on-surface-variant">Consolidate to one chain</p>
+                <p class="text-xs font-bold text-on-background">Sweep assets</p>
+                <p class="text-[10px] text-on-surface-variant">Consolidate to one chain</p>
               </div>
             </div>
-            <span class="material-symbols-outlined text-on-surface-variant">chevron_right</span>
+            <span class="material-symbols-outlined text-on-surface-variant text-base">chevron_right</span>
           </a>
         </div>
       </section>
@@ -655,7 +655,7 @@ function renderPortfolio(balancesByChain) {
       ? info.chains.length + ' chains'
       : (CHAINS[info.chains[0]]?.name || 'Chain ' + info.chains[0]);
     const icon = tokenIcon(symbol);
-    return `<div class="asset-card bg-surface-container-lowest rounded-lg self-start">
+    return `<div class="asset-card bg-surface-container-lowest rounded-lg relative">
       <div class="p-3.5 cursor-pointer" onclick="toggleAssetDrop('${symbol}')">
         <div class="flex items-center gap-3 mb-2">
           <img src="${icon}" alt="${symbol}" class="w-9 h-9 rounded-full bg-surface-container flex-shrink-0" onerror="this.outerHTML='<div class=\\'w-9 h-9 rounded-full bg-surface-container flex items-center justify-center flex-shrink-0\\'><span class=\\'text-sm font-black text-on-surface-variant\\'>${symbol[0]}</span></div>'"/>
@@ -672,7 +672,7 @@ function renderPortfolio(balancesByChain) {
           <p class="text-[11px] text-on-surface-variant truncate">${info.total.toLocaleString('en-US',{maximumFractionDigits:4})} ${symbol}</p>
         </div>
       </div>
-      <div id="asset-drop-${symbol}" class="hidden"></div>
+      <div id="asset-drop-${symbol}" class="hidden absolute left-0 right-0 top-full z-20 bg-surface-container-lowest rounded-lg shadow-lg border border-outline-variant/10"></div>
     </div>`;
   });
 
