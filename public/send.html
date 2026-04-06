@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html class="light" lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Send Tokens - Sage</title>
+<link rel="icon" type="image/svg+xml" href="favicon.svg"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<script>
+tailwind.config = {
+  darkMode: "class",
+  theme: {
+    extend: {
+      colors: {
+        "outline-variant":"#a3b899","on-surface":"#2f3a33","background":"#faf7f5",
+        "on-primary":"#faf7f5","primary":"#667b68",
+        "surface-container-lowest":"#ffffff","surface-container-high":"#dde6d5",
+        "surface-container":"#eaefe5","surface-container-low":"#f2f5ef",
+        "on-background":"#1f2622","on-surface-variant":"#667b68",
+        "error":"#9e422c","error-container":"#f8d3c5",
+      },
+      fontFamily: { "headline":["Outfit"],"body":["Outfit"],"label":["Outfit"] },
+      borderRadius: { "DEFAULT":"1rem","lg":"2rem","xl":"3rem","full":"9999px" },
+    },
+  },
+}
+</script>
+<style>
+  body { font-family: 'Outfit', sans-serif; }
+  b, strong, .font-bold, .font-extrabold, .font-black, .font-semibold { letter-spacing: 0.01em; }
+  .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+  input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+  input[type=number] { -moz-appearance: textfield; }
+</style>
+</head>
+<body class="bg-background text-on-surface antialiased min-h-screen flex flex-col">
+
+<!-- Header -->
+<header class="w-full max-w-xl mx-auto h-14 flex justify-between items-center px-6 flex-shrink-0">
+  <a href="index.html" class="flex items-center gap-2">
+    <img src="sage-wordmark.svg" alt="Sage" class="h-6"/>
+  </a>
+  <div class="flex items-center gap-3">
+    <a href="index.html" class="text-xs font-medium text-on-surface-variant hover:text-primary transition-colors flex items-center gap-1">
+      <span class="material-symbols-outlined text-sm">arrow_back</span>Dashboard
+    </a>
+    <button id="connect-btn" onclick="connectWallet()" class="flex items-center gap-2 px-3 py-1.5 bg-primary text-on-primary rounded-full text-xs font-bold active:scale-95 transition-transform">
+      <span class="material-symbols-outlined text-sm">account_balance_wallet</span>
+      <span id="connect-label">Connect</span>
+    </button>
+  </div>
+</header>
+
+<main class="w-full max-w-xl mx-auto px-6 py-8 flex-1">
+
+  <!-- Page Header -->
+  <div class="bg-primary rounded-3xl p-6 mb-6 text-on-primary">
+    <div class="flex items-center gap-3 mb-2">
+      <div class="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center">
+        <span class="material-symbols-outlined text-2xl">send</span>
+      </div>
+      <div>
+        <h1 class="text-xl font-black">Send Tokens</h1>
+        <p class="text-sm text-white/60">Transfer tokens to any address on the same chain</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Recipient -->
+  <div class="mb-5">
+    <label class="text-sm font-bold text-on-surface mb-2 block">Recipient address</label>
+    <input id="recipient" type="text" placeholder="0x..." class="w-full px-4 py-3 rounded-xl border border-primary/20 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-primary/40 bg-white" oninput="validateAddr()"/>
+    <p id="addr-error" class="hidden text-xs text-error mt-1">Invalid address</p>
+  </div>
+
+  <!-- Token & Amount -->
+  <div class="bg-white rounded-2xl p-5 border border-primary/10 mb-5">
+    <p class="text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-3">You send</p>
+    <div class="flex items-end justify-between gap-4">
+      <button onclick="openPicker()" class="inline-flex items-center gap-2 bg-surface-container-low pl-1.5 pr-4 py-1.5 rounded-full border border-outline-variant/10 hover:bg-surface-container-high transition-colors">
+        <div class="relative">
+          <img id="from-token-icon" src="" class="w-8 h-8 rounded-full"/>
+          <img id="from-chain-icon" src="" class="w-5 h-5 rounded-full absolute -right-1 -bottom-0.5 border-2 border-white bg-white"/>
+        </div>
+        <span id="from-label" class="font-bold text-sm ml-1">ETH</span>
+        <span class="material-symbols-outlined text-base text-on-surface-variant">expand_more</span>
+      </button>
+      <input id="input-amount" type="number" placeholder="0" class="flex-1 text-right text-4xl font-black border-none focus:ring-0 p-0 bg-transparent placeholder:text-on-surface-variant/15 min-w-0" oninput="onAmountChange()"/>
+    </div>
+    <div class="flex justify-between mt-2">
+      <span id="usd-value" class="text-sm text-on-surface-variant">~$0.00</span>
+      <span class="text-sm text-on-surface-variant">Balance: <button onclick="setMax()" class="font-bold text-primary hover:underline" id="from-balance">--</button></span>
+    </div>
+  </div>
+
+  <!-- Action -->
+  <button id="action-btn" onclick="execute()" class="w-full py-4 bg-primary text-on-primary rounded-full font-black text-lg active:scale-[0.98] transition-transform">
+    Connect Wallet
+  </button>
+
+  <!-- Tx status -->
+  <div id="tx-status" class="hidden mt-5 text-center">
+    <div class="inline-flex items-center gap-2 px-4 py-2 bg-surface-container rounded-full">
+      <div class="w-4 h-4 rounded-full border-2 border-primary border-t-transparent animate-spin"></div>
+      <span id="tx-text" class="text-sm font-bold">Confirming...</span>
+    </div>
+  </div>
+  <div id="tx-done" class="hidden mt-5 text-center">
+    <div class="inline-flex items-center gap-2 px-4 py-2 bg-primary/10 rounded-full">
+      <span class="material-symbols-outlined text-primary text-base">check_circle</span>
+      <span class="text-sm font-bold text-primary">Transfer complete</span>
+    </div>
+  </div>
+
+</main>
+
+<!-- Token Picker -->
+<div id="picker-modal" class="fixed inset-0 z-50 hidden">
+  <div class="absolute inset-0 bg-black/30 backdrop-blur-sm" onclick="closePicker()"></div>
+  <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md bg-white rounded-3xl shadow-2xl p-6 max-h-[70vh] flex flex-col">
+    <div class="flex items-center justify-between mb-4">
+      <h3 class="text-lg font-black">Choose token</h3>
+      <button onclick="closePicker()" class="w-9 h-9 rounded-full bg-surface-container-low flex items-center justify-center"><span class="material-symbols-outlined text-on-surface-variant">close</span></button>
+    </div>
+    <input id="picker-search" type="text" placeholder="Search..." class="w-full px-4 py-3 rounded-xl border border-outline-variant/15 text-sm mb-3 focus:outline-none focus:ring-2 focus:ring-primary/30" oninput="filterPicker()"/>
+    <div id="picker-list" class="overflow-y-auto flex-1 space-y-1"></div>
+  </div>
+</div>
+
+<script>
+const CHAINS = [
+  { id:1, name:'Ethereum', slug:'ethereum' },
+  { id:42161, name:'Arbitrum', slug:'arbitrum' },
+  { id:8453, name:'Base', slug:'base' },
+  { id:10, name:'Optimism', slug:'optimism' },
+  { id:137, name:'Polygon', slug:'polygon' },
+  { id:324, name:'zkSync', slug:'zksync%20era' },
+  { id:59144, name:'Linea', slug:'linea' },
+];
+
+const TOKENS = [
+  { symbol:'ETH', name:'Ethereum', decimals:18, native:true,
+    addresses:{1:null,42161:null,8453:null,10:null} },
+  { symbol:'USDC', name:'USD Coin', decimals:6, native:false,
+    addresses:{1:'0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48',42161:'0xaf88d065e77c8cC2239327C5EDb3A432268e5831',8453:'0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913',10:'0x0b2C639c533813f4Aa9D7837CAf62653d097Ff85',137:'0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359'} },
+  { symbol:'USDT', name:'Tether', decimals:6, native:false,
+    addresses:{1:'0xdAC17F958D2ee523a2206206994597C13D831ec7',42161:'0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9',10:'0x94b008aA00579c1307B0EF2c499aD98a8ce58e58'} },
+  { symbol:'DAI', name:'Dai', decimals:18, native:false,
+    addresses:{1:'0x6B175474E89094C44Da98b954EedeAC495271d0F',42161:'0xDA10009cBd5D07dd0CeCc66161FC93D7c9000da1'} },
+  { symbol:'WBTC', name:'Wrapped BTC', decimals:8, native:false,
+    addresses:{1:'0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599',42161:'0x2f2a2543B76A4166549F7aaB2e75Bef0aefC5B0f'} },
+  { symbol:'POL', name:'Polygon', decimals:18, native:true,
+    addresses:{137:null} },
+];
+
+const TOKEN_ICONS = {
+  ETH:'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2/logo.png',
+  USDC:'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48/logo.png',
+  USDT:'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0xdAC17F958D2ee523a2206206994597C13D831ec7/logo.png',
+  DAI:'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0x6B175474E89094C44Da98b954EedeAC495271d0F/logo.png',
+  WBTC:'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599/logo.png',
+  POL:'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/polygon/info/logo.png',
+};
+function chainIcon(id) { const c=CHAINS.find(x=>x.id===id); return c?`https://icons.llamao.fi/icons/chains/rsz_${c.slug}.jpg`:''; }
+
+let walletAddress=null, selTokenIdx=0, selChainIdx=0, fromBal=null, cachedBalances=null, prices={};
+
+async function connectWallet() {
+  if(!window.ethereum){alert('Install MetaMask');return;}
+  const accs=await window.ethereum.request({method:'eth_requestAccounts'});
+  walletAddress=accs[0];
+  document.getElementById('connect-label').textContent=walletAddress.slice(0,6)+'...'+walletAddress.slice(-4);
+  fetchBalance(); updateBtn();
+}
+
+async function fetchBalance() {
+  if(!walletAddress)return;
+  try {
+    const res=await fetch(`/api/balances?address=${walletAddress}&_t=${Date.now()}`);
+    cachedBalances=await res.json();
+    const t=TOKENS[selTokenIdx], cid=CHAINS[selChainIdx].id;
+    const bal=cachedBalances?.[cid]?.[t.symbol]||0;
+    fromBal=bal;
+    document.getElementById('from-balance').textContent=`${fmt(bal)} ${t.symbol}`;
+  } catch{fromBal=null;}
+}
+
+async function fetchPrices() {
+  try {
+    const res=await fetch('/api/prices'); const raw=await res.json();
+    prices={ETH:raw.ethereum?.usd||0,USDC:1,USDT:1,DAI:1,WBTC:raw['wrapped-bitcoin']?.usd||0,POL:raw['matic-network']?.usd||0};
+  } catch{prices={ETH:2500,USDC:1,USDT:1,DAI:1,WBTC:90000,POL:0.5};}
+}
+
+function updateDisplay() {
+  const t=TOKENS[selTokenIdx], c=CHAINS[selChainIdx];
+  document.getElementById('from-token-icon').src=TOKEN_ICONS[t.symbol]||'';
+  document.getElementById('from-chain-icon').src=chainIcon(c.id);
+  document.getElementById('from-label').textContent=`${t.symbol} on ${c.name}`;
+}
+
+function validateAddr() {
+  const v=document.getElementById('recipient').value.trim();
+  document.getElementById('addr-error').classList.toggle('hidden', !v||/^0x[0-9a-fA-F]{40}$/.test(v));
+  updateBtn();
+}
+
+function updateBtn() {
+  const btn=document.getElementById('action-btn');
+  const amt=parseFloat(document.getElementById('input-amount').value)||0;
+  const addr=document.getElementById('recipient').value.trim();
+  if(!walletAddress){btn.textContent='Connect Wallet';btn.className='w-full py-4 bg-primary text-on-primary rounded-full font-black text-lg active:scale-[0.98] transition-transform';}
+  else if(!addr||!/^0x[0-9a-fA-F]{40}$/.test(addr)){btn.textContent='Enter address';btn.className='w-full py-4 bg-surface-container-high text-on-surface-variant rounded-full font-black text-lg';}
+  else if(amt<=0){btn.textContent='Enter amount';btn.className='w-full py-4 bg-surface-container-high text-on-surface-variant rounded-full font-black text-lg';}
+  else{btn.textContent='Send';btn.className='w-full py-4 bg-primary text-on-primary rounded-full font-black text-lg active:scale-[0.98] transition-transform';}
+}
+
+function onAmountChange() {
+  updateBtn();
+  const val=parseFloat(document.getElementById('input-amount').value)||0;
+  const p=prices[TOKENS[selTokenIdx].symbol]||0;
+  document.getElementById('usd-value').textContent=val>0&&p?`~$${fmt(val*p)}`:'~$0.00';
+}
+
+function toHex(n) { return '0x'+BigInt(n).toString(16); }
+
+function encodeTransfer(to, amount, decimals) {
+  const selector='0xa9059cbb';
+  const addrPad=to.toLowerCase().replace('0x','').padStart(64,'0');
+  const amtWei=BigInt(Math.floor(amount*10**decimals));
+  const amtPad=amtWei.toString(16).padStart(64,'0');
+  return selector+addrPad+amtPad;
+}
+
+async function sendTx(chainId, txParams) {
+  const chainHex='0x'+chainId.toString(16);
+  const current=await window.ethereum.request({method:'eth_chainId'});
+  if(current!==chainHex){
+    try{await window.ethereum.request({method:'wallet_switchEthereumChain',params:[{chainId:chainHex}]});}
+    catch(e){if(e.code===4902)throw new Error('Add chain to wallet');throw e;}
+  }
+  // Estimate gas
+  try{const gas=await window.ethereum.request({method:'eth_estimateGas',params:[txParams]});txParams.gas=gas;}catch{}
+  return window.ethereum.request({method:'eth_sendTransaction',params:[txParams]});
+}
+
+async function execute() {
+  if(!walletAddress){connectWallet();return;}
+  const amount=parseFloat(document.getElementById('input-amount').value)||0;
+  if(amount<=0)return;
+  const recipient=document.getElementById('recipient').value.trim();
+  if(!/^0x[0-9a-fA-F]{40}$/.test(recipient))return;
+  const t=TOKENS[selTokenIdx], c=CHAINS[selChainIdx];
+  try {
+    const btn=document.getElementById('action-btn');
+    btn.textContent='Confirm in wallet...';
+    document.getElementById('tx-status').classList.remove('hidden');
+    document.getElementById('tx-done').classList.add('hidden');
+    document.getElementById('tx-text').textContent='Confirming...';
+    let txParams, hash;
+    if(t.native) {
+      const amtWei=BigInt(Math.floor(amount*10**t.decimals));
+      txParams={from:walletAddress,to:recipient,value:toHex(amtWei),chainId:'0x'+c.id.toString(16)};
+      hash=await sendTx(c.id,txParams);
+    } else {
+      const contractAddr=t.addresses[c.id];
+      const data=encodeTransfer(recipient,amount,t.decimals);
+      txParams={from:walletAddress,to:contractAddr,data,value:'0x0',chainId:'0x'+c.id.toString(16)};
+      hash=await sendTx(c.id,txParams);
+    }
+    document.getElementById('tx-text').textContent='Waiting for confirmation...';
+    // Poll for receipt
+    for(let i=0;i<60;i++){
+      try{const r=await window.ethereum.request({method:'eth_getTransactionReceipt',params:[hash]});if(r&&r.blockNumber)break;}catch{}
+      await new Promise(r=>setTimeout(r,2000));
+    }
+    document.getElementById('tx-status').classList.add('hidden');
+    document.getElementById('tx-done').classList.remove('hidden');
+    btn.textContent='Transfer complete!';
+    // Save to history
+    try{const k='sage_tx_'+(walletAddress||'').toLowerCase();const h=JSON.parse(localStorage.getItem(k)||'[]');h.unshift({type:'send',summary:`Sent ${amount} ${t.symbol} on ${c.name}`,token:t.symbol,chain:c.name,chainId:c.id,amount:String(amount),to:recipient,timestamp:Date.now(),txHash:hash});if(h.length>20)h.length=20;localStorage.setItem(k,JSON.stringify(h));}catch{}
+    fetchBalance();
+    setTimeout(updateBtn,3000);
+  } catch(e){
+    console.error(e);
+    document.getElementById('tx-status').classList.add('hidden');
+    const btn=document.getElementById('action-btn');
+    btn.textContent=e.code===4001?'Rejected':'Failed';
+    setTimeout(updateBtn,2000);
+  }
+}
+
+function setMax(){if(fromBal!=null){document.getElementById('input-amount').value=fromBal;onAmountChange();}}
+
+// Picker
+let allRows=[];
+function openPicker(){
+  document.getElementById('picker-search').value='';
+  allRows=[];
+  CHAINS.forEach((c,ci)=>{TOKENS.forEach((t,ti)=>{
+    const has=t.native?t.addresses.hasOwnProperty(c.id):t.addresses[c.id];
+    if(!has)return;
+    const bal=cachedBalances?.[c.id]?.[t.symbol]||0;
+    allRows.push({c,ci,t,ti,bal});
+  });});
+  allRows.sort((a,b)=>b.bal-a.bal);
+  renderPicker(allRows);
+  document.getElementById('picker-modal').classList.remove('hidden');
+}
+function closePicker(){document.getElementById('picker-modal').classList.add('hidden');}
+function filterPicker(){
+  const q=document.getElementById('picker-search').value.toLowerCase();
+  renderPicker(q?allRows.filter(r=>r.t.symbol.toLowerCase().includes(q)||r.t.name.toLowerCase().includes(q)||r.c.name.toLowerCase().includes(q)):allRows);
+}
+function renderPicker(rows){
+  document.getElementById('picker-list').innerHTML=rows.map(({c,ci,t,ti,bal})=>`
+    <button onclick="selectToken(${ti},${ci})" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-surface-container-low transition-colors text-left">
+      <div class="relative flex-shrink-0">
+        <img src="${TOKEN_ICONS[t.symbol]||''}" class="w-9 h-9 rounded-full bg-surface-container"/>
+        <img src="${chainIcon(c.id)}" class="w-4 h-4 rounded-full absolute -bottom-0.5 -right-0.5 border-2 border-white bg-white"/>
+      </div>
+      <div class="flex-1"><p class="font-bold text-sm">${bal>0?fmt(bal)+' ':''}${t.symbol}</p><p class="text-xs text-on-surface-variant">${t.name} · ${c.name}</p></div>
+      <span class="material-symbols-outlined text-on-surface-variant text-base">chevron_right</span>
+    </button>`).join('')||'<p class="text-sm text-on-surface-variant text-center py-4">No tokens found</p>';
+}
+function selectToken(ti,ci){selTokenIdx=ti;selChainIdx=ci;closePicker();updateDisplay();fetchBalance();onAmountChange();}
+
+function fmt(n){if(n>=1000)return n.toLocaleString('en-US',{maximumFractionDigits:2});if(n>=1)return n.toLocaleString('en-US',{maximumFractionDigits:4});return n.toLocaleString('en-US',{maximumFractionDigits:6});}
+
+(async function(){
+  updateDisplay();updateBtn();
+  await fetchPrices();
+  if(window.ethereum){
+    const accs=await window.ethereum.request({method:'eth_accounts'});
+    if(accs.length>0){walletAddress=accs[0];document.getElementById('connect-label').textContent=walletAddress.slice(0,6)+'...'+walletAddress.slice(-4);fetchBalance();updateBtn();}
+    window.ethereum.on('accountsChanged',a=>{walletAddress=a[0]||null;document.getElementById('connect-label').textContent=walletAddress?walletAddress.slice(0,6)+'...'+walletAddress.slice(-4):'Connect';fetchBalance();updateBtn();});
+  }
+})();
+</script>
+</body>
+</html>
