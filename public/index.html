@@ -48,6 +48,8 @@ tailwind.config = {
   .glass-panel { background: rgba(248,250,249,0.7); backdrop-filter: blur(20px); }
   .chain-pill { transition: all 0.15s ease; }
   .chain-pill:hover { transform: translateY(-1px); box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+  .scrollbar-hide::-webkit-scrollbar { display: none; }
   .asset-card { transition: all 0.2s ease; }
   .asset-card:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(42,52,52,0.08); }
 </style>
@@ -237,10 +239,18 @@ tailwind.config = {
 
       <!-- Active Chains Overview -->
       <section>
-        <div class="flex justify-between items-end mb-4">
+        <div class="flex justify-between items-center mb-4">
           <h4 class="text-sm font-bold text-on-surface-variant uppercase tracking-wider">Chain Breakdown</h4>
+          <div class="flex gap-1">
+            <button onclick="scrollChains(-1)" class="w-7 h-7 rounded-full bg-surface-container-low flex items-center justify-center hover:bg-surface-container-high transition-colors">
+              <span class="material-symbols-outlined text-on-surface-variant text-base">chevron_left</span>
+            </button>
+            <button onclick="scrollChains(1)" class="w-7 h-7 rounded-full bg-surface-container-low flex items-center justify-center hover:bg-surface-container-high transition-colors">
+              <span class="material-symbols-outlined text-on-surface-variant text-base">chevron_right</span>
+            </button>
+          </div>
         </div>
-        <div id="chain-breakdown" class="flex gap-3 overflow-x-auto pb-2 -mx-2 px-2">
+        <div id="chain-breakdown" class="flex gap-3 overflow-x-auto -mx-2 px-2 scrollbar-hide">
           <p class="text-sm text-on-surface-variant px-2 py-3">Connect wallet to view chain balances</p>
         </div>
       </section>
@@ -672,6 +682,11 @@ function expandAssets() {
 
 // ── Auto-reconnect if already connected ──
 // ── Dropdown toggles ──
+function scrollChains(dir) {
+  const el = document.getElementById('chain-breakdown');
+  el.scrollBy({ left: dir * 200, behavior: 'smooth' });
+}
+
 function toggleAssetDrop(symbol) {
   const el = document.getElementById('asset-drop-' + symbol);
   if (!el) return;
