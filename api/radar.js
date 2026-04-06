@@ -16,7 +16,7 @@ export default async function handler(req, res) {
     const [chainsRes, tokensRes, depositsRes] = await Promise.all([
       fetch(`${BASE_URL}/swap/chains`, { next: { revalidate: 300 } }),
       fetch(`${BASE_URL}/swap/tokens`, { next: { revalidate: 300 } }),
-      fetch(`${BASE_URL}/deposits?limit=500`, { next: { revalidate: 30 } }),
+      fetch(`${BASE_URL}/deposits?limit=200`, { next: { revalidate: 30 } }),
     ]);
 
     if (!chainsRes.ok || !tokensRes.ok || !depositsRes.ok) {

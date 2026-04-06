@@ -533,6 +533,7 @@ tailwind.config = {
       const res = await fetch("/api/radar");
       if (!res.ok) throw new Error("HTTP " + res.status);
       const data = await res.json();
+      try { localStorage.setItem('sage_radar_cache', JSON.stringify(data)); } catch {}
 
       buildMaps(data);
       const deposits = data.deposits || [];
@@ -565,6 +566,15 @@ tailwind.config = {
 
   // --- Init ---
 
+  // Show cached data instantly, fetch fresh in background
+  try {
+    const cached = JSON.parse(localStorage.getItem('sage_radar_cache'));
+    if (cached && cached.deposits && cached.deposits.length > 0) {
+      buildMaps(cached);
+      const d = cached.deposits;
+      renderStats(d); renderDestChains(d); renderRoutes(d); renderTokens(d); renderRecent(d);
+    }
+  } catch {}
   fetchAndRender();
   startCountdown();
 
