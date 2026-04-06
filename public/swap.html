@@ -80,7 +80,7 @@ tailwind.config = {
 
   <!-- ═══ FROM ═══ -->
   <div class="mb-3">
-    <p class="text-base text-on-surface-variant mb-3">From <span class="font-bold text-on-surface">Wallet</span></p>
+    <p class="text-base text-on-surface-variant mb-3">From <span id="from-wallet-label" class="font-bold text-on-surface">Wallet</span></p>
     <div class="flex items-end justify-between gap-6">
       <button onclick="cycleToken('from')" class="inline-flex items-center gap-2 bg-surface-container-low pl-1.5 pr-4 py-1.5 rounded-full border border-outline-variant/10 hover:bg-surface-container-high transition-colors">
         <div class="relative">
@@ -432,7 +432,14 @@ async function connectWallet() {
     updateActionBtn();
   } catch(e) { console.error(e); }
 }
-function resolveWalletENS(){if(!walletAddress)return;fetch(`/api/ens?address=${walletAddress}`).then(r=>r.json()).then(d=>{if(d.name)document.getElementById('connect-label').textContent=d.name;}).catch(()=>{});}
+function resolveWalletENS(){
+  if(!walletAddress)return;
+  const short=walletAddress.slice(0,6)+'...'+walletAddress.slice(-4);
+  document.getElementById('from-wallet-label').textContent=short;
+  fetch(`/api/ens?address=${walletAddress}`).then(r=>r.json()).then(d=>{
+    if(d.name){document.getElementById('connect-label').textContent=d.name;document.getElementById('from-wallet-label').textContent=d.name;}
+  }).catch(()=>{});
+}
 
 async function updateBalance() {
   if (!walletAddress) return;
