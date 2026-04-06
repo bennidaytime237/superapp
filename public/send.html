@@ -359,6 +359,27 @@ function fmt(n){if(n>=1000)return n.toLocaleString('en-US',{maximumFractionDigit
 (async function(){
   updateDisplay();updateBtn();
   await fetchPrices();
+
+  // Pre-fill from URL params (payment request links)
+  const params=new URLSearchParams(window.location.search);
+  if(params.get('to')){document.getElementById('recipient').value=params.get('to');validateAddr();}
+  if(params.get('token')&&params.get('chain')){
+    const tok=params.get('token'), cid=Number(params.get('chain'));
+    const ti=TOKENS.findIndex(t=>t.symbol===tok);
+    const ci=CHAINS.findIndex(c=>c.id===cid);
+    if(ti>=0&&ci>=0){selTokenIdx=ti;selChainIdx=ci;updateDisplay();}
+  }
+  if(params.get('amount')){document.getElementById('input-amount').value=params.get('amount');onAmountChange();}
+  if(params.get('note')){
+    const noteEl=document.getElementById('request-note');
+    if(!noteEl){
+      const div=document.createElement('div');
+      div.className='mb-4 px-4 py-3 bg-primary-container rounded-xl';
+      div.innerHTML=`<p class="text-xs font-bold text-on-primary-container mb-1">Payment request</p><p class="text-sm text-on-primary-container">${params.get('note').replace(/</g,'&lt;')}</p>`;
+      document.getElementById('recipient').closest('.mb-5').after(div);
+    }
+  }
+
   if(window.ethereum){
     const accs=await window.ethereum.request({method:'eth_accounts'});
     if(accs.length>0){walletAddress=accs[0];document.getElementById('connect-label').textContent=walletAddress.slice(0,6)+'...'+walletAddress.slice(-4);resolveWalletENS();fetchBalance();updateBtn();}
