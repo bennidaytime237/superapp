@@ -623,7 +623,7 @@ function renderPortfolio(balancesByChain) {
       .map(([cid, val]) => {
         const c = CHAINS[cid] || { name:'Chain '+cid };
         const icon = chainIcon(Number(cid));
-        return `<div class="flex-shrink-0 min-w-[160px]">
+        return `<div class="flex-shrink-0 min-w-[160px]" data-chain="${cid}">
           <button onclick="toggleChainDrop(${cid})" class="w-full px-4 py-3 bg-surface-container-lowest rounded-xl flex items-center gap-3 hover:bg-surface-container transition-colors">
             <img src="${icon}" alt="${c.name}" class="w-8 h-8 rounded-full" onerror="this.style.display='none'"/>
             <div class="flex-1">
@@ -632,7 +632,6 @@ function renderPortfolio(balancesByChain) {
             </div>
             <span class="material-symbols-outlined text-on-surface-variant/40 text-sm">expand_more</span>
           </button>
-          <div id="chain-drop-${cid}" class="hidden mt-1 bg-surface-container-lowest rounded-lg border border-outline-variant/10 shadow-sm"></div>
         </div>`;
       }).join('');
   }
@@ -703,11 +702,12 @@ function scrollChains(dir) {
 }
 
 function closeAssetDrop() {
-  const existing = document.getElementById('asset-overlay');
-  if (existing) existing.remove();
+  const a = document.getElementById('asset-overlay'); if (a) a.remove();
+  const c = document.getElementById('chain-overlay'); if (c) c.remove();
 }
 
 function toggleAssetDrop(symbol) {
+  const ch = document.getElementById('chain-overlay'); if (ch) ch.remove();
   const existing = document.getElementById('asset-overlay');
   if (existing) { const prev = existing.dataset.symbol; existing.remove(); if (prev === symbol) return; }
   if (!portfolioData) return;
@@ -747,10 +747,14 @@ function toggleAssetDrop(symbol) {
 }
 
 function toggleChainDrop(chainId) {
-  const el = document.getElementById('chain-drop-' + chainId);
-  if (!el) return;
-  if (!el.classList.contains('hidden')) { el.classList.add('hidden'); return; }
+  const existing = document.getElementById('chain-overlay');
+  if (existing) { const prev = existing.dataset.chainId; existing.remove(); if (prev == chainId) return; }
+  // Also close any asset overlay
+  closeAssetDrop();
   if (!portfolioData) return;
+  const card = document.querySelector(`[data-chain="${chainId}"]`);
+  if (!card) return;
+  const rect = card.getBoundingClientRect();
   const tokens = portfolioData[chainId] || {};
   let rows = '';
   for (const [symbol, bal] of Object.entries(tokens)) {
@@ -768,8 +772,16 @@ function toggleChainDrop(chainId) {
       </div>
     </div>`;
   }
-  el.innerHTML = rows || '<p class="px-4 py-2 text-sm text-on-surface-variant">Empty</p>';
-  el.classList.remove('hidden');
+  const overlay = document.createElement('div');
+  overlay.id = 'chain-overlay';
+  overlay.dataset.chainId = chainId;
+  overlay.className = 'fixed z-50 bg-white rounded-xl shadow-2xl border border-outline-variant/10 overflow-hidden';
+  overlay.style.cssText = `left:${rect.left}px;width:${Math.max(rect.width, 220)}px;top:${rect.bottom + 4}px;max-height:250px;overflow-y:auto;`;
+  overlay.innerHTML = rows || '<p class="px-4 py-3 text-sm text-on-surface-variant">Empty</p>';
+  document.body.appendChild(overlay);
+  setTimeout(() => document.addEventListener('click', function close(e) {
+    if (!overlay.contains(e.target) && !card.contains(e.target)) { overlay.remove(); document.removeEventListener('click', close); }
+  }), 0);
 }
 
 function fmtNum(n) {
