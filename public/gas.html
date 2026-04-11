@@ -1,30 +1,44 @@
 <!DOCTYPE html>
-<html class="light" lang="en">
+<html lang="en">
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script>
+(function(){var t=localStorage.getItem('sage-theme')||(window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');document.documentElement.className=t;})();
+</script>
 <title>Gas - Sage</title>
 <link rel="icon" type="image/svg+xml" href="favicon.svg"/>
 <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&display=swap" rel="stylesheet"/>
 <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="theme.css"/>
 <script>
 tailwind.config = {
   darkMode: "class",
   theme: {
     extend: {
       colors: {
-        "outline-variant":"#a3b899","on-surface":"#2f3a33","background":"#faf7f5",
-        "on-primary-container":"#2f3a33","on-primary":"#faf7f5","primary":"#667b68",
-        "surface-container-lowest":"#ffffff","surface-container-high":"#dde6d5",
-        "surface-bright":"#faf7f5","on-background":"#1f2622","on-error":"#faf7f5",
-        "outline":"#667b68","error":"#9e422c","surface":"#faf7f5",
-        "surface-dim":"#dde6d5","on-surface-variant":"#667b68",
-        "surface-container":"#eaefe5","surface-container-low":"#f2f5ef",
-        "primary-fixed":"#dde6d5","primary-container":"#dde6d5",
-        "error-container":"#f8d3c5","surface-variant":"#dde6d5",
-        "surface-container-highest":"#d3deca",
-        "sage-peach-light":"#fceee9",
+        "surface-bright":"var(--surface-bright)","surface":"var(--surface)","background":"var(--background)",
+        "surface-container-lowest":"var(--surface-container-lowest)","surface-container-low":"var(--surface-container-low)",
+        "surface-container":"var(--surface-container)","surface-container-high":"var(--surface-container-high)",
+        "surface-container-highest":"var(--surface-container-highest)","surface-dim":"var(--surface-dim)",
+        "surface-variant":"var(--surface-variant)","surface-tint":"var(--surface-tint)",
+        "primary":"var(--primary)","primary-dim":"var(--primary-dim)","primary-fixed":"var(--primary-fixed)",
+        "primary-fixed-dim":"var(--primary-fixed-dim)","primary-container":"var(--primary-container)",
+        "on-primary":"var(--on-primary)","on-primary-container":"var(--on-primary-container)",
+        "on-primary-fixed":"var(--on-primary-fixed)","on-primary-fixed-variant":"var(--on-primary-fixed-variant)",
+        "on-surface":"var(--on-surface)","on-surface-variant":"var(--on-surface-variant)",
+        "on-background":"var(--on-background)",
+        "outline":"var(--outline)","outline-variant":"var(--outline-variant)",
+        "error":"var(--error)","error-container":"var(--error-container)",
+        "on-error":"var(--on-error)","on-error-container":"var(--on-error-container)",
+        "inverse-surface":"var(--inverse-surface)","inverse-on-surface":"var(--inverse-on-surface)",
+        "inverse-primary":"var(--inverse-primary)",
+        "secondary":"var(--secondary)","secondary-container":"var(--secondary-container)",
+        "on-secondary":"var(--on-secondary)","on-secondary-container":"var(--on-secondary-container)",
+        "tertiary":"var(--tertiary)","tertiary-container":"var(--tertiary-container)",
+        "on-tertiary":"var(--on-tertiary)","on-tertiary-container":"var(--on-tertiary-container)",
+        "sage-peach":"var(--sage-peach)","sage-peach-light":"var(--sage-peach-light)",
       },
       fontFamily: { "headline":["Outfit"],"body":["Outfit"],"label":["Outfit"] },
       borderRadius: { "DEFAULT":"1rem","lg":"2rem","xl":"3rem","full":"9999px" },
@@ -39,6 +53,7 @@ tailwind.config = {
   input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
   input[type=number] { -moz-appearance: textfield; }
 </style>
+<script src="theme.js"></script>
 </head>
 <body class="bg-background text-on-surface antialiased h-screen flex flex-col overflow-hidden">
 
@@ -52,6 +67,9 @@ tailwind.config = {
       <span class="material-symbols-outlined text-sm">arrow_back</span>
       Dashboard
     </a>
+    <button onclick="toggleTheme()" class="flex items-center justify-center w-9 h-9 rounded-full text-on-surface-variant hover:text-primary hover:bg-surface-container transition-all flex-shrink-0">
+      <span class="material-symbols-outlined text-lg theme-toggle-icon">dark_mode</span>
+    </button>
     <button id="connect-btn" onclick="connectWallet()" class="flex items-center gap-2 px-3 py-1.5 bg-primary text-on-primary rounded-full text-xs font-bold active:scale-95 transition-transform">
       <span class="material-symbols-outlined text-sm">account_balance_wallet</span>
       <span id="connect-label">Connect</span>
@@ -75,7 +93,7 @@ tailwind.config = {
       <button onclick="openSourcePicker()" class="flex items-center gap-2 bg-surface-container-low pl-1.5 pr-4 py-1.5 rounded-full border border-outline-variant/10 hover:bg-surface-container-high transition-colors">
         <div class="relative">
           <img id="source-token-icon" src="" alt="" class="w-8 h-8 rounded-full"/>
-          <img id="source-chain-icon" src="" alt="" class="w-5 h-5 rounded-full absolute -right-1 -bottom-0.5 border-2 border-white bg-white"/>
+          <img id="source-chain-icon" src="" alt="" class="w-5 h-5 rounded-full absolute -right-1 -bottom-0.5 border-2 border-surface-container-lowest bg-surface-container-lowest"/>
         </div>
         <span class="font-bold text-sm ml-1" id="source-label">USDC on Base</span>
         <span class="material-symbols-outlined text-sm text-on-surface-variant">expand_more</span>
@@ -283,7 +301,7 @@ function filterSourceList() {
     return `<button onclick="selectSource(${ti},${ci})" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-surface-container-low transition-colors text-left">
       <div class="relative flex-shrink-0">
         <img src="${tokenIconUrl(t,c.chainId)}" class="w-10 h-10 rounded-full bg-surface-container"/>
-        <img src="${chainLogoUrl(c.chainId)}" class="w-5 h-5 rounded-full absolute -bottom-0.5 -right-0.5 border-2 border-white bg-white"/>
+        <img src="${chainLogoUrl(c.chainId)}" class="w-5 h-5 rounded-full absolute -bottom-0.5 -right-0.5 border-2 border-surface-container-lowest bg-surface-container-lowest"/>
       </div>
       <div class="flex-1"><p class="font-bold text-[15px] ${bal>0?'text-on-background':'text-on-surface-variant'}">${bal>0?fmt(bal)+' ':'0 '}${t.symbol}</p><p class="text-xs text-on-surface-variant">${t.name} · ${c.name}</p></div>
       ${bal>0?`<span class="text-xs text-on-surface-variant">$${fmt(bal*p)}</span>`:''}

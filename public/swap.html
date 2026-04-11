@@ -620,7 +620,7 @@ function renderModalRows(rows) {
     return `<button onclick="selectToken(${tIdx}, ${chain.id})" class="w-full flex items-center gap-3 px-4 py-3 ${highlight} rounded-xl transition-colors text-left" data-search="${token.symbol} ${token.name} ${chain.name}">
       <div class="relative flex-shrink-0">
         <img src="${tIcon}" alt="${token.symbol}" class="w-10 h-10 rounded-full bg-surface-container" onerror="this.style.display='none'"/>
-        <img src="${cIcon}" alt="${chain.name}" class="w-5 h-5 rounded-full absolute -bottom-0.5 -right-0.5 border-2 border-white bg-white"/>
+        <img src="${cIcon}" alt="${chain.name}" class="w-5 h-5 rounded-full absolute -bottom-0.5 -right-0.5 border-2 border-surface-container-lowest bg-surface-container-lowest"/>
       </div>
       <div class="flex-1 min-w-0">
         <p class="font-bold text-[15px] ${bal > 0 ? 'text-on-background' : 'text-on-surface-variant'}">${bal > 0 ? fmtNum(bal) + ' ' : '0 '}${token.symbol}</p>
