@@ -1,41 +1,46 @@
 <!DOCTYPE html>
-<html class="light" lang="en">
+<html lang="en">
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script>
+(function(){var t=localStorage.getItem('sage-theme')||(window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');document.documentElement.className=t;})();
+</script>
 <title>Sage | Onchain Dashboard</title>
 <link rel="icon" type="image/svg+xml" href="favicon.svg"/>
 <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&display=swap" rel="stylesheet"/>
 <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="theme.css"/>
 <script>
 tailwind.config = {
   darkMode: "class",
   theme: {
     extend: {
       colors: {
-        "surface-bright":"#faf7f5","surface":"#faf7f5","background":"#faf7f5",
-        "surface-container-lowest":"#ffffff","surface-container-low":"#f2f5ef",
-        "surface-container":"#eaefe5","surface-container-high":"#dde6d5",
-        "surface-container-highest":"#d3deca","surface-dim":"#dde6d5",
-        "surface-variant":"#dde6d5","surface-tint":"#667b68",
-        "primary":"#667b68","primary-dim":"#2f3a33","primary-fixed":"#dde6d5",
-        "primary-fixed-dim":"#a3b899","primary-container":"#dde6d5",
-        "on-primary":"#faf7f5","on-primary-container":"#2f3a33",
-        "on-primary-fixed":"#2f3a33","on-primary-fixed-variant":"#667b68",
-        "on-surface":"#2f3a33","on-surface-variant":"#667b68",
-        "on-background":"#1f2622",
-        "outline":"#667b68","outline-variant":"#a3b899",
-        "error":"#9e422c","error-container":"#f8d3c5",
-        "on-error":"#faf7f5","on-error-container":"#742410",
-        "inverse-surface":"#1f2622","inverse-on-surface":"#a3b899",
-        "inverse-primary":"#dde6d5",
-        "secondary":"#667b68","secondary-container":"#dde6d5",
-        "on-secondary":"#faf7f5","on-secondary-container":"#2f3a33",
-        "tertiary":"#667b68","tertiary-container":"#dde6d5",
-        "on-tertiary":"#faf7f5","on-tertiary-container":"#2f3a33",
+        "surface-bright":"var(--surface-bright)","surface":"var(--surface)","background":"var(--background)",
+        "surface-container-lowest":"var(--surface-container-lowest)","surface-container-low":"var(--surface-container-low)",
+        "surface-container":"var(--surface-container)","surface-container-high":"var(--surface-container-high)",
+        "surface-container-highest":"var(--surface-container-highest)","surface-dim":"var(--surface-dim)",
+        "surface-variant":"var(--surface-variant)","surface-tint":"var(--surface-tint)",
+        "primary":"var(--primary)","primary-dim":"var(--primary-dim)","primary-fixed":"var(--primary-fixed)",
+        "primary-fixed-dim":"var(--primary-fixed-dim)","primary-container":"var(--primary-container)",
+        "on-primary":"var(--on-primary)","on-primary-container":"var(--on-primary-container)",
+        "on-primary-fixed":"var(--on-primary-fixed)","on-primary-fixed-variant":"var(--on-primary-fixed-variant)",
+        "on-surface":"var(--on-surface)","on-surface-variant":"var(--on-surface-variant)",
+        "on-background":"var(--on-background)",
+        "outline":"var(--outline)","outline-variant":"var(--outline-variant)",
+        "error":"var(--error)","error-container":"var(--error-container)",
+        "on-error":"var(--on-error)","on-error-container":"var(--on-error-container)",
+        "inverse-surface":"var(--inverse-surface)","inverse-on-surface":"var(--inverse-on-surface)",
+        "inverse-primary":"var(--inverse-primary)",
+        "secondary":"var(--secondary)","secondary-container":"var(--secondary-container)",
+        "on-secondary":"var(--on-secondary)","on-secondary-container":"var(--on-secondary-container)",
+        "tertiary":"var(--tertiary)","tertiary-container":"var(--tertiary-container)",
+        "on-tertiary":"var(--on-tertiary)","on-tertiary-container":"var(--on-tertiary-container)",
+        "sage-peach":"var(--sage-peach)","sage-peach-light":"var(--sage-peach-light)",
       },
-      fontFamily: { "headline":["Outfit"], "body":["Outfit"], "label":["Outfit"] },
+      fontFamily: { "headline":["Outfit"],"body":["Outfit"],"label":["Outfit"] },
       borderRadius: { "DEFAULT":"1rem","lg":"2rem","xl":"3rem","full":"9999px" },
     },
   },
@@ -53,6 +58,7 @@ tailwind.config = {
   .asset-card { transition: all 0.2s ease; }
   .asset-card:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(42,52,52,0.08); }
 </style>
+<script src="theme.js"></script>
 </head>
 <body class="bg-surface text-on-surface selection:bg-primary-fixed selection:text-on-primary-fixed min-h-screen">
 
@@ -94,6 +100,10 @@ tailwind.config = {
       <span class="material-symbols-outlined">radar</span>
       <span class="font-medium text-sm">Radar</span>
     </a>
+    <button onclick="toggleTheme()" class="flex items-center gap-3 px-4 py-2.5 text-on-surface-variant hover:text-primary hover:bg-surface-container rounded-full transition-all w-full">
+      <span class="material-symbols-outlined theme-toggle-icon">dark_mode</span>
+      <span class="font-medium text-sm">Dark Mode</span>
+    </button>
   </nav>
 
   <!-- Hyperliquid Promo -->
@@ -162,7 +172,7 @@ tailwind.config = {
         <span class="material-symbols-outlined text-lg">account_balance_wallet</span>
         <span id="connect-label">Connect Wallet</span>
       </button>
-      <div id="wallet-menu" class="hidden absolute right-0 top-full mt-2 bg-white rounded-lg shadow-lg border border-outline-variant/10 overflow-hidden z-50 min-w-[180px]">
+      <div id="wallet-menu" class="hidden absolute right-0 top-full mt-2 bg-surface-container-lowest rounded-lg shadow-lg border border-outline-variant/10 overflow-hidden z-50 min-w-[180px]">
         <button onclick="copyAddress()" class="w-full px-4 py-3 text-sm font-medium text-on-surface hover:bg-surface-container-low transition-colors text-left flex items-center gap-2">
           <span class="material-symbols-outlined text-base">content_copy</span>Copy Address
         </button>

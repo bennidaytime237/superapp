@@ -1,0 +1,114 @@
+/* ─── Sage Theme: CSS Custom Properties ───────────────────────────────────── */
+
+:root {
+  /* Light mode (default) */
+  --surface-bright: #faf7f5;
+  --surface: #faf7f5;
+  --background: #faf7f5;
+  --surface-container-lowest: #ffffff;
+  --surface-container-low: #f2f5ef;
+  --surface-container: #eaefe5;
+  --surface-container-high: #dde6d5;
+  --surface-container-highest: #d3deca;
+  --surface-dim: #dde6d5;
+  --surface-variant: #dde6d5;
+  --surface-tint: #667b68;
+  --primary: #667b68;
+  --primary-dim: #2f3a33;
+  --primary-fixed: #dde6d5;
+  --primary-fixed-dim: #a3b899;
+  --primary-container: #dde6d5;
+  --on-primary: #faf7f5;
+  --on-primary-container: #2f3a33;
+  --on-primary-fixed: #2f3a33;
+  --on-primary-fixed-variant: #667b68;
+  --on-surface: #2f3a33;
+  --on-surface-variant: #667b68;
+  --on-background: #1f2622;
+  --outline: #667b68;
+  --outline-variant: #a3b899;
+  --error: #9e422c;
+  --error-container: #f8d3c5;
+  --on-error: #faf7f5;
+  --on-error-container: #742410;
+  --inverse-surface: #1f2622;
+  --inverse-on-surface: #a3b899;
+  --inverse-primary: #dde6d5;
+  --secondary: #667b68;
+  --secondary-container: #dde6d5;
+  --on-secondary: #faf7f5;
+  --on-secondary-container: #2f3a33;
+  --tertiary: #667b68;
+  --tertiary-container: #dde6d5;
+  --on-tertiary: #faf7f5;
+  --on-tertiary-container: #2f3a33;
+  --sage-peach: #f8d3c5;
+  --sage-peach-light: #fceee9;
+}
+
+html.dark {
+  /* Dark mode overrides */
+  --surface-bright: #343b38;
+  --surface: #121812;
+  --background: #121812;
+  --surface-container-lowest: #0d120f;
+  --surface-container-low: #1a221d;
+  --surface-container: #1e2720;
+  --surface-container-high: #283028;
+  --surface-container-highest: #323a32;
+  --surface-dim: #121812;
+  --surface-variant: #3a4841;
+  --surface-tint: #a3b899;
+  --primary: #a3b899;
+  --primary-dim: #dde6d5;
+  --primary-fixed: #dde6d5;
+  --primary-fixed-dim: #a3b899;
+  --primary-container: #3a4841;
+  --on-primary: #1b2720;
+  --on-primary-container: #dde6d5;
+  --on-primary-fixed: #2f3a33;
+  --on-primary-fixed-variant: #667b68;
+  --on-surface: #dde6d5;
+  --on-surface-variant: #a3b899;
+  --on-background: #dde6d5;
+  --outline: #667b68;
+  --outline-variant: #3a4841;
+  --error: #ffb4ab;
+  --error-container: #5c2018;
+  --on-error: #690005;
+  --on-error-container: #ffb4ab;
+  --inverse-surface: #dde6d5;
+  --inverse-on-surface: #2f3a33;
+  --inverse-primary: #667b68;
+  --secondary: #a3b899;
+  --secondary-container: #3a4841;
+  --on-secondary: #1b2720;
+  --on-secondary-container: #dde6d5;
+  --tertiary: #a3b899;
+  --tertiary-container: #3a4841;
+  --on-tertiary: #1b2720;
+  --on-tertiary-container: #dde6d5;
+  --sage-peach: #6e3428;
+  --sage-peach-light: #2d1a17;
+}
+
+/* Glass panel dark mode */
+html.dark .glass-panel {
+  background: rgba(30, 39, 32, 0.85);
+}
+
+/* Wallet menu dropdown dark mode */
+html.dark #wallet-menu {
+  background-color: var(--surface-container-lowest);
+  border-color: var(--outline-variant);
+}
+
+/* Smooth theme transitions */
+*, *::before, *::after {
+  transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}
+
+/* Exclude transitions on page load (applied via JS) */
+html.no-transition * {
+  transition: none !important;
+}
