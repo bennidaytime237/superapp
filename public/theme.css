@@ -112,3 +112,6 @@ html.dark #wallet-menu {
 html.no-transition * {
   transition: none !important;
 }
+
+/* Prevent horizontal scroll on all pages */
+html, body { overflow-x: hidden; }
