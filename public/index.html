@@ -193,17 +193,20 @@ tailwind.config = {
           <div class="flex items-center gap-3 mb-4">
             <p class="text-on-surface-variant text-sm font-medium">Total Balance</p>
             <span id="hero-chain-count" class="text-xs font-bold text-primary bg-primary-container px-2 py-0.5 rounded-full hidden">0 chains</span>
+            <button onclick="toggleBalanceVisibility()" class="ml-auto flex items-center justify-center w-8 h-8 rounded-full hover:bg-surface-container-high transition-colors active:scale-90">
+              <span id="balance-eye-icon" class="material-symbols-outlined text-lg text-on-surface-variant">visibility</span>
+            </button>
           </div>
           <h3 id="hero-balance" class="text-5xl md:text-6xl font-black text-on-background tracking-tight mb-1">
             <span class="text-on-surface-variant text-2xl tracking-wide">Connect wallet to view</span>
           </h3>
           <p id="hero-change" class="text-sm text-primary font-bold mb-4"></p>
           <div class="flex flex-wrap gap-3 items-center">
-            <button onclick="window.location.href='send.html'" class="flex items-center gap-2 px-6 py-3 bg-primary text-on-primary rounded-full font-bold text-sm active:scale-95 transition-transform">
+            <button onclick="window.location.href='payments.html?tab=pay'" class="flex items-center gap-2 px-6 py-3 bg-primary text-on-primary rounded-full font-bold text-sm active:scale-95 transition-transform">
               <span class="material-symbols-outlined text-lg">send</span>
-              Send
+              Payments
             </button>
-            <button onclick="window.location.href='request.html'" class="flex items-center gap-2 px-6 py-3 bg-primary-container text-on-primary-container rounded-full font-bold text-sm hover:opacity-90 transition-opacity">
+            <button onclick="window.location.href='payments.html?tab=request'" class="flex items-center gap-2 px-6 py-3 bg-primary-container text-on-primary-container rounded-full font-bold text-sm hover:opacity-90 transition-opacity">
               <span class="material-symbols-outlined text-lg">request_page</span>
               Request
             </button>
@@ -235,7 +238,7 @@ tailwind.config = {
                 <span class="tracking-widest">···</span>
               </button>
               <div id="more-menu" class="hidden absolute left-0 top-full mt-2 bg-white rounded-lg shadow-lg border border-outline-variant/10 overflow-hidden z-50 min-w-[200px]">
-                <a href="request.html" class="flex items-center gap-3 px-4 py-3 text-sm font-medium text-on-surface hover:bg-surface-container-low transition-colors">
+                <a href="payments.html?tab=request" class="flex items-center gap-3 px-4 py-3 text-sm font-medium text-on-surface hover:bg-surface-container-low transition-colors">
                   <span class="material-symbols-outlined text-base text-primary">request_page</span>
                   Request
                 </a>
@@ -360,7 +363,7 @@ tailwind.config = {
 </main>
 
 <!-- Mobile Bottom Nav -->
-<nav class="fixed bottom-0 w-full z-50 flex justify-around items-center px-2 pb-6 pt-2 md:hidden bg-surface/70 backdrop-blur-xl shadow-[0_-4px_40px_rgba(42,52,52,0.04)] rounded-t-3xl">
+<nav class="fixed bottom-5 left-4 right-4 z-50 md:hidden flex items-center justify-around py-3 px-2 bg-surface-container/95 backdrop-blur-xl rounded-full shadow-[0_8px_40px_rgba(0,0,0,0.12)] border border-outline-variant/15">
   <a class="flex flex-col items-center justify-center bg-primary-container text-primary rounded-full p-3 transition-transform active:scale-90" href="index.html">
     <span class="material-symbols-outlined">home</span>
     <span class="font-headline text-[10px] font-bold uppercase mt-1">Home</span>
@@ -369,13 +372,9 @@ tailwind.config = {
     <span class="material-symbols-outlined">swap_horiz</span>
     <span class="font-headline text-[10px] font-bold uppercase mt-1">Bridge</span>
   </a>
-  <a class="flex flex-col items-center justify-center text-on-surface-variant p-3 transition-transform active:scale-90" href="send.html">
+  <a class="flex flex-col items-center justify-center text-on-surface-variant p-3 transition-transform active:scale-90" href="payments.html">
     <span class="material-symbols-outlined">send</span>
-    <span class="font-headline text-[10px] font-bold uppercase mt-1">Send</span>
-  </a>
-  <a class="flex flex-col items-center justify-center text-on-surface-variant p-3 transition-transform active:scale-90" href="request.html">
-    <span class="material-symbols-outlined">request_page</span>
-    <span class="font-headline text-[10px] font-bold uppercase mt-1">Request</span>
+    <span class="font-headline text-[10px] font-bold uppercase mt-1">Pay</span>
   </a>
   <button onclick="toggleMobileMenu()" class="flex flex-col items-center justify-center text-on-surface-variant p-3 transition-transform active:scale-90">
     <span class="material-symbols-outlined">menu</span>
@@ -669,10 +668,15 @@ function renderPortfolio(balancesByChain) {
   portfolioAgg = agg;
 
   // Hero
-  const whole = Math.floor(totalUsd).toLocaleString('en-US');
-  const cents = (totalUsd % 1).toFixed(2).slice(1);
-  document.getElementById('hero-balance').innerHTML =
-    `$${whole}<span class="text-3xl md:text-4xl">${cents}</span>`;
+  let heroHtml;
+  if (balancesHidden) {
+    heroHtml = '••••';
+  } else {
+    const whole = Math.floor(totalUsd).toLocaleString('en-US');
+    const cents = (totalUsd % 1).toFixed(2).slice(1);
+    heroHtml = `$${whole}<span class="text-3xl md:text-4xl">${cents}</span>`;
+  }
+  document.getElementById('hero-balance').innerHTML = heroHtml;
 
   const chainCount = Object.keys(chainTotals).length;
   const badge = document.getElementById('hero-chain-count');
@@ -680,7 +684,7 @@ function renderPortfolio(balancesByChain) {
   badge.classList.remove('hidden');
 
   // Sidebar
-  document.getElementById('sidebar-total').textContent = usd(totalUsd);
+  document.getElementById('sidebar-total').textContent = balancesHidden ? '••••' : usd(totalUsd);
 
   // Chain breakdown
   const chainEl = document.getElementById('chain-breakdown');
@@ -692,12 +696,13 @@ function renderPortfolio(balancesByChain) {
       .map(([cid, val]) => {
         const c = CHAINS[cid] || { name:'Chain '+cid };
         const icon = chainIcon(Number(cid));
+        const displayVal = balancesHidden ? '••••' : usd(val);
         return `<div class="flex-shrink-0 min-w-[160px]" data-chain="${cid}">
           <button onclick="toggleChainDrop(${cid})" class="w-full px-4 py-3 bg-surface-container-lowest rounded-xl flex items-center gap-3 hover:bg-surface-container transition-colors">
             <img src="${icon}" alt="${c.name}" class="w-8 h-8 rounded-full" onerror="this.style.display='none'"/>
             <div class="flex-1">
               <p class="text-xs text-on-surface-variant">${c.name}</p>
-              <p class="text-sm font-bold">${usd(val)}</p>
+              <p class="text-sm font-bold">${displayVal}</p>
             </div>
             <span class="material-symbols-outlined text-on-surface-variant/40 text-sm">expand_more</span>
           </button>
@@ -724,6 +729,7 @@ function renderPortfolio(balancesByChain) {
       ? info.chains.length + ' chains'
       : (CHAINS[info.chains[0]]?.name || 'Chain ' + info.chains[0]);
     const icon = tokenIcon(symbol);
+    const displayUsd = balancesHidden ? '••••' : usd(info.usdValue);
     return `<div class="asset-card bg-surface-container-lowest rounded-xl cursor-pointer hover:shadow-md transition-shadow" data-symbol="${symbol}" onclick="toggleAssetDrop('${symbol}')">
       <div class="p-4">
         <div class="flex items-center gap-3 mb-3">
@@ -734,7 +740,7 @@ function renderPortfolio(balancesByChain) {
           </div>
           ${changeBadge}
         </div>
-        <p class="text-xl font-black text-on-background mb-0.5">${usd(info.usdValue)}</p>
+        <p class="text-xl font-black text-on-background mb-0.5">${displayUsd}</p>
         <p class="text-xs text-on-surface-variant">${info.total.toLocaleString('en-US',{maximumFractionDigits:4})} ${symbol}</p>
       </div>
       <div class="flex items-center justify-center gap-1 py-2 border-t border-outline-variant/10 text-on-surface-variant hover:text-primary transition-colors">
@@ -985,6 +991,20 @@ async function fetchBridgeTimes() {
     const data = await res.json();
     if (!data.error) { renderTimes(data); try { localStorage.setItem(cacheKey, JSON.stringify(data)); } catch {} }
   } catch (e) { console.warn('Bridge times failed:', e); }
+}
+
+// ── Balance Visibility Toggle ──
+let balancesHidden = false;
+function toggleBalanceVisibility() {
+  balancesHidden = !balancesHidden;
+  const icon = document.getElementById('balance-eye-icon');
+  icon.textContent = balancesHidden ? 'visibility_off' : 'visibility';
+  if (portfolioData) renderPortfolio(portfolioData);
+}
+
+function formatBalanceDisplay(value) {
+  if (!balancesHidden) return usd(value);
+  return '••••';
 }
 </script>
 </body>
