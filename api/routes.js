@@ -2,8 +2,10 @@
  * Proxies Across Protocol available-routes, swap/chains, and swap/tokens.
  * GET /api/routes → { chains, tokens, routes }
  */
+import { applyCors } from './_cors.js';
+
 export default async function handler(req, res) {
-  res.setHeader('Access-Control-Allow-Origin', '*');
+  if (applyCors(req, res)) return;
 
   try {
     const controller = new AbortController();

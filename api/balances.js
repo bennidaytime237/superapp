@@ -1,3 +1,5 @@
+import { applyCors } from './_cors.js';
+
 // ERC-20 balanceOf selector: keccak256("balanceOf(address)")[0:4] = 0x70a08231
 function encodeBalanceOf(address) {
   const addr = address.toLowerCase().replace('0x', '').padStart(64, '0');
@@ -140,7 +142,7 @@ function fromHex(hex, decimals) {
 }
 
 export default async function handler(req, res) {
-  res.setHeader('Access-Control-Allow-Origin', '*');
+  if (applyCors(req, res)) return;
   const { address } = req.query;
   if (!address || !/^0x[0-9a-fA-F]{40}$/.test(address)) {
     return res.status(400).json({ error: 'Invalid address' });

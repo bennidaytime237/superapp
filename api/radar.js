@@ -1,10 +1,12 @@
+import { applyCors } from './_cors.js';
+
 const BASE_URL = 'https://app.across.to/api';
 
 let cache = { chains: null, tokens: null, deposits: null, ts: 0 };
 const CACHE_TTL = 30000; // 30s
 
 export default async function handler(req, res) {
-  res.setHeader('Access-Control-Allow-Origin', '*');
+  if (applyCors(req, res)) return;
   res.setHeader('Cache-Control', 'public, s-maxage=30, stale-while-revalidate=60');
 
   const now = Date.now();
@@ -35,6 +37,6 @@ export default async function handler(req, res) {
     console.error('Radar API error:', e.message);
     // Return stale cache if available
     if (cache.deposits) return res.json(cache);
-    return res.status(502).json({ error: e.message });
+    return res.status(502).json({ error: 'Upstream fetch failed' });
   }
 }

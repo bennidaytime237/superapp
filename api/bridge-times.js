@@ -1,3 +1,5 @@
+import { applyCors } from './_cors.js';
+
 const BASE = 'https://app.across.to/api/suggested-fees';
 
 // Representative routes for each category
@@ -17,7 +19,7 @@ const ROUTES = [
 ];
 
 export default async function handler(req, res) {
-  res.setHeader('Access-Control-Allow-Origin', '*');
+  if (applyCors(req, res)) return;
   res.setHeader('Cache-Control', 'public, s-maxage=30, stale-while-revalidate=60');
 
   const result = {};
@@ -37,11 +39,6 @@ export default async function handler(req, res) {
       clearTimeout(t);
       if (!r.ok) { result[route.label] = null; return; }
       const data = await r.json();
-      // Log first response to discover field names
-      if (route.label === 'L1 → L2') {
-        console.log('suggested-fees keys:', Object.keys(data));
-        console.log('suggested-fees sample:', JSON.stringify(data).slice(0, 500));
-      }
       // Try known field names for estimated fill time
       const secs = data.estimatedFillTimeSec
         || data.estimatedFillTime
