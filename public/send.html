@@ -398,7 +398,13 @@ function fmt(n){if(n>=1000)return n.toLocaleString('en-US',{maximumFractionDigit
     if(!noteEl){
       const div=document.createElement('div');
       div.className='mb-4 px-4 py-3 bg-primary-container rounded-xl';
-      div.innerHTML=`<p class="text-xs font-bold text-on-primary-container mb-1">Payment request</p><p class="text-sm text-on-primary-container">${params.get('note').replace(/</g,'&lt;')}</p>`;
+      const label=document.createElement('p');
+      label.className='text-xs font-bold text-on-primary-container mb-1';
+      label.textContent='Payment request';
+      const body=document.createElement('p');
+      body.className='text-sm text-on-primary-container';
+      body.textContent=params.get('note');
+      div.append(label,body);
       document.getElementById('recipient').closest('.mb-5').after(div);
     }
   }

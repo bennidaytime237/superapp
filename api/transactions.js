@@ -1,3 +1,5 @@
+import { applyCors } from './_cors.js';
+
 const TOKEN_MAP = {
   '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2': { symbol: 'ETH', decimals: 18 },
   '0x82aF49447D8a07e3bd95BD0d56f35241523fBab1': { symbol: 'ETH', decimals: 18 },
@@ -54,7 +56,7 @@ function formatAmount(raw, decimals) {
 }
 
 export default async function handler(req, res) {
-  res.setHeader('Access-Control-Allow-Origin', '*');
+  if (applyCors(req, res)) return;
   const { address } = req.query;
   if (!address || !/^0x[0-9a-fA-F]{40}$/.test(address)) {
     return res.status(400).json({ error: 'Invalid address' });
@@ -97,10 +99,6 @@ export default async function handler(req, res) {
   }
 
   const rawDeposits = Array.isArray(data) ? data : (data.deposits || data.results || []);
-  if (rawDeposits.length > 0) {
-    const d = rawDeposits[0];
-    console.log('TS debug:', JSON.stringify({ dbt: d.depositBlockTimestamp, qt: d.quoteTimestamp, fbt: d.fillBlockTimestamp, dd: d.depositDate, t_dbt: typeof d.depositBlockTimestamp }));
-  }
 
   function toMs(v) {
     if (!v) return 0;

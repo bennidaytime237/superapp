@@ -1,3 +1,5 @@
+import { applyCors } from './_cors.js';
+
 const COINGECKO_IDS = 'ethereum,bitcoin,usd-coin,dai,wrapped-bitcoin,matic-network,polygon-ecosystem-token,binancecoin,uma,across-protocol,pooltogether-v2,havven';
 
 async function fetchCoinGecko(signal) {
@@ -47,7 +49,7 @@ async function fetchDeFiLlama(signal) {
 }
 
 export default async function handler(req, res) {
-  res.setHeader('Access-Control-Allow-Origin', '*');
+  if (applyCors(req, res)) return;
   res.setHeader('Cache-Control', 's-maxage=30, stale-while-revalidate=60');
 
   const ctrl = new AbortController();
