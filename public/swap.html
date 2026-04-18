@@ -8,44 +8,10 @@
 </script>
 <title>Bridge - Sage</title>
 <link rel="icon" type="image/svg+xml" href="favicon.svg"/>
-<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link rel="stylesheet" href="tailwind.output.css"/>
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&display=swap" rel="stylesheet"/>
 <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
 <link rel="stylesheet" href="theme.css"/>
-<script>
-tailwind.config = {
-  darkMode: "class",
-  theme: {
-    extend: {
-      colors: {
-        "surface-bright":"var(--surface-bright)","surface":"var(--surface)","background":"var(--background)",
-        "surface-container-lowest":"var(--surface-container-lowest)","surface-container-low":"var(--surface-container-low)",
-        "surface-container":"var(--surface-container)","surface-container-high":"var(--surface-container-high)",
-        "surface-container-highest":"var(--surface-container-highest)","surface-dim":"var(--surface-dim)",
-        "surface-variant":"var(--surface-variant)","surface-tint":"var(--surface-tint)",
-        "primary":"var(--primary)","primary-dim":"var(--primary-dim)","primary-fixed":"var(--primary-fixed)",
-        "primary-fixed-dim":"var(--primary-fixed-dim)","primary-container":"var(--primary-container)",
-        "on-primary":"var(--on-primary)","on-primary-container":"var(--on-primary-container)",
-        "on-primary-fixed":"var(--on-primary-fixed)","on-primary-fixed-variant":"var(--on-primary-fixed-variant)",
-        "on-surface":"var(--on-surface)","on-surface-variant":"var(--on-surface-variant)",
-        "on-background":"var(--on-background)",
-        "outline":"var(--outline)","outline-variant":"var(--outline-variant)",
-        "error":"var(--error)","error-container":"var(--error-container)",
-        "on-error":"var(--on-error)","on-error-container":"var(--on-error-container)",
-        "inverse-surface":"var(--inverse-surface)","inverse-on-surface":"var(--inverse-on-surface)",
-        "inverse-primary":"var(--inverse-primary)",
-        "secondary":"var(--secondary)","secondary-container":"var(--secondary-container)",
-        "on-secondary":"var(--on-secondary)","on-secondary-container":"var(--on-secondary-container)",
-        "tertiary":"var(--tertiary)","tertiary-container":"var(--tertiary-container)",
-        "on-tertiary":"var(--on-tertiary)","on-tertiary-container":"var(--on-tertiary-container)",
-        "sage-peach":"var(--sage-peach)","sage-peach-light":"var(--sage-peach-light)",
-      },
-      fontFamily: { "headline":["Outfit"],"body":["Outfit"],"label":["Outfit"] },
-      borderRadius: { "DEFAULT":"1rem","lg":"2rem","xl":"3rem","full":"9999px" },
-    },
-  },
-}
-</script>
 <style>
   body { font-family: 'Outfit', sans-serif; }
   b, strong, .font-bold, .font-extrabold, .font-black, .font-semibold { letter-spacing: 0.01em; }
@@ -69,6 +35,8 @@ tailwind.config = {
   .compact { padding-top: 0.75rem; padding-bottom: 0.75rem; }
 </style>
 <script src="theme.js"></script>
+<script src="safe-dom.js"></script>
+<script src="eth-utils.js"></script>
 </head>
 <body class="bg-background text-on-surface antialiased h-screen flex flex-col overflow-hidden">
 
@@ -608,7 +576,7 @@ function renderModalRows(rows) {
     ? CHAINS[fromChainIdx]
     : CHAINS[toChainIdx];
 
-  list.innerHTML = rows.map(({ chain, token, tIdx }) => {
+  const items = rows.map(({ chain, token, tIdx }) => {
     const bal = cachedBalances?.[chain.id]?.[token.symbol] || 0;
     const price = prices[token.symbol] || 0;
     const usdVal = bal * price;
@@ -616,20 +584,25 @@ function renderModalRows(rows) {
     const highlight = isSelected ? 'bg-primary-container/20' : 'hover:bg-surface-container-low';
     const tIcon = tokenIconUrl(token);
     const cIcon = `https://icons.llamao.fi/icons/chains/rsz_${chain.slug}.jpg`;
+    const usdEl = bal > 0 ? Safe.html`<span class="text-xs text-on-surface-variant font-medium">$${fmtNum(usdVal)}</span>` : Safe.html``;
 
-    return `<button onclick="selectToken(${tIdx}, ${chain.id})" class="w-full flex items-center gap-3 px-4 py-3 ${highlight} rounded-xl transition-colors text-left" data-search="${token.symbol} ${token.name} ${chain.name}">
+    return Safe.html`<button data-tidx="${tIdx}" data-chain-id="${chain.id}" class="token-pick w-full flex items-center gap-3 px-4 py-3 ${highlight} rounded-xl transition-colors text-left" data-search="${token.symbol + ' ' + token.name + ' ' + chain.name}">
       <div class="relative flex-shrink-0">
-        <img src="${tIcon}" alt="${token.symbol}" class="w-10 h-10 rounded-full bg-surface-container" onerror="this.style.display='none'"/>
-        <img src="${cIcon}" alt="${chain.name}" class="w-5 h-5 rounded-full absolute -bottom-0.5 -right-0.5 border-2 border-surface-container-lowest bg-surface-container-lowest"/>
+        <img src="${Safe.url(tIcon)}" alt="${token.symbol}" class="w-10 h-10 rounded-full bg-surface-container" onerror="this.style.display='none'"/>
+        <img src="${Safe.url(cIcon)}" alt="${chain.name}" class="w-5 h-5 rounded-full absolute -bottom-0.5 -right-0.5 border-2 border-surface-container-lowest bg-surface-container-lowest"/>
       </div>
       <div class="flex-1 min-w-0">
         <p class="font-bold text-[15px] ${bal > 0 ? 'text-on-background' : 'text-on-surface-variant'}">${bal > 0 ? fmtNum(bal) + ' ' : '0 '}${token.symbol}</p>
         <p class="text-xs text-on-surface-variant">${token.name} · ${chain.name}</p>
       </div>
-      ${bal > 0 ? `<span class="text-xs text-on-surface-variant font-medium">$${fmtNum(usdVal)}</span>` : ''}
+      ${usdEl}
       <span class="material-symbols-outlined text-on-surface-variant text-base flex-shrink-0">chevron_right</span>
     </button>`;
-  }).join('');
+  });
+  Safe.setHTML(list, items);
+  list.querySelectorAll('button.token-pick').forEach(btn => {
+    btn.addEventListener('click', () => selectToken(Number(btn.dataset.tidx), Number(btn.dataset.chainId)));
+  });
 }
 
 function filterTokenList() {
@@ -774,7 +747,7 @@ function toggleFeeBreakdown() {
 function getRecipient() {
   const inp = document.getElementById('recipient-address');
   const val = (inp?.value || '').trim();
-  if (val && /^0x[0-9a-fA-F]{40}$/.test(val)) return val;
+  if (val && EthUtils.isValidAddress(val)) return val;
   return walletAddress;
 }
 
@@ -798,7 +771,7 @@ function validateRecipient() {
   const err = document.getElementById('recipient-error');
   const label = document.getElementById('to-label');
   if (!val) { err.classList.add('hidden'); label.textContent = 'Wallet'; return; }
-  if (/^0x[0-9a-fA-F]{40}$/.test(val)) {
+  if (EthUtils.isValidAddress(val)) {
     err.classList.add('hidden');
     label.textContent = val.slice(0,6) + '...' + val.slice(-4);
   } else {
@@ -1437,6 +1410,7 @@ async function loadRoutes() {
       updateBalance();
       updateActionBtn();
     });
+    window.ethereum.on('chainChanged', () => { if (walletAddress) { updateBalance(); updateActionBtn(); } });
     if (walletAddress) {
       document.getElementById('connect-label').textContent = walletAddress.slice(0,6)+'...'+walletAddress.slice(-4);
       resolveWalletENS();

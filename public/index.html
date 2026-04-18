@@ -8,44 +8,10 @@
 </script>
 <title>Sage | Onchain Dashboard</title>
 <link rel="icon" type="image/svg+xml" href="favicon.svg"/>
-<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link rel="stylesheet" href="tailwind.output.css"/>
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&display=swap" rel="stylesheet"/>
 <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
 <link rel="stylesheet" href="theme.css"/>
-<script>
-tailwind.config = {
-  darkMode: "class",
-  theme: {
-    extend: {
-      colors: {
-        "surface-bright":"var(--surface-bright)","surface":"var(--surface)","background":"var(--background)",
-        "surface-container-lowest":"var(--surface-container-lowest)","surface-container-low":"var(--surface-container-low)",
-        "surface-container":"var(--surface-container)","surface-container-high":"var(--surface-container-high)",
-        "surface-container-highest":"var(--surface-container-highest)","surface-dim":"var(--surface-dim)",
-        "surface-variant":"var(--surface-variant)","surface-tint":"var(--surface-tint)",
-        "primary":"var(--primary)","primary-dim":"var(--primary-dim)","primary-fixed":"var(--primary-fixed)",
-        "primary-fixed-dim":"var(--primary-fixed-dim)","primary-container":"var(--primary-container)",
-        "on-primary":"var(--on-primary)","on-primary-container":"var(--on-primary-container)",
-        "on-primary-fixed":"var(--on-primary-fixed)","on-primary-fixed-variant":"var(--on-primary-fixed-variant)",
-        "on-surface":"var(--on-surface)","on-surface-variant":"var(--on-surface-variant)",
-        "on-background":"var(--on-background)",
-        "outline":"var(--outline)","outline-variant":"var(--outline-variant)",
-        "error":"var(--error)","error-container":"var(--error-container)",
-        "on-error":"var(--on-error)","on-error-container":"var(--on-error-container)",
-        "inverse-surface":"var(--inverse-surface)","inverse-on-surface":"var(--inverse-on-surface)",
-        "inverse-primary":"var(--inverse-primary)",
-        "secondary":"var(--secondary)","secondary-container":"var(--secondary-container)",
-        "on-secondary":"var(--on-secondary)","on-secondary-container":"var(--on-secondary-container)",
-        "tertiary":"var(--tertiary)","tertiary-container":"var(--tertiary-container)",
-        "on-tertiary":"var(--on-tertiary)","on-tertiary-container":"var(--on-tertiary-container)",
-        "sage-peach":"var(--sage-peach)","sage-peach-light":"var(--sage-peach-light)",
-      },
-      fontFamily: { "headline":["Outfit"],"body":["Outfit"],"label":["Outfit"] },
-      borderRadius: { "DEFAULT":"1rem","lg":"2rem","xl":"3rem","full":"9999px" },
-    },
-  },
-}
-</script>
 <style>
   .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
   body { font-family: 'Outfit', sans-serif; }
@@ -59,6 +25,7 @@ tailwind.config = {
   .asset-card:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(42,52,52,0.08); }
 </style>
 <script src="theme.js"></script>
+<script src="safe-dom.js"></script>
 </head>
 <body class="bg-surface text-on-surface selection:bg-primary-fixed selection:text-on-primary-fixed min-h-screen">
 
@@ -689,17 +656,18 @@ function renderPortfolio(balancesByChain) {
   // Chain breakdown
   const chainEl = document.getElementById('chain-breakdown');
   if (chainCount === 0) {
-    chainEl.innerHTML = '<p class="text-sm text-on-surface-variant px-2 py-3">No balances found</p>';
+    Safe.setHTML(chainEl, Safe.html`<p class="text-sm text-on-surface-variant px-2 py-3">No balances found</p>`);
   } else {
-    chainEl.innerHTML = Object.entries(chainTotals)
+    Safe.setHTML(chainEl, Object.entries(chainTotals)
       .sort((a,b) => b[1] - a[1])
       .map(([cid, val]) => {
         const c = CHAINS[cid] || { name:'Chain '+cid };
         const icon = chainIcon(Number(cid));
         const displayVal = balancesHidden ? '••••' : usd(val);
-        return `<div class="flex-shrink-0 min-w-[160px]" data-chain="${cid}">
-          <button onclick="toggleChainDrop(${cid})" class="w-full px-4 py-3 bg-surface-container-lowest rounded-xl flex items-center gap-3 hover:bg-surface-container transition-colors">
-            <img src="${icon}" alt="${c.name}" class="w-8 h-8 rounded-full" onerror="this.style.display='none'"/>
+        const cidNum = Number(cid);
+        return Safe.html`<div class="flex-shrink-0 min-w-[160px]" data-chain="${cid}">
+          <button data-chain-drop="${cidNum}" class="w-full px-4 py-3 bg-surface-container-lowest rounded-xl flex items-center gap-3 hover:bg-surface-container transition-colors">
+            <img src="${Safe.url(icon)}" alt="${c.name}" class="w-8 h-8 rounded-full" onerror="this.style.display='none'"/>
             <div class="flex-1">
               <p class="text-xs text-on-surface-variant">${c.name}</p>
               <p class="text-sm font-bold">${displayVal}</p>
@@ -707,33 +675,35 @@ function renderPortfolio(balancesByChain) {
             <span class="material-symbols-outlined text-on-surface-variant/40 text-sm">expand_more</span>
           </button>
         </div>`;
-      }).join('');
+      }));
+    chainEl.querySelectorAll('button[data-chain-drop]').forEach(btn => {
+      btn.addEventListener('click', () => toggleChainDrop(Number(btn.dataset.chainDrop)));
+    });
   }
 
   // Assets grid
   const grid = document.getElementById('assets-grid');
   const sorted = Object.entries(agg).sort((a,b) => b[1].usdValue - a[1].usdValue);
   if (sorted.length === 0) {
-    grid.innerHTML = '<p class="text-sm text-on-surface-variant col-span-2">No tokens found in this wallet</p>';
+    Safe.setHTML(grid, Safe.html`<p class="text-sm text-on-surface-variant col-span-2">No tokens found in this wallet</p>`);
     return;
   }
   const cards = sorted.map(([symbol, info]) => {
     const meta = TOKEN_META[symbol] || { label:symbol };
-    const price = prices[symbol]?.usd || 0;
     const change = prices[symbol]?.change || 0;
     const isStable = meta.stable;
     const changeBadge = isStable
-      ? `<span class="text-xs text-on-surface-variant font-bold px-2 py-1 bg-surface-container rounded-full">Stable</span>`
-      : `<span class="text-xs font-bold px-2 py-1 rounded-full ${change >= 0 ? 'text-primary bg-primary-container' : 'text-error bg-error-container/20'}">${pct(change)}</span>`;
+      ? Safe.html`<span class="text-xs text-on-surface-variant font-bold px-2 py-1 bg-surface-container rounded-full">Stable</span>`
+      : Safe.html`<span class="text-xs font-bold px-2 py-1 rounded-full ${change >= 0 ? 'text-primary bg-primary-container' : 'text-error bg-error-container/20'}">${pct(change)}</span>`;
     const chainLabel = info.chains.length > 1
       ? info.chains.length + ' chains'
       : (CHAINS[info.chains[0]]?.name || 'Chain ' + info.chains[0]);
     const icon = tokenIcon(symbol);
     const displayUsd = balancesHidden ? '••••' : usd(info.usdValue);
-    return `<div class="asset-card bg-surface-container-lowest rounded-xl cursor-pointer hover:shadow-md transition-shadow" data-symbol="${symbol}" onclick="toggleAssetDrop('${symbol}')">
+    return Safe.html`<div class="asset-card bg-surface-container-lowest rounded-xl cursor-pointer hover:shadow-md transition-shadow" data-symbol="${symbol}">
       <div class="p-4">
         <div class="flex items-center gap-3 mb-3">
-          <img src="${icon}" alt="${symbol}" class="w-10 h-10 rounded-full bg-surface-container flex-shrink-0" onerror="this.outerHTML='<div class=\\'w-10 h-10 rounded-full bg-surface-container flex items-center justify-center flex-shrink-0\\'><span class=\\'text-sm font-black text-on-surface-variant\\'>${symbol[0]}</span></div>'"/>
+          <img src="${Safe.url(icon)}" alt="${symbol}" class="w-10 h-10 rounded-full bg-surface-container flex-shrink-0" onerror="this.style.display='none'"/>
           <div class="flex-1 min-w-0">
             <p class="text-sm font-black text-on-background">${symbol}</p>
             <p class="text-xs text-on-surface-variant">${chainLabel}</p>
@@ -754,10 +724,15 @@ function renderPortfolio(balancesByChain) {
   const visible = cards.slice(0, assetsExpanded ? cards.length : ASSET_LIMIT);
   const remaining = cards.length - ASSET_LIMIT;
 
-  grid.innerHTML = visible.join('')
-    + (remaining > 0 && !assetsExpanded
-      ? `<button onclick="expandAssets()" class="col-span-1 sm:col-span-2 lg:col-span-3 py-3 bg-surface-container-low text-on-surface-variant rounded-xl font-bold text-sm hover:bg-surface-container-high transition-colors">Show ${remaining} more asset${remaining > 1 ? 's' : ''}</button>`
-      : '');
+  const moreBtn = remaining > 0 && !assetsExpanded
+    ? Safe.html`<button id="expand-assets-btn" class="col-span-1 sm:col-span-2 lg:col-span-3 py-3 bg-surface-container-low text-on-surface-variant rounded-xl font-bold text-sm hover:bg-surface-container-high transition-colors">Show ${remaining} more asset${remaining > 1 ? 's' : ''}</button>`
+    : Safe.html``;
+  Safe.setHTML(grid, Safe.html`${visible}${moreBtn}`);
+  grid.querySelectorAll('.asset-card[data-symbol]').forEach(card => {
+    card.addEventListener('click', () => toggleAssetDrop(card.dataset.symbol));
+  });
+  const eb = document.getElementById('expand-assets-btn');
+  if (eb) eb.addEventListener('click', expandAssets);
 }
 
 let assetsExpanded = false;
@@ -788,22 +763,22 @@ function toggleAssetDrop(symbol) {
   if (!card) return;
   const rect = card.getBoundingClientRect();
 
-  let rows = '';
+  const rowItems = [];
   for (const [chainId, tokens] of Object.entries(portfolioData)) {
     const bal = tokens[symbol];
     if (!bal || bal <= 0) continue;
     const c = CHAINS[chainId] || { name: 'Chain ' + chainId };
     const p = prices[symbol]?.usd || 0;
-    rows += `<div class="flex items-center justify-between px-4 py-2.5">
+    rowItems.push(Safe.html`<div class="flex items-center justify-between px-4 py-2.5">
       <div class="flex items-center gap-2.5">
-        <img src="${chainIcon(Number(chainId))}" class="w-5 h-5 rounded-full"/>
+        <img src="${Safe.url(chainIcon(Number(chainId)))}" class="w-5 h-5 rounded-full"/>
         <span class="text-sm text-on-surface">${c.name}</span>
       </div>
       <div class="text-right">
         <p class="text-sm font-bold text-on-background">${fmtNum(bal)} ${symbol}</p>
         <p class="text-xs text-on-surface-variant">${usd(bal * p)}</p>
       </div>
-    </div>`;
+    </div>`);
   }
 
   const overlay = document.createElement('div');
@@ -811,7 +786,7 @@ function toggleAssetDrop(symbol) {
   overlay.dataset.symbol = symbol;
   overlay.className = 'fixed z-50 bg-white rounded-lg shadow-2xl border border-outline-variant/10 overflow-hidden';
   overlay.style.cssText = `left:${rect.left}px;width:${rect.width}px;top:${rect.bottom + 4}px;max-height:300px;overflow-y:auto;`;
-  overlay.innerHTML = rows || '<p class="px-4 py-3 text-sm text-on-surface-variant">No balances</p>';
+  Safe.setHTML(overlay, rowItems.length ? rowItems : Safe.html`<p class="px-4 py-3 text-sm text-on-surface-variant">No balances</p>`);
   document.body.appendChild(overlay);
 
   setTimeout(() => document.addEventListener('click', function close(e) {
@@ -829,28 +804,28 @@ function toggleChainDrop(chainId) {
   if (!card) return;
   const rect = card.getBoundingClientRect();
   const tokens = portfolioData[chainId] || {};
-  let rows = '';
+  const rowItems = [];
   for (const [symbol, bal] of Object.entries(tokens)) {
     if (bal <= 0) continue;
     const p = prices[symbol]?.usd || 0;
     const icon = tokenIcon(symbol);
-    rows += `<div class="flex items-center justify-between px-4 py-2.5">
+    rowItems.push(Safe.html`<div class="flex items-center justify-between px-4 py-2.5">
       <div class="flex items-center gap-2">
-        <img src="${icon}" class="w-5 h-5 rounded-full"/>
+        <img src="${Safe.url(icon)}" class="w-5 h-5 rounded-full"/>
         <span class="text-sm text-on-surface">${symbol}</span>
       </div>
       <div class="text-right">
         <p class="text-sm font-bold text-on-background">${fmtNum(bal)}</p>
         <p class="text-xs text-on-surface-variant">${usd(bal * p)}</p>
       </div>
-    </div>`;
+    </div>`);
   }
   const overlay = document.createElement('div');
   overlay.id = 'chain-overlay';
   overlay.dataset.chainId = chainId;
   overlay.className = 'fixed z-50 bg-white rounded-lg shadow-2xl border border-outline-variant/10 overflow-hidden';
   overlay.style.cssText = `left:${rect.left}px;width:${Math.max(rect.width, 220)}px;top:${rect.bottom + 4}px;max-height:250px;overflow-y:auto;`;
-  overlay.innerHTML = rows || '<p class="px-4 py-3 text-sm text-on-surface-variant">Empty</p>';
+  Safe.setHTML(overlay, rowItems.length ? rowItems : Safe.html`<p class="px-4 py-3 text-sm text-on-surface-variant">Empty</p>`);
   document.body.appendChild(overlay);
   setTimeout(() => document.addEventListener('click', function close(e) {
     if (!overlay.contains(e.target) && !card.contains(e.target)) { overlay.remove(); document.removeEventListener('click', close); }
@@ -912,13 +887,10 @@ function renderActivityList(allTx) {
   const feed = document.getElementById('activity-feed');
   const show = allTx.slice(0, 3);
   const EXP = {1:'https://etherscan.io/tx/',42161:'https://arbiscan.io/tx/',8453:'https://basescan.org/tx/',10:'https://optimistic.etherscan.io/tx/',137:'https://polygonscan.com/tx/',324:'https://explorer.zksync.io/tx/',59144:'https://lineascan.build/tx/'};
-  feed.innerHTML = '<div class="space-y-4">' + show.map(tx => {
+  const rows = show.map(tx => {
     const ago = timeAgo(tx.timestamp);
     const url = tx.depositTxHash && tx.fromChainId ? (EXP[tx.fromChainId] || 'https://etherscan.io/tx/') + tx.depositTxHash : null;
-    const tag = url ? 'a' : 'div';
-    const attrs = url ? `href="${url}" target="_blank" rel="noopener"` : '';
-    return `<${tag} ${attrs} class="flex items-center gap-4 px-2 ${url ? 'hover:bg-surface-container-low rounded-lg cursor-pointer transition-colors' : ''}">
-      <div class="w-10 h-10 rounded-full bg-primary-container flex items-center justify-center flex-shrink-0">
+    const body = Safe.html`<div class="w-10 h-10 rounded-full bg-primary-container flex items-center justify-center flex-shrink-0">
         <span class="material-symbols-outlined text-primary text-lg">layers</span>
       </div>
       <div class="flex-1 border-b border-outline-variant/10 pb-3">
@@ -930,11 +902,15 @@ function renderActivityList(allTx) {
           <p class="text-xs text-on-surface-variant">${tx.fromChain} → ${tx.toChain}</p>
           <p class="text-xs text-primary font-bold">${ago}</p>
         </div>
-      </div>
-      ${url ? '<span class="material-symbols-outlined text-on-surface-variant text-base flex-shrink-0">open_in_new</span>' : ''}
-    </${tag}>`;
-  }).join('') + '</div>'
-  + (allTx.length > 3 ? `<a href="transactions.html" class="block mt-4 text-center text-sm font-bold text-primary hover:underline">View all ${allTx.length} transactions →</a>` : '');
+      </div>`;
+    return url
+      ? Safe.html`<a href="${Safe.url(url)}" target="_blank" rel="noopener" class="flex items-center gap-4 px-2 hover:bg-surface-container-low rounded-lg cursor-pointer transition-colors">${body}<span class="material-symbols-outlined text-on-surface-variant text-base flex-shrink-0">open_in_new</span></a>`
+      : Safe.html`<div class="flex items-center gap-4 px-2">${body}</div>`;
+  });
+  const viewAll = allTx.length > 3
+    ? Safe.html`<a href="transactions.html" class="block mt-4 text-center text-sm font-bold text-primary hover:underline">View all ${allTx.length} transactions →</a>`
+    : Safe.html``;
+  Safe.setHTML(feed, Safe.html`<div class="space-y-4">${rows}</div>${viewAll}`);
 }
 
 function timeAgo(ts) {
@@ -961,6 +937,7 @@ function timeAgo(ts) {
       walletAddress = accs[0];
       onConnected();
     });
+    window.ethereum.on('chainChanged', () => { if (walletAddress) onConnected(); });
   } else {
     renderActivity();
   }

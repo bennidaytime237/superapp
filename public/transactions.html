@@ -8,50 +8,17 @@
 </script>
 <title>Transactions - Sage</title>
 <link rel="icon" type="image/svg+xml" href="favicon.svg"/>
-<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link rel="stylesheet" href="tailwind.output.css"/>
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&display=swap" rel="stylesheet"/>
 <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
 <link rel="stylesheet" href="theme.css"/>
-<script>
-tailwind.config = {
-  darkMode: "class",
-  theme: {
-    extend: {
-      colors: {
-        "surface-bright":"var(--surface-bright)","surface":"var(--surface)","background":"var(--background)",
-        "surface-container-lowest":"var(--surface-container-lowest)","surface-container-low":"var(--surface-container-low)",
-        "surface-container":"var(--surface-container)","surface-container-high":"var(--surface-container-high)",
-        "surface-container-highest":"var(--surface-container-highest)","surface-dim":"var(--surface-dim)",
-        "surface-variant":"var(--surface-variant)","surface-tint":"var(--surface-tint)",
-        "primary":"var(--primary)","primary-dim":"var(--primary-dim)","primary-fixed":"var(--primary-fixed)",
-        "primary-fixed-dim":"var(--primary-fixed-dim)","primary-container":"var(--primary-container)",
-        "on-primary":"var(--on-primary)","on-primary-container":"var(--on-primary-container)",
-        "on-primary-fixed":"var(--on-primary-fixed)","on-primary-fixed-variant":"var(--on-primary-fixed-variant)",
-        "on-surface":"var(--on-surface)","on-surface-variant":"var(--on-surface-variant)",
-        "on-background":"var(--on-background)",
-        "outline":"var(--outline)","outline-variant":"var(--outline-variant)",
-        "error":"var(--error)","error-container":"var(--error-container)",
-        "on-error":"var(--on-error)","on-error-container":"var(--on-error-container)",
-        "inverse-surface":"var(--inverse-surface)","inverse-on-surface":"var(--inverse-on-surface)",
-        "inverse-primary":"var(--inverse-primary)",
-        "secondary":"var(--secondary)","secondary-container":"var(--secondary-container)",
-        "on-secondary":"var(--on-secondary)","on-secondary-container":"var(--on-secondary-container)",
-        "tertiary":"var(--tertiary)","tertiary-container":"var(--tertiary-container)",
-        "on-tertiary":"var(--on-tertiary)","on-tertiary-container":"var(--on-tertiary-container)",
-        "sage-peach":"var(--sage-peach)","sage-peach-light":"var(--sage-peach-light)",
-      },
-      fontFamily: { "headline":["Outfit"],"body":["Outfit"],"label":["Outfit"] },
-      borderRadius: { "DEFAULT":"1rem","lg":"2rem","xl":"3rem","full":"9999px" },
-    },
-  },
-}
-</script>
 <style>
   .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
   body { font-family: 'Outfit', sans-serif; }
   b, strong, .font-bold, .font-extrabold, .font-black, .font-semibold { letter-spacing: 0.01em; }
 </style>
 <script src="theme.js"></script>
+<script src="safe-dom.js"></script>
 </head>
 <body class="bg-surface text-on-surface min-h-screen">
 
@@ -216,13 +183,17 @@ function populateFilters() {
 
 function renderDropdown(key, options) {
   const menu = document.getElementById(`dd-${key}-menu`);
-  menu.innerHTML = options.map(o => {
+  // Use addEventListener on labels so option values can't break out of attribute/JS contexts.
+  Safe.setHTML(menu, options.map((o, i) => {
     const checked = selected[key].has(o);
-    return `<label class="flex items-center gap-2 px-3 py-2 hover:bg-surface-container-low cursor-pointer transition-colors text-sm">
-      <input type="checkbox" ${checked ? 'checked' : ''} onchange="toggleFilter('${key}','${o}')" class="rounded border-outline-variant/30 text-primary focus:ring-primary/30"/>
+    return Safe.html`<label data-key="${key}" data-value="${o}" data-idx="${i}" class="flex items-center gap-2 px-3 py-2 hover:bg-surface-container-low cursor-pointer transition-colors text-sm">
+      <input type="checkbox" ${Safe.raw(checked ? 'checked' : '')} class="rounded border-outline-variant/30 text-primary focus:ring-primary/30"/>
       <span class="text-on-surface">${o}</span>
     </label>`;
-  }).join('');
+  }));
+  menu.querySelectorAll('label[data-key]').forEach(lbl => {
+    lbl.addEventListener('change', () => toggleFilter(lbl.dataset.key, lbl.dataset.value));
+  });
   updateLabel(key);
 }
 
@@ -304,6 +275,7 @@ async function initWallet() {
       if (walletAddress) await loadTransactions();
       else { txData = []; showEmpty('Connect wallet to view transactions'); }
     });
+    window.ethereum.on('chainChanged', async () => { if (walletAddress) await loadTransactions(); });
   } else {
     showEmpty('Install MetaMask to view transactions');
   }
@@ -394,41 +366,44 @@ function render(resetPage) {
     const depositUrl = tx.depositTxHash && tx.fromChainId ? (EXP[tx.fromChainId] || 'https://etherscan.io/tx/') + tx.depositTxHash : null;
     const fillUrl = tx.fillTxHash && tx.toChainId ? (EXP[tx.toChainId] || 'https://etherscan.io/tx/') + tx.fillTxHash : null;
 
-    // Status + fill time
-    let statusHtml = '';
+    let statusBadge = Safe.html``;
     if (tx.status === 'filled') {
       const dur = tx.fillDuration;
-      statusHtml = `<span class="text-[10px] font-bold text-primary bg-primary-container px-2 py-0.5 rounded-full">Filled${dur ? ' · ' + (dur < 60 ? dur + 's' : Math.floor(dur/60) + 'm ' + (dur%60) + 's') : ''}</span>`;
+      const durLabel = dur ? ' · ' + (dur < 60 ? dur + 's' : Math.floor(dur/60) + 'm ' + (dur%60) + 's') : '';
+      statusBadge = Safe.html`<span class="text-[10px] font-bold text-primary bg-primary-container px-2 py-0.5 rounded-full">Filled${durLabel}</span>`;
     } else if (tx.status === 'pending') {
-      statusHtml = '<span class="text-[10px] font-bold text-amber-600 bg-amber-100 px-2 py-0.5 rounded-full">Pending</span>';
+      statusBadge = Safe.html`<span class="text-[10px] font-bold text-amber-600 bg-amber-100 px-2 py-0.5 rounded-full">Pending</span>`;
     }
 
-    // Sage badge
-    const sageBadge = tx.isSage ? '<span class="text-[10px] font-bold text-on-primary bg-primary px-2 py-0.5 rounded-full">Sage</span>' : '';
+    const sageBadge = tx.isSage
+      ? Safe.html`<span class="text-[10px] font-bold text-on-primary bg-primary px-2 py-0.5 rounded-full">Sage</span>`
+      : Safe.html``;
 
-    // Recipient display
     const recipientShort = shortAddr(tx.recipient);
     const isHL = tx.toChain === 'Hyperliquid';
     const recipientLabel = isHL ? 'Hyperliquid Bridge2' : recipientShort;
 
-    // Net fee from API
-    const feeHtml = tx.totalFeeUsd ? `$${parseFloat(tx.totalFeeUsd).toFixed(2)}` : '--';
+    const feeStr = tx.totalFeeUsd ? '$' + parseFloat(tx.totalFeeUsd).toFixed(2) : '--';
 
-    return `<div class="bg-surface-container-lowest rounded-xl border border-outline-variant/10 mb-3 overflow-hidden">
-      <!-- Header row: date + badges -->
+    const depositLink = depositUrl
+      ? Safe.html`<a href="${Safe.url(depositUrl)}" target="_blank" rel="noopener" class="text-xs text-primary font-bold hover:underline inline-flex items-center gap-0.5">Deposit <span class="material-symbols-outlined text-[10px]">open_in_new</span></a>`
+      : Safe.html`<span class="text-xs text-on-surface-variant">--</span>`;
+    const fillLink = fillUrl
+      ? Safe.html`<a href="${Safe.url(fillUrl)}" target="_blank" rel="noopener" class="text-xs text-primary font-bold hover:underline inline-flex items-center gap-0.5">Fill <span class="material-symbols-outlined text-[10px]">open_in_new</span></a>`
+      : Safe.html``;
+
+    return Safe.html`<div class="bg-surface-container-lowest rounded-xl border border-outline-variant/10 mb-3 overflow-hidden">
       <div class="flex items-center justify-between px-5 pt-4 pb-2">
         <div class="flex items-center gap-2">
           <p class="text-xs text-on-surface-variant">${dateStr} · ${timeStr}</p>
           ${sageBadge}
         </div>
         <div class="flex items-center gap-2">
-          ${statusHtml}
+          ${statusBadge}
         </div>
       </div>
 
-      <!-- Main content -->
       <div class="px-5 pb-4">
-        <!-- Sent → Received -->
         <div class="flex items-center gap-3 mb-3">
           <div class="flex-1">
             <p class="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider mb-0.5">Sent</p>
@@ -443,29 +418,21 @@ function render(resetPage) {
           </div>
         </div>
 
-        <!-- Details grid -->
         <div class="grid grid-cols-3 gap-3 pt-3 border-t border-outline-variant/10">
-          <!-- Recipient -->
           <div>
             <p class="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider mb-0.5">Recipient</p>
             <p class="text-xs font-mono text-on-surface truncate" title="${tx.recipient || ''}">${recipientLabel}</p>
           </div>
-          <!-- Transactions -->
           <div>
             <p class="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider mb-0.5">Transactions</p>
             <div class="flex flex-col gap-0.5">
-              ${depositUrl
-                ? `<a href="${depositUrl}" target="_blank" rel="noopener" class="text-xs text-primary font-bold hover:underline inline-flex items-center gap-0.5">Deposit <span class="material-symbols-outlined text-[10px]">open_in_new</span></a>`
-                : '<span class="text-xs text-on-surface-variant">--</span>'}
-              ${fillUrl
-                ? `<a href="${fillUrl}" target="_blank" rel="noopener" class="text-xs text-primary font-bold hover:underline inline-flex items-center gap-0.5">Fill <span class="material-symbols-outlined text-[10px]">open_in_new</span></a>`
-                : ''}
+              ${depositLink}
+              ${fillLink}
             </div>
           </div>
-          <!-- Net Fee -->
           <div>
             <p class="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider mb-0.5">Net Fee</p>
-            <p class="text-xs font-bold text-on-surface">${feeHtml}</p>
+            <p class="text-xs font-bold text-on-surface">${feeStr}</p>
           </div>
         </div>
       </div>
@@ -475,10 +442,12 @@ function render(resetPage) {
   const visible = cards.slice(0, visibleCount);
   const remaining = cards.length - visibleCount;
 
-  list.innerHTML = visible.join('')
-    + (remaining > 0
-      ? `<button onclick="showMore()" class="w-full py-3 mt-2 bg-surface-container-low text-on-surface-variant rounded-xl font-bold text-sm hover:bg-surface-container-high transition-colors">Show ${Math.min(remaining, PAGE_SIZE)} more of ${remaining} remaining</button>`
-      : '');
+  const moreBtn = remaining > 0
+    ? Safe.html`<button id="show-more-btn" class="w-full py-3 mt-2 bg-surface-container-low text-on-surface-variant rounded-xl font-bold text-sm hover:bg-surface-container-high transition-colors">Show ${Math.min(remaining, PAGE_SIZE)} more of ${remaining} remaining</button>`
+    : Safe.html``;
+  Safe.setHTML(list, Safe.html`${visible}${moreBtn}`);
+  const smb = document.getElementById('show-more-btn');
+  if (smb) smb.addEventListener('click', showMore);
 }
 
 initWallet();

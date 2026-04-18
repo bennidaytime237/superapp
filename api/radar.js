@@ -1,4 +1,47 @@
+import { z } from 'zod';
 import { applyCors } from './_cors.js';
+
+const AcrossChain = z.object({
+  chainId:     z.number(),
+  name:        z.string().optional(),
+  logoURI:     z.string().nullish(),
+  explorerUrl: z.string().nullish(),
+}).passthrough();
+
+const AcrossToken = z.object({
+  symbol:   z.string(),
+  chainId:  z.number().optional(),
+  address:  z.string().optional(),
+  decimals: z.number().optional(),
+  logoURI:  z.string().nullish(),
+}).passthrough();
+
+const AcrossDeposit = z.object({
+  depositId:             z.union([z.string(), z.number()]).nullish(),
+  depositTxHash:         z.string().nullish(),
+  fillTxHash:            z.string().nullish(),
+  status:                z.string().nullish(),
+  originChainId:         z.number().nullish(),
+  destinationChainId:    z.number().nullish(),
+  inputToken:            z.string().nullish(),
+  outputToken:           z.string().nullish(),
+  inputAmount:           z.string().nullish(),
+  outputAmount:          z.string().nullish(),
+  depositor:             z.string().nullish(),
+  recipient:             z.string().nullish(),
+  depositBlockTimestamp: z.union([z.string(), z.number()]).nullish(),
+  fillBlockTimestamp:    z.union([z.string(), z.number()]).nullish(),
+}).passthrough();
+
+function parseArr(schema, data, label) {
+  if (!Array.isArray(data)) return [];
+  return data.reduce((acc, item) => {
+    const r = schema.safeParse(item);
+    if (r.success) acc.push(r.data);
+    else console.warn(`[radar] Malformed ${label}:`, r.error.issues?.[0]?.message);
+    return acc;
+  }, []);
+}
 
 const BASE_URL = 'https://app.across.to/api';
 
@@ -31,8 +74,12 @@ export default async function handler(req, res) {
       depositsRes.json(),
     ]);
 
-    cache = { chains, tokens, deposits, ts: now };
-    return res.json({ chains, tokens, deposits });
+    const rawDeposits = Array.isArray(deposits) ? deposits : (deposits?.deposits || []);
+    const validChains   = parseArr(AcrossChain,   chains,      'chain');
+    const validTokens   = parseArr(AcrossToken,   tokens,      'token');
+    const validDeposits = parseArr(AcrossDeposit, rawDeposits, 'deposit');
+    cache = { chains: validChains, tokens: validTokens, deposits: validDeposits, ts: now };
+    return res.json({ chains: validChains, tokens: validTokens, deposits: validDeposits });
   } catch (e) {
     console.error('Radar API error:', e.message);
     // Return stale cache if available
