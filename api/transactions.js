@@ -1,4 +1,32 @@
+import { z } from 'zod';
 import { applyCors } from './_cors.js';
+
+const DepositRaw = z.object({
+  depositTxHash:         z.string().nullish(),
+  fillTx:                z.string().nullish(),
+  fillTxHash:            z.string().nullish(),
+  inputToken:            z.string().nullish(),
+  sourceToken:           z.string().nullish(),
+  outputToken:           z.string().nullish(),
+  destinationToken:      z.string().nullish(),
+  originChainId:         z.number().nullish(),
+  sourceChainId:         z.number().nullish(),
+  destinationChainId:    z.number().nullish(),
+  destChainId:           z.number().nullish(),
+  depositor:             z.string().nullish(),
+  recipient:             z.string().nullish(),
+  inputAmount:           z.string().nullish(),
+  amount:                z.string().nullish(),
+  outputAmount:          z.string().nullish(),
+  depositBlockTimestamp: z.union([z.string(), z.number()]).nullish(),
+  quoteTimestamp:        z.union([z.string(), z.number()]).nullish(),
+  depositDate:           z.union([z.string(), z.number()]).nullish(),
+  fillBlockTimestamp:    z.union([z.string(), z.number()]).nullish(),
+  message:               z.string().nullish(),
+  status:                z.string().nullish(),
+  bridgeFeeUsd:          z.union([z.string(), z.number()]).nullish(),
+  swapFeeUsd:            z.union([z.string(), z.number()]).nullish(),
+}).passthrough();
 
 const TOKEN_MAP = {
   '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2': { symbol: 'ETH', decimals: 18 },
@@ -98,7 +126,13 @@ export default async function handler(req, res) {
     return res.status(502).json({ error: 'Could not reach Across API', deposits: [] });
   }
 
-  const rawDeposits = Array.isArray(data) ? data : (data.deposits || data.results || []);
+  const rawItems = Array.isArray(data) ? data : (data.deposits || data.results || []);
+  const rawDeposits = Array.isArray(rawItems) ? rawItems.reduce((acc, item) => {
+    const r = DepositRaw.safeParse(item);
+    if (r.success) acc.push(r.data);
+    else console.warn('[transactions] Skipping malformed deposit:', r.error.issues?.[0]?.message);
+    return acc;
+  }, []) : [];
 
   function toMs(v) {
     if (!v) return 0;

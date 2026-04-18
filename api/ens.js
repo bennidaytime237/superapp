@@ -1,5 +1,18 @@
 // ENS forward/reverse resolution via free public services with fallback.
+import { z } from 'zod';
 import { applyCors } from './_cors.js';
+
+const ENSIdeasShape = z.object({
+  address:     z.string().nullish(),
+  name:        z.string().nullish(),
+  displayName: z.string().nullish(),
+}).passthrough();
+
+const ENSDataShape = z.object({
+  address: z.string().nullish(),
+  ens:     z.string().nullish(),
+  name:    z.string().nullish(),
+}).passthrough();
 
 // Accept only syntactically valid ENS names: labels of [a-z0-9-] joined by dots,
 // ending in a known TLD. Keeps untrusted query input out of upstream URLs.
@@ -11,14 +24,14 @@ async function resolveENS(name) {
     async () => {
       const r = await fetch(`https://api.ensideas.com/ens/resolve/${encodeURIComponent(name)}`);
       if (!r.ok) return null;
-      const d = await r.json();
-      return d.address || null;
+      const parsed = ENSIdeasShape.safeParse(await r.json());
+      return parsed.success ? (parsed.data.address || null) : null;
     },
     async () => {
       const r = await fetch(`https://ensdata.net/${encodeURIComponent(name)}`);
       if (!r.ok) return null;
-      const d = await r.json();
-      return d.address || null;
+      const parsed = ENSDataShape.safeParse(await r.json());
+      return parsed.success ? (parsed.data.address || null) : null;
     },
   ];
 
@@ -36,14 +49,14 @@ async function reverseENS(address) {
     async () => {
       const r = await fetch(`https://api.ensideas.com/ens/resolve/${address}`);
       if (!r.ok) return null;
-      const d = await r.json();
-      return d.name || d.displayName || null;
+      const parsed = ENSIdeasShape.safeParse(await r.json());
+      return parsed.success ? (parsed.data.name || parsed.data.displayName || null) : null;
     },
     async () => {
       const r = await fetch(`https://ensdata.net/${address}`);
       if (!r.ok) return null;
-      const d = await r.json();
-      return d.ens || d.name || null;
+      const parsed = ENSDataShape.safeParse(await r.json());
+      return parsed.success ? (parsed.data.ens || parsed.data.name || null) : null;
     },
   ];
 

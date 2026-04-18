@@ -8,50 +8,17 @@
 </script>
 <title>Sweep - Sage</title>
 <link rel="icon" type="image/svg+xml" href="favicon.svg"/>
-<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link rel="stylesheet" href="tailwind.output.css"/>
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&display=swap" rel="stylesheet"/>
 <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
 <link rel="stylesheet" href="theme.css"/>
-<script>
-tailwind.config = {
-  darkMode: "class",
-  theme: {
-    extend: {
-      colors: {
-        "surface-bright":"var(--surface-bright)","surface":"var(--surface)","background":"var(--background)",
-        "surface-container-lowest":"var(--surface-container-lowest)","surface-container-low":"var(--surface-container-low)",
-        "surface-container":"var(--surface-container)","surface-container-high":"var(--surface-container-high)",
-        "surface-container-highest":"var(--surface-container-highest)","surface-dim":"var(--surface-dim)",
-        "surface-variant":"var(--surface-variant)","surface-tint":"var(--surface-tint)",
-        "primary":"var(--primary)","primary-dim":"var(--primary-dim)","primary-fixed":"var(--primary-fixed)",
-        "primary-fixed-dim":"var(--primary-fixed-dim)","primary-container":"var(--primary-container)",
-        "on-primary":"var(--on-primary)","on-primary-container":"var(--on-primary-container)",
-        "on-primary-fixed":"var(--on-primary-fixed)","on-primary-fixed-variant":"var(--on-primary-fixed-variant)",
-        "on-surface":"var(--on-surface)","on-surface-variant":"var(--on-surface-variant)",
-        "on-background":"var(--on-background)",
-        "outline":"var(--outline)","outline-variant":"var(--outline-variant)",
-        "error":"var(--error)","error-container":"var(--error-container)",
-        "on-error":"var(--on-error)","on-error-container":"var(--on-error-container)",
-        "inverse-surface":"var(--inverse-surface)","inverse-on-surface":"var(--inverse-on-surface)",
-        "inverse-primary":"var(--inverse-primary)",
-        "secondary":"var(--secondary)","secondary-container":"var(--secondary-container)",
-        "on-secondary":"var(--on-secondary)","on-secondary-container":"var(--on-secondary-container)",
-        "tertiary":"var(--tertiary)","tertiary-container":"var(--tertiary-container)",
-        "on-tertiary":"var(--on-tertiary)","on-tertiary-container":"var(--on-tertiary-container)",
-        "sage-peach":"var(--sage-peach)","sage-peach-light":"var(--sage-peach-light)",
-      },
-      fontFamily: { "headline":["Outfit"],"body":["Outfit"],"label":["Outfit"] },
-      borderRadius: { "DEFAULT":"1rem","lg":"2rem","xl":"3rem","full":"9999px" },
-    },
-  },
-}
-</script>
 <style>
   body { font-family: 'Outfit', sans-serif; }
   b, strong, .font-bold, .font-extrabold, .font-black, .font-semibold { letter-spacing: 0.01em; }
   .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
 </style>
 <script src="theme.js"></script>
+<script src="safe-dom.js"></script>
 </head>
 <body class="bg-background text-on-surface antialiased min-h-screen flex flex-col">
 
@@ -244,27 +211,32 @@ function renderAssets(){
     list.innerHTML='<div class="py-8 text-center text-sm text-on-surface-variant">'+(walletAddress?'No bridgeable assets found':'Connect wallet to load your assets')+'</div>';
     return;
   }
-  list.innerHTML=sweepItems.map((item,idx)=>{
+  const items=sweepItems.map((item,idx)=>{
     const icon=TOKEN_ICONS[item.symbol]||'';
     const cicon=chainIcon(item.chainSlug);
     const stateClass=item.done?'opacity-60':item.failed?'opacity-60':'';
     const checkClass=item.selected&&!item.done?'bg-primary border-primary':'bg-white border-outline-variant/30';
-    return `<button onclick="${item.done||item.failed?'':(`toggleItem(${idx})`)}" class="w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl mb-2 bg-surface-container-lowest border border-outline-variant/10 text-left transition-colors hover:border-primary/20 ${stateClass}">
+    const statusIcon=item.done
+      ?Safe.html`<span class="material-symbols-outlined text-primary text-lg">check_circle</span>`
+      :item.failed
+        ?Safe.html`<span class="material-symbols-outlined text-error text-lg">error</span>`
+        :Safe.html`<div class="w-5 h-5 rounded-md border-2 flex items-center justify-center flex-shrink-0 ${checkClass}">${item.selected?Safe.html`<span class="material-symbols-outlined text-on-primary text-sm">check</span>`:Safe.html``}</div>`;
+    return Safe.html`<button data-idx="${idx}" data-active="${item.done||item.failed?'0':'1'}" class="sweep-item w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl mb-2 bg-surface-container-lowest border border-outline-variant/10 text-left transition-colors hover:border-primary/20 ${stateClass}">
       <div class="relative flex-shrink-0">
-        <img src="${icon}" class="w-10 h-10 rounded-full bg-surface-container" onerror="this.style.display='none'"/>
-        <img src="${cicon}" class="w-5 h-5 rounded-full absolute -bottom-0.5 -right-0.5 border-2 border-white"/>
+        <img src="${Safe.url(icon)}" class="w-10 h-10 rounded-full bg-surface-container" onerror="this.style.display='none'"/>
+        <img src="${Safe.url(cicon)}" class="w-5 h-5 rounded-full absolute -bottom-0.5 -right-0.5 border-2 border-white"/>
       </div>
       <div class="flex-1 min-w-0">
         <p class="font-bold text-sm text-on-background">${fmt(item.amount)} ${item.symbol}</p>
         <p class="text-xs text-on-surface-variant">${item.chainName} · ≈$${fmt(item.usdValue)}</p>
       </div>
-      ${item.done?'<span class="material-symbols-outlined text-primary text-lg">check_circle</span>':
-        item.failed?'<span class="material-symbols-outlined text-error text-lg">error</span>':
-        `<div class="w-5 h-5 rounded-md border-2 flex items-center justify-center flex-shrink-0 ${checkClass}">
-          ${item.selected?'<span class="material-symbols-outlined text-on-primary text-sm">check</span>':''}
-        </div>`}
+      ${statusIcon}
     </button>`;
-  }).join('');
+  });
+  Safe.setHTML(list,items);
+  list.querySelectorAll('button.sweep-item[data-active="1"]').forEach(btn=>{
+    btn.addEventListener('click',()=>toggleItem(Number(btn.dataset.idx)));
+  });
 }
 
 function updateSummary(){

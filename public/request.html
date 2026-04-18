@@ -8,44 +8,10 @@
 </script>
 <title>Request Payment - Sage</title>
 <link rel="icon" type="image/svg+xml" href="favicon.svg"/>
-<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link rel="stylesheet" href="tailwind.output.css"/>
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&display=swap" rel="stylesheet"/>
 <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
 <link rel="stylesheet" href="theme.css"/>
-<script>
-tailwind.config = {
-  darkMode: "class",
-  theme: {
-    extend: {
-      colors: {
-        "surface-bright":"var(--surface-bright)","surface":"var(--surface)","background":"var(--background)",
-        "surface-container-lowest":"var(--surface-container-lowest)","surface-container-low":"var(--surface-container-low)",
-        "surface-container":"var(--surface-container)","surface-container-high":"var(--surface-container-high)",
-        "surface-container-highest":"var(--surface-container-highest)","surface-dim":"var(--surface-dim)",
-        "surface-variant":"var(--surface-variant)","surface-tint":"var(--surface-tint)",
-        "primary":"var(--primary)","primary-dim":"var(--primary-dim)","primary-fixed":"var(--primary-fixed)",
-        "primary-fixed-dim":"var(--primary-fixed-dim)","primary-container":"var(--primary-container)",
-        "on-primary":"var(--on-primary)","on-primary-container":"var(--on-primary-container)",
-        "on-primary-fixed":"var(--on-primary-fixed)","on-primary-fixed-variant":"var(--on-primary-fixed-variant)",
-        "on-surface":"var(--on-surface)","on-surface-variant":"var(--on-surface-variant)",
-        "on-background":"var(--on-background)",
-        "outline":"var(--outline)","outline-variant":"var(--outline-variant)",
-        "error":"var(--error)","error-container":"var(--error-container)",
-        "on-error":"var(--on-error)","on-error-container":"var(--on-error-container)",
-        "inverse-surface":"var(--inverse-surface)","inverse-on-surface":"var(--inverse-on-surface)",
-        "inverse-primary":"var(--inverse-primary)",
-        "secondary":"var(--secondary)","secondary-container":"var(--secondary-container)",
-        "on-secondary":"var(--on-secondary)","on-secondary-container":"var(--on-secondary-container)",
-        "tertiary":"var(--tertiary)","tertiary-container":"var(--tertiary-container)",
-        "on-tertiary":"var(--on-tertiary)","on-tertiary-container":"var(--on-tertiary-container)",
-        "sage-peach":"var(--sage-peach)","sage-peach-light":"var(--sage-peach-light)",
-      },
-      fontFamily: { "headline":["Outfit"],"body":["Outfit"],"label":["Outfit"] },
-      borderRadius: { "DEFAULT":"1rem","lg":"2rem","xl":"3rem","full":"9999px" },
-    },
-  },
-}
-</script>
 <style>
   body { font-family: 'Outfit', sans-serif; }
   b, strong, .font-bold, .font-extrabold, .font-black, .font-semibold { letter-spacing: 0.01em; }
@@ -54,6 +20,7 @@ tailwind.config = {
   input[type=number] { -moz-appearance: textfield; }
 </style>
 <script src="theme.js"></script>
+<script src="safe-dom.js"></script>
 </head>
 <body class="bg-background text-on-surface antialiased min-h-screen flex flex-col">
 
@@ -324,14 +291,20 @@ function filterPicker(){
   renderPicker(q?allRows.filter(r=>r.t.symbol.toLowerCase().includes(q)||r.t.name.toLowerCase().includes(q)||r.c.name.toLowerCase().includes(q)):allRows);
 }
 function renderPicker(rows){
-  document.getElementById('picker-list').innerHTML=rows.map(({c,ci,t,ti})=>`
-    <button onclick="selectToken(${ti},${ci})" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-surface-container-low transition-colors text-left">
+  const list = document.getElementById('picker-list');
+  const items = rows.map(({c,ci,t,ti}) =>
+    Safe.html`<button data-ti="${ti}" data-ci="${ci}" class="pick-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-surface-container-low transition-colors text-left">
       <div class="relative flex-shrink-0">
-        <img src="${TOKEN_ICONS[t.symbol]||''}" class="w-9 h-9 rounded-full bg-surface-container"/>
-        <img src="${chainIcon(c.id)}" class="w-4 h-4 rounded-full absolute -bottom-0.5 -right-0.5 border-2 border-white bg-white"/>
+        <img src="${Safe.url(TOKEN_ICONS[t.symbol]||'')}" class="w-9 h-9 rounded-full bg-surface-container"/>
+        <img src="${Safe.url(chainIcon(c.id))}" class="w-4 h-4 rounded-full absolute -bottom-0.5 -right-0.5 border-2 border-white bg-white"/>
       </div>
       <div class="flex-1"><p class="font-bold text-sm">${t.symbol}</p><p class="text-xs text-on-surface-variant">${t.name} · ${c.name}</p></div>
-    </button>`).join('')||'<p class="text-sm text-on-surface-variant text-center py-4">No tokens found</p>';
+    </button>`
+  );
+  Safe.setHTML(list, items.length ? items : Safe.html`<p class="text-sm text-on-surface-variant text-center py-4">No tokens found</p>`);
+  list.querySelectorAll('button.pick-btn').forEach(btn => {
+    btn.addEventListener('click', () => selectToken(Number(btn.dataset.ti), Number(btn.dataset.ci)));
+  });
 }
 function selectToken(ti,ci){selTokenIdx=ti;selChainIdx=ci;closePicker();updateDisplay();}
 

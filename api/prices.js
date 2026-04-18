@@ -1,4 +1,16 @@
+import { z } from 'zod';
 import { applyCors } from './_cors.js';
+
+const CoinEntry = z.object({
+  usd: z.number(),
+  usd_24h_change: z.number().optional(),
+}).passthrough();
+
+const LlamaCoin = z.object({
+  price:      z.number(),
+  confidence: z.number().optional(),
+  timestamp:  z.number().optional(),
+}).passthrough();
 
 const COINGECKO_IDS = 'ethereum,bitcoin,usd-coin,dai,wrapped-bitcoin,matic-network,polygon-ecosystem-token,binancecoin,uma,across-protocol,pooltogether-v2,havven';
 
@@ -6,7 +18,16 @@ async function fetchCoinGecko(signal) {
   const url = `https://api.coingecko.com/api/v3/simple/price?ids=${COINGECKO_IDS}&vs_currencies=usd&include_24hr_change=true`;
   const res = await fetch(url, { signal });
   if (!res.ok) throw new Error(`CoinGecko ${res.status}`);
-  return res.json();
+  const raw = await res.json();
+  if (!raw || typeof raw !== 'object') throw new Error('CoinGecko returned non-object');
+  const out = {};
+  for (const [id, val] of Object.entries(raw)) {
+    const r = CoinEntry.safeParse(val);
+    if (r.success) out[id] = r.data;
+    else console.warn('[prices] Skipping malformed CoinGecko entry:', id);
+  }
+  if (Object.keys(out).length === 0) throw new Error('CoinGecko response had no valid entries');
+  return out;
 }
 
 async function fetchDeFiLlama(signal) {
@@ -24,6 +45,8 @@ async function fetchDeFiLlama(signal) {
   const res = await fetch(`https://coins.llama.fi/prices/current/${coins}`, { signal });
   if (!res.ok) throw new Error(`DeFiLlama ${res.status}`);
   const data = await res.json();
+  const rawCoins = data?.coins;
+  if (!rawCoins || typeof rawCoins !== 'object') throw new Error('DeFiLlama missing coins object');
   // Normalize to CoinGecko format
   const out = {
     'usd-coin': { usd: 1, usd_24h_change: 0 },
@@ -40,10 +63,8 @@ async function fetchDeFiLlama(signal) {
     'coingecko:across-protocol': 'across-protocol',
   };
   for (const [key, id] of Object.entries(map)) {
-    const coin = data.coins?.[key];
-    if (coin) {
-      out[id] = { usd: coin.price || 0, usd_24h_change: coin.confidence ? 0 : 0 };
-    }
+    const r = LlamaCoin.safeParse(rawCoins[key]);
+    if (r.success) out[id] = { usd: r.data.price, usd_24h_change: 0 };
   }
   return out;
 }
