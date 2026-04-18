@@ -275,6 +275,7 @@ async function initWallet() {
       if (walletAddress) await loadTransactions();
       else { txData = []; showEmpty('Connect wallet to view transactions'); }
     });
+    window.ethereum.on('chainChanged', async () => { if (walletAddress) await loadTransactions(); });
   } else {
     showEmpty('Install MetaMask to view transactions');
   }

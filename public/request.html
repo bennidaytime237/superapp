@@ -314,6 +314,7 @@ function selectToken(ti,ci){selTokenIdx=ti;selChainIdx=ci;closePicker();updateDi
     const accs=await window.ethereum.request({method:'eth_accounts'});
     if(accs.length>0){walletAddress=accs[0];document.getElementById('connect-label').textContent=walletAddress.slice(0,6)+'...'+walletAddress.slice(-4);document.getElementById('my-address').textContent=walletAddress.slice(0,6)+'...'+walletAddress.slice(-4);resolveWalletENS();updateBtn();}
     window.ethereum.on('accountsChanged',a=>{walletAddress=a[0]||null;if(walletAddress){document.getElementById('connect-label').textContent=walletAddress.slice(0,6)+'...'+walletAddress.slice(-4);document.getElementById('my-address').textContent=walletAddress.slice(0,6)+'...'+walletAddress.slice(-4);resolveWalletENS();}else{document.getElementById('connect-label').textContent='Connect';document.getElementById('my-address').textContent='Connect wallet';}updateBtn();});
+    window.ethereum.on('chainChanged',()=>{if(walletAddress)updateBtn();});
   }
 })();
 </script>

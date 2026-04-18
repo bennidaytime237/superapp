@@ -1,6 +1,7 @@
 // ENS forward/reverse resolution via free public services with fallback.
 import { z } from 'zod';
 import { applyCors } from './_cors.js';
+import { isValidAddress } from './_eth-utils.js';
 
 const ENSIdeasShape = z.object({
   address:     z.string().nullish(),
@@ -80,7 +81,7 @@ export default async function handler(req, res) {
       const resolved = await resolveENS(name.toLowerCase());
       return res.json({ name, address: resolved });
     }
-    if (typeof address === 'string' && ADDRESS_RE.test(address)) {
+    if (typeof address === 'string' && ADDRESS_RE.test(address) && isValidAddress(address)) {
       const resolved = await reverseENS(address);
       return res.json({ address, name: resolved });
     }

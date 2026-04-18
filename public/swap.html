@@ -36,6 +36,7 @@
 </style>
 <script src="theme.js"></script>
 <script src="safe-dom.js"></script>
+<script src="eth-utils.js"></script>
 </head>
 <body class="bg-background text-on-surface antialiased h-screen flex flex-col overflow-hidden">
 
@@ -746,7 +747,7 @@ function toggleFeeBreakdown() {
 function getRecipient() {
   const inp = document.getElementById('recipient-address');
   const val = (inp?.value || '').trim();
-  if (val && /^0x[0-9a-fA-F]{40}$/.test(val)) return val;
+  if (val && EthUtils.isValidAddress(val)) return val;
   return walletAddress;
 }
 
@@ -770,7 +771,7 @@ function validateRecipient() {
   const err = document.getElementById('recipient-error');
   const label = document.getElementById('to-label');
   if (!val) { err.classList.add('hidden'); label.textContent = 'Wallet'; return; }
-  if (/^0x[0-9a-fA-F]{40}$/.test(val)) {
+  if (EthUtils.isValidAddress(val)) {
     err.classList.add('hidden');
     label.textContent = val.slice(0,6) + '...' + val.slice(-4);
   } else {
@@ -1409,6 +1410,7 @@ async function loadRoutes() {
       updateBalance();
       updateActionBtn();
     });
+    window.ethereum.on('chainChanged', () => { if (walletAddress) { updateBalance(); updateActionBtn(); } });
     if (walletAddress) {
       document.getElementById('connect-label').textContent = walletAddress.slice(0,6)+'...'+walletAddress.slice(-4);
       resolveWalletENS();

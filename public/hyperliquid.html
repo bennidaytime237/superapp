@@ -391,6 +391,7 @@ function fmt(n){if(n>=1000)return n.toLocaleString('en-US',{maximumFractionDigit
     const accs=await window.ethereum.request({method:'eth_accounts'});
     if(accs.length>0){walletAddress=accs[0];document.getElementById('connect-label').textContent=walletAddress.slice(0,6)+'...'+walletAddress.slice(-4);resolveWalletENS();fetchBalance();updateBtn();}
     window.ethereum.on('accountsChanged',a=>{walletAddress=a[0]||null;document.getElementById('connect-label').textContent=walletAddress?walletAddress.slice(0,6)+'...'+walletAddress.slice(-4):'Connect';fetchBalance();updateBtn();});
+    window.ethereum.on('chainChanged',()=>{if(walletAddress){fetchBalance();updateBtn();}});
   }
 })();
 </script>

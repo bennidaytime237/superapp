@@ -937,6 +937,7 @@ function timeAgo(ts) {
       walletAddress = accs[0];
       onConnected();
     });
+    window.ethereum.on('chainChanged', () => { if (walletAddress) onConnected(); });
   } else {
     renderActivity();
   }

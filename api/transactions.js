@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { applyCors } from './_cors.js';
+import { isValidAddress } from './_eth-utils.js';
 
 const DepositRaw = z.object({
   depositTxHash:         z.string().nullish(),
@@ -86,7 +87,7 @@ function formatAmount(raw, decimals) {
 export default async function handler(req, res) {
   if (applyCors(req, res)) return;
   const { address } = req.query;
-  if (!address || !/^0x[0-9a-fA-F]{40}$/.test(address)) {
+  if (!address || !isValidAddress(address)) {
     return res.status(400).json({ error: 'Invalid address' });
   }
 
