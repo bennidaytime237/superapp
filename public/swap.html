@@ -216,7 +216,7 @@
       <div class="text-center">
         <p id="tx-status" class="text-lg font-bold text-on-background mb-1">Bridging...</p>
         <p id="tx-detail" class="text-sm text-on-surface-variant">Waiting for confirmation</p>
-        <p id="tx-timer" class="text-2xl font-black text-primary mt-4 tabular-nums">0.0s</p>
+        <p id="tx-timer" class="text-2xl font-black text-primary mt-4 tabular-nums"></p>
       </div>
     </div>
 
@@ -1021,7 +1021,7 @@ async function fetchHyperliquidQuote(originChain, fromToken, amountWei) {
 let txStartTime = 0;
 let txTimerInterval = null;
 
-function showTxScreen(statusText, detailText, resetTimer = true) {
+function showTxScreen(statusText, detailText) {
   const screen = document.getElementById('tx-screen');
   screen.classList.remove('hidden');
   screen.classList.add('flex');
@@ -1029,14 +1029,16 @@ function showTxScreen(statusText, detailText, resetTimer = true) {
   document.getElementById('tx-success').classList.add('hidden');
   document.getElementById('tx-status').textContent = statusText;
   document.getElementById('tx-detail').textContent = detailText;
-  if (resetTimer) {
-    txStartTime = Date.now();
-    clearInterval(txTimerInterval);
-    txTimerInterval = setInterval(() => {
-      const elapsed = ((Date.now() - txStartTime) / 1000).toFixed(1);
-      document.getElementById('tx-timer').textContent = elapsed + 's';
-    }, 100);
-  }
+  document.getElementById('tx-timer').textContent = '';
+}
+
+function startTxTimer() {
+  txStartTime = Date.now();
+  clearInterval(txTimerInterval);
+  txTimerInterval = setInterval(() => {
+    const elapsed = ((Date.now() - txStartTime) / 1000).toFixed(1);
+    document.getElementById('tx-timer').textContent = elapsed + 's';
+  }, 100);
 }
 
 let txRedirectTimer = null;
@@ -1155,14 +1157,13 @@ async function executeSwap() {
     if (routeType === 'across') {
       // Standard Across bridge
       if (lastQuote.approvalTxns?.length) {
-        showTxScreen('Approving...', `Approve ${fromSym} for bridging`, false);
-        document.getElementById('tx-timer').textContent = '';
+        showTxScreen('Approving...', `Approve ${fromSym} for bridging`);
         for (const tx of lastQuote.approvalTxns) { await sendTx(tx); }
       }
-      showTxScreen('Confirm in wallet...', `${amount} ${fromSym} → ${toSym}`, false);
-      document.getElementById('tx-timer').textContent = '';
+      showTxScreen('Confirm in wallet...', `${amount} ${fromSym} → ${toSym}`);
       const hash = await sendTx(lastQuote.swapTx);
-      showTxScreen('Bridging...', `${fromChainName} → ${toChainName} via Across`, true);
+      startTxTimer();
+      showTxScreen('Bridging...', `${fromChainName} → ${toChainName} via Across`);
 
       // Fire gas top-up bridge in parallel (don't wait for main fill first)
       if (gasTopupEnabled) {
@@ -1178,16 +1179,15 @@ async function executeSwap() {
     } else if (routeType === 'hyperliquid') {
       // Same as Across bridge — USDC lands on Bridge2 and Hyperliquid credits the user
       if (lastQuote.approvalTxns?.length) {
-        showTxScreen('Approving...', `Approve ${fromSym}`, false);
-        document.getElementById('tx-timer').textContent = '';
+        showTxScreen('Approving...', `Approve ${fromSym}`);
         for (const tx of lastQuote.approvalTxns) { await sendTx(tx); }
       }
-      showTxScreen('Confirm in wallet...', `${amount} ${fromSym} → Hyperliquid`, false);
-      document.getElementById('tx-timer').textContent = '';
+      showTxScreen('Confirm in wallet...', `${amount} ${fromSym} → Hyperliquid`);
       const hash = await sendTx(lastQuote.swapTx);
       const dest = CHAINS[toChainIdx];
       const destLabel = dest.id === 'hl-spot' ? 'Spot' : 'Perp';
-      showTxScreen('Depositing...', `→ Hyperliquid ${destLabel}`, true);
+      startTxTimer();
+      showTxScreen('Depositing...', `→ Hyperliquid ${destLabel}`);
       await pollFill(CHAINS[fromChainIdx].id, hash);
       const elapsed = (Date.now() - txStartTime) / 1000;
       showTxSuccess(`${amount} ${fromSym} → USDC on Hyperliquid ${destLabel}`, elapsed, hash, CHAINS[fromChainIdx].id);
@@ -1233,12 +1233,10 @@ async function executeGasTopup() {
   const data = await res.json();
 
   if (data.approvalTxns?.length) {
-    showTxScreen('Approving gas...', `Approve ${fromToken.symbol}`, false);
-    document.getElementById('tx-timer').textContent = '';
+    showTxScreen('Approving gas...', `Approve ${fromToken.symbol}`);
     for (const tx of data.approvalTxns) { await sendTx(tx); }
   }
-  showTxScreen('Adding gas...', `+$${gasTopupUsd} of ${nativeWrap.symbol} on ${CHAINS[toChainIdx].name} — confirm in wallet`, false);
-  document.getElementById('tx-timer').textContent = '';
+  showTxScreen('Adding gas...', `+$${gasTopupUsd} of ${nativeWrap.symbol} on ${CHAINS[toChainIdx].name} — confirm in wallet`);
   await sendTx(data.swapTx);
 }
 
