@@ -1,12 +1,18 @@
 // Shared wallet utilities used by all pages.
 // Requires config.js (for nothing currently, but load order: config → wallet → page).
 
-// Returns a shortened address like 0x1234...5678.
+/**
+ * @param {string} address - Full 0x-prefixed Ethereum address.
+ * @returns {string} Shortened form, e.g. "0x1234...5678".
+ */
 function formatAddr(address) {
   return address.slice(0, 6) + '...' + address.slice(-4);
 }
 
-// Fetches the ENS name for `address` and updates #connect-label if found.
+/**
+ * Fetches the ENS name for `address` and updates #connect-label if found.
+ * @param {string} address
+ */
 function resolveWalletENS(address) {
   if (!address) return;
   fetch(`/api/ens?address=${address}`)
@@ -15,10 +21,18 @@ function resolveWalletENS(address) {
     .catch(() => {});
 }
 
-// Sets up wallet auto-reconnect and MetaMask event listeners.
-// opts.onConnected(addr)  — called on auto-connect and accountsChanged (new account)
-// opts.onDisconnected()   — called when accountsChanged fires with empty array
-// opts.onChainChanged()   — called on chainChanged
+/**
+ * @typedef {Object} SetupWalletOpts
+ * @property {(addr: string) => void} [onConnected]    - Called on auto-connect and accountsChanged (new account).
+ * @property {() => void}             [onDisconnected] - Called when accountsChanged fires with empty array.
+ * @property {() => void}             [onChainChanged] - Called on chainChanged.
+ */
+
+/**
+ * Sets up wallet auto-reconnect and MetaMask event listeners.
+ * @param {SetupWalletOpts} [opts]
+ * @returns {Promise<void>}
+ */
 async function setupWallet({ onConnected, onDisconnected, onChainChanged } = {}) {
   if (!window.ethereum) return;
   const accs = await window.ethereum.request({ method: 'eth_accounts' });
@@ -30,7 +44,7 @@ async function setupWallet({ onConnected, onDisconnected, onChainChanged } = {})
   window.ethereum.on('chainChanged', () => onChainChanged?.());
 }
 
-// Removes all sage_* cache entries to free localStorage space.
+/** Removes all sage_* cache entries to free localStorage space. */
 function evictSageCache() {
   const toRemove = [];
   for (let i = 0; i < localStorage.length; i++) {
@@ -42,7 +56,13 @@ function evictSageCache() {
   localStorage.removeItem('sage_radar_cache');
 }
 
-// Reads a TTL-wrapped cache entry. Returns the value if fresh, null if expired or missing.
+/**
+ * Reads a TTL-wrapped cache entry written by lsSet.
+ * @template T
+ * @param {string} key
+ * @param {number} ttlMs
+ * @returns {T | null} The cached value, or null if missing or expired.
+ */
 function lsGet(key, ttlMs) {
   try {
     const raw = localStorage.getItem(key);
@@ -54,7 +74,12 @@ function lsGet(key, ttlMs) {
   } catch { return null; }
 }
 
-// Writes a TTL-wrapped cache entry. Evicts sage caches on QuotaExceededError and retries once.
+/**
+ * Writes a TTL-wrapped cache entry. Evicts sage caches on QuotaExceededError and retries once.
+ * @param {string} key
+ * @param {unknown} value
+ * @param {number} ttlMs
+ */
 function lsSet(key, value, ttlMs) {
   const payload = JSON.stringify({ v: value, t: Date.now() });
   try {

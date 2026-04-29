@@ -73,6 +73,10 @@ function keccakF(s) {
   }
 }
 
+/**
+ * @param {string} str - ASCII string to hash (not hex-encoded bytes).
+ * @returns {string} 64-character lowercase hex digest.
+ */
 export function keccak256(str) {
   const msgLen = str.length;
   const rate = 136;
@@ -101,6 +105,10 @@ export function keccak256(str) {
   return hex;
 }
 
+/**
+ * @param {string} addr - Ethereum address (any case, with 0x prefix).
+ * @returns {string} EIP-55 mixed-case checksummed address.
+ */
 export function checksumAddress(addr) {
   const lower = addr.slice(2).toLowerCase();
   const hash = keccak256(lower);
@@ -109,7 +117,11 @@ export function checksumAddress(addr) {
   return out;
 }
 
-// Accepts all-lowercase (no checksum) or correctly checksummed mixed-case.
+/**
+ * Returns true for all-lowercase addresses and correctly checksummed mixed-case ones.
+ * @param {string} addr
+ * @returns {boolean}
+ */
 export function isValidAddress(addr) {
   if (!/^0x[0-9a-fA-F]{40}$/.test(addr)) return false;
   const hex = addr.slice(2);
