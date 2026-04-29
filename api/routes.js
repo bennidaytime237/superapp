@@ -4,6 +4,7 @@
  */
 import { z } from 'zod';
 import { applyCors } from './_cors.js';
+import { fetchWithRetry } from './_fetch.js';
 
 const AcrossChain = z.object({
   chainId:  z.number(),
@@ -41,16 +42,11 @@ export default async function handler(req, res) {
   if (applyCors(req, res)) return;
 
   try {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 8000);
-    const opts = { signal: controller.signal };
-
     const [chainsRes, tokensRes, routesRes] = await Promise.all([
-      fetch('https://app.across.to/api/swap/chains', opts),
-      fetch('https://app.across.to/api/swap/tokens', opts),
-      fetch('https://app.across.to/api/available-routes', opts),
+      fetchWithRetry('https://app.across.to/api/swap/chains'),
+      fetchWithRetry('https://app.across.to/api/swap/tokens'),
+      fetchWithRetry('https://app.across.to/api/available-routes', {}, { timeout: 12000 }),
     ]);
-    clearTimeout(timeout);
 
     const [chains, tokens, routes] = await Promise.all([
       chainsRes.ok ? chainsRes.json() : [],

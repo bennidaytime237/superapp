@@ -1,4 +1,5 @@
 import { applyCors } from './_cors.js';
+import { fetchWithRetry } from './_fetch.js';
 
 const BASE = 'https://app.across.to/api/suggested-fees';
 
@@ -33,10 +34,7 @@ export default async function handler(req, res) {
         destinationChainId: route.destinationChainId,
         amount: route.amount,
       });
-      const ctrl = new AbortController();
-      const t = setTimeout(() => ctrl.abort(), 8000);
-      const r = await fetch(`${BASE}?${params}`, { signal: ctrl.signal });
-      clearTimeout(t);
+      const r = await fetchWithRetry(`${BASE}?${params}`);
       if (!r.ok) { result[route.label] = null; return; }
       const data = await r.json();
       // Try known field names for estimated fill time
