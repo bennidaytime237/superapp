@@ -52,7 +52,7 @@
       <span class="material-symbols-outlined text-sm">arrow_back</span>
       Dashboard
     </a>
-    <button onclick="toggleTheme()" title="Toggle dark mode" class="flex items-center gap-2 px-3 py-1.5 bg-surface-container rounded-full text-on-surface-variant hover:text-primary hover:bg-surface-container-high transition-all flex-shrink-0">
+    <button onclick="toggleTheme()" title="Toggle dark mode" aria-label="Toggle dark mode" class="flex items-center gap-2 px-3 py-1.5 bg-surface-container rounded-full text-on-surface-variant hover:text-primary hover:bg-surface-container-high transition-all flex-shrink-0">
       <span class="material-symbols-outlined text-base theme-toggle-icon">dark_mode</span>
     </button>
     <button id="connect-btn" onclick="connectWallet()" class="flex items-center gap-2 px-3 py-1.5 bg-primary text-on-primary rounded-full text-xs font-bold active:scale-95 transition-transform">
@@ -254,15 +254,15 @@
 </div>
 
 <!-- Token Picker Modal -->
-<div id="token-modal" class="fixed inset-0 z-50 hidden">
+<div id="token-modal" role="dialog" aria-modal="true" aria-labelledby="token-modal-title" class="fixed inset-0 z-50 hidden">
   <!-- Backdrop -->
   <div class="absolute inset-0 bg-black/30 backdrop-blur-sm" onclick="closeTokenModal()"></div>
   <!-- Panel -->
   <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md bg-surface-container-lowest rounded-3xl shadow-2xl p-8 max-h-[80vh] flex flex-col">
     <!-- Header -->
     <div class="flex items-center justify-between mb-6">
-      <h3 class="text-xl font-black text-on-background">Choose a token</h3>
-      <button onclick="closeTokenModal()" class="w-10 h-10 rounded-full bg-surface-container-low flex items-center justify-center hover:bg-surface-container-high transition-colors">
+      <h3 id="token-modal-title" class="text-xl font-black text-on-background">Choose a token</h3>
+      <button onclick="closeTokenModal()" aria-label="Close token picker" class="w-10 h-10 rounded-full bg-surface-container-low flex items-center justify-center hover:bg-surface-container-high transition-colors">
         <span class="material-symbols-outlined text-on-surface-variant">close</span>
       </button>
     </div>
@@ -578,6 +578,9 @@ function closeTokenModal() {
   document.getElementById('token-modal').classList.add('hidden');
   document.body.style.overflow = '';
 }
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && !document.getElementById('token-modal').classList.contains('hidden')) closeTokenModal();
+});
 
 function selectToken(tokenIdx, chainId) {
   const chainIdx = CHAINS.findIndex(c => c.id === chainId);

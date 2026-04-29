@@ -36,7 +36,7 @@
       <span class="material-symbols-outlined text-sm">arrow_back</span>
       Dashboard
     </a>
-    <button onclick="toggleTheme()" title="Toggle dark mode" class="flex items-center gap-2 px-3 py-1.5 bg-surface-container rounded-full text-on-surface-variant hover:text-primary hover:bg-surface-container-high transition-all flex-shrink-0">
+    <button onclick="toggleTheme()" title="Toggle dark mode" aria-label="Toggle dark mode" class="flex items-center gap-2 px-3 py-1.5 bg-surface-container rounded-full text-on-surface-variant hover:text-primary hover:bg-surface-container-high transition-all flex-shrink-0">
       <span class="material-symbols-outlined text-base theme-toggle-icon">dark_mode</span>
     </button>
     <button id="connect-btn" onclick="connectWallet()" class="flex items-center gap-2 px-3 py-1.5 bg-primary text-on-primary rounded-full text-xs font-bold active:scale-95 transition-transform">
@@ -108,12 +108,12 @@
 </main>
 
 <!-- Source Picker Modal -->
-<div id="source-modal" class="fixed inset-0 z-50 hidden">
+<div id="source-modal" role="dialog" aria-modal="true" aria-labelledby="source-modal-title" class="fixed inset-0 z-50 hidden">
   <div class="absolute inset-0 bg-black/30 backdrop-blur-sm" onclick="closeSourcePicker()"></div>
   <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md bg-surface-container-lowest rounded-3xl shadow-2xl p-6 max-h-[80vh] flex flex-col">
     <div class="flex items-center justify-between mb-4">
-      <h3 class="text-lg font-black text-on-background">Choose source token</h3>
-      <button onclick="closeSourcePicker()" class="p-2 rounded-full hover:bg-surface-container-high"><span class="material-symbols-outlined text-on-surface-variant">close</span></button>
+      <h3 id="source-modal-title" class="text-lg font-black text-on-background">Choose source token</h3>
+      <button onclick="closeSourcePicker()" aria-label="Close" class="p-2 rounded-full hover:bg-surface-container-high"><span class="material-symbols-outlined text-on-surface-variant">close</span></button>
     </div>
     <input id="source-search" type="text" placeholder="Search..." class="w-full px-4 py-3 rounded-xl border border-outline-variant/15 text-sm mb-3 focus:outline-none focus:ring-2 focus:ring-primary/30" oninput="filterSourceList()"/>
     <div id="source-list" class="overflow-y-auto max-h-[50vh] space-y-1"></div>
@@ -241,8 +241,12 @@ function openSourcePicker() {
   document.getElementById('source-search').value = '';
   buildSourceList();
   document.getElementById('source-modal').classList.remove('hidden');
+  document.getElementById('source-search').focus();
 }
 function closeSourcePicker() { document.getElementById('source-modal').classList.add('hidden'); }
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && !document.getElementById('source-modal').classList.contains('hidden')) closeSourcePicker();
+});
 
 function buildSourceList() { filterSourceList(); }
 function filterSourceList() {

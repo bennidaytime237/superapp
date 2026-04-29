@@ -35,7 +35,7 @@
     <a href="index.html" class="text-xs font-medium text-on-surface-variant hover:text-primary transition-colors flex items-center gap-1">
       <span class="material-symbols-outlined text-sm">arrow_back</span>Dashboard
     </a>
-    <button onclick="toggleTheme()" title="Toggle dark mode" class="flex items-center gap-2 px-3 py-1.5 bg-surface-container rounded-full text-on-surface-variant hover:text-primary hover:bg-surface-container-high transition-all flex-shrink-0">
+    <button onclick="toggleTheme()" title="Toggle dark mode" aria-label="Toggle dark mode" class="flex items-center gap-2 px-3 py-1.5 bg-surface-container rounded-full text-on-surface-variant hover:text-primary hover:bg-surface-container-high transition-all flex-shrink-0">
       <span class="material-symbols-outlined text-base theme-toggle-icon">dark_mode</span>
     </button>
     <button id="connect-btn" onclick="connectWallet()" class="flex items-center gap-2 px-3 py-1.5 bg-primary text-on-primary rounded-full text-xs font-bold active:scale-95 transition-transform">
@@ -148,12 +148,12 @@
 </main>
 
 <!-- Token Picker Modal -->
-<div id="picker-modal" class="fixed inset-0 z-50 hidden">
+<div id="picker-modal" role="dialog" aria-modal="true" aria-labelledby="picker-modal-title" class="fixed inset-0 z-50 hidden">
   <div class="absolute inset-0 bg-black/30 backdrop-blur-sm" onclick="closePicker()"></div>
   <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md bg-surface-container-lowest rounded-3xl shadow-2xl p-6 max-h-[70vh] flex flex-col">
     <div class="flex items-center justify-between mb-4">
-      <h3 class="text-lg font-black text-on-surface">Choose token</h3>
-      <button onclick="closePicker()" class="w-9 h-9 rounded-full bg-surface-container-low flex items-center justify-center"><span class="material-symbols-outlined text-on-surface-variant">close</span></button>
+      <h3 id="picker-modal-title" class="text-lg font-black text-on-surface">Choose token</h3>
+      <button onclick="closePicker()" aria-label="Close" class="w-9 h-9 rounded-full bg-surface-container-low flex items-center justify-center"><span class="material-symbols-outlined text-on-surface-variant">close</span></button>
     </div>
     <input id="picker-search" type="text" placeholder="Search..." class="w-full px-4 py-3 rounded-xl border border-outline-variant/15 text-sm mb-3 focus:outline-none focus:ring-2 focus:ring-primary/30" oninput="filterPicker()"/>
     <div id="picker-list" class="overflow-y-auto flex-1 space-y-1"></div>
@@ -277,8 +277,12 @@ function openPicker(){
   });});
   renderPicker(allRows);
   document.getElementById('picker-modal').classList.remove('hidden');
+  document.getElementById('picker-search').focus();
 }
 function closePicker(){document.getElementById('picker-modal').classList.add('hidden');}
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && !document.getElementById('picker-modal').classList.contains('hidden')) closePicker();
+});
 function filterPicker(){
   const q=document.getElementById('picker-search').value.toLowerCase();
   renderPicker(q?allRows.filter(r=>r.t.symbol.toLowerCase().includes(q)||r.t.name.toLowerCase().includes(q)||r.c.name.toLowerCase().includes(q)):allRows);

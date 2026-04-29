@@ -142,7 +142,7 @@
       <h2 class="hidden md:block font-headline font-bold text-xl tracking-tight text-on-background">Portfolio Overview</h2>
     </div>
     <div class="flex items-center gap-3 relative">
-      <button onclick="toggleTheme()" title="Toggle dark mode" class="flex items-center gap-2 px-3 py-1.5 bg-surface-container rounded-full text-on-surface-variant hover:text-primary hover:bg-surface-container-high transition-all flex-shrink-0">
+      <button onclick="toggleTheme()" title="Toggle dark mode" aria-label="Toggle dark mode" class="flex items-center gap-2 px-3 py-1.5 bg-surface-container rounded-full text-on-surface-variant hover:text-primary hover:bg-surface-container-high transition-all flex-shrink-0">
         <span class="material-symbols-outlined text-base theme-toggle-icon">dark_mode</span>
       </button>
       <button id="connect-btn" onclick="walletAddress?toggleWalletMenu():connectWallet()" class="flex items-center gap-2 px-4 py-2 bg-primary text-on-primary rounded-full text-sm font-bold tracking-wide active:scale-95 transition-transform">
@@ -171,7 +171,7 @@
           <div class="flex items-center gap-3 mb-4">
             <p class="text-on-surface-variant text-sm font-medium">Total Balance</p>
             <span id="hero-chain-count" class="text-xs font-bold text-primary bg-primary-container px-2 py-0.5 rounded-full hidden">0 chains</span>
-            <button onclick="toggleBalanceVisibility()" class="ml-auto flex items-center justify-center w-8 h-8 rounded-full hover:bg-surface-container-high transition-colors active:scale-90">
+            <button onclick="toggleBalanceVisibility()" aria-label="Toggle balance visibility" class="ml-auto flex items-center justify-center w-8 h-8 rounded-full hover:bg-surface-container-high transition-colors active:scale-90">
               <span id="balance-eye-icon" class="material-symbols-outlined text-lg text-on-surface-variant">visibility</span>
             </button>
           </div>
@@ -244,10 +244,10 @@
         <div class="flex justify-between items-center mb-2">
           <h4 class="text-base font-bold text-on-background">Chains</h4>
           <div class="flex gap-1">
-            <button onclick="scrollChains(-1)" class="w-6 h-6 rounded-full bg-surface-container-low flex items-center justify-center hover:bg-surface-container-high transition-colors">
+            <button onclick="scrollChains(-1)" aria-label="Scroll chains left" class="w-6 h-6 rounded-full bg-surface-container-low flex items-center justify-center hover:bg-surface-container-high transition-colors">
               <span class="material-symbols-outlined text-on-surface-variant text-sm">chevron_left</span>
             </button>
-            <button onclick="scrollChains(1)" class="w-6 h-6 rounded-full bg-surface-container-low flex items-center justify-center hover:bg-surface-container-high transition-colors">
+            <button onclick="scrollChains(1)" aria-label="Scroll chains right" class="w-6 h-6 rounded-full bg-surface-container-low flex items-center justify-center hover:bg-surface-container-high transition-colors">
               <span class="material-symbols-outlined text-on-surface-variant text-sm">chevron_right</span>
             </button>
           </div>
