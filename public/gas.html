@@ -364,6 +364,7 @@ function updateBtn() {
   const selected = getSelected();
   if (!walletAddress) btn.textContent = 'Connect Wallet';
   else if (total <= 0) btn.textContent = 'Enter amount';
+  else if (sourceBalance != null && total > sourceBalance) btn.textContent = 'Insufficient balance';
   else if (selected.length === 0) btn.textContent = 'Select chains';
   else btn.textContent = `Bridge to ${selected.length} chain${selected.length > 1 ? 's' : ''}`;
 }
@@ -373,6 +374,7 @@ async function executeGas() {
   const total = parseFloat(document.getElementById('total-amount').value) || 0;
   const selected = getSelected();
   if (total <= 0 || selected.length === 0) return;
+  if (sourceBalance != null && total > sourceBalance) return;
 
   const t = sourceToken(), sc = sourceChain();
   const perChain = total / selected.length;

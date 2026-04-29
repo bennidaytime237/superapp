@@ -672,6 +672,10 @@ function updateActionBtn() {
     btn.textContent = 'Enter amount';
     btn.className = 'w-full py-4 bg-surface-container-high text-on-surface-variant rounded-full font-black text-lg';
     btn.disabled = false;
+  } else if (fromBal != null && val > fromBal) {
+    btn.textContent = 'Insufficient balance';
+    btn.className = 'w-full py-4 bg-surface-container-high text-on-surface-variant/50 rounded-full font-black text-lg cursor-not-allowed';
+    btn.disabled = true;
   } else if (!routeAvailable && lastQuote === null) {
     btn.textContent = 'Route unavailable';
     btn.className = 'w-full py-4 bg-surface-container-high text-on-surface-variant/50 rounded-full font-black text-lg cursor-not-allowed';
@@ -1132,6 +1136,7 @@ async function executeSwap() {
   if (!walletAddress) { connectWallet(); return; }
   const amount = parseFloat(document.getElementById('input-amount').value) || 0;
   if (amount <= 0) return;
+  if (fromBal != null && amount > fromBal) return;
 
   const fromSym = TOKENS[fromTokenIdx].symbol;
   const toSym = TOKENS[toTokenIdx].symbol;
