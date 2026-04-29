@@ -853,8 +853,8 @@ async function renderActivity() {
 
   try {
     // Try cache first for instant render
-    let allTx = [];
-    try { allTx = JSON.parse(localStorage.getItem('sage_txcache_' + walletAddress.toLowerCase()) || '[]'); } catch {}
+    const txCacheKey = 'sage_txcache_' + walletAddress.toLowerCase();
+    let allTx = lsGet(txCacheKey, 5 * 60 * 1000) || [];
 
     // Fetch fresh in background
     fetch(`/api/transactions?address=${walletAddress}`)
@@ -862,7 +862,7 @@ async function renderActivity() {
       .then(data => {
         const fresh = data.deposits || [];
         if (fresh.length > 0) {
-          try { localStorage.setItem('sage_txcache_' + walletAddress.toLowerCase(), JSON.stringify(fresh)); } catch {}
+          lsSet(txCacheKey, fresh, 5 * 60 * 1000);
           if (JSON.stringify(fresh) !== JSON.stringify(allTx)) renderActivityList(fresh);
         }
       }).catch(() => {});
@@ -962,13 +962,14 @@ async function fetchBridgeTimes() {
   }
 
   // Show cached instantly
-  try { const c = JSON.parse(localStorage.getItem(cacheKey)); if (c) renderTimes(c); } catch {}
+  const cachedTimes = lsGet(cacheKey, 60 * 60 * 1000);
+  if (cachedTimes) renderTimes(cachedTimes);
 
   // Fetch fresh
   try {
     const res = await fetch('/api/bridge-times');
     const data = await res.json();
-    if (!data.error) { renderTimes(data); try { localStorage.setItem(cacheKey, JSON.stringify(data)); } catch {} }
+    if (!data.error) { renderTimes(data); lsSet(cacheKey, data, 60 * 60 * 1000); }
   } catch (e) { console.warn('Bridge times failed:', e); }
 }
 

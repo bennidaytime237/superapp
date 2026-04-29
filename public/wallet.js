@@ -29,3 +29,39 @@ async function setupWallet({ onConnected, onDisconnected, onChainChanged } = {})
   });
   window.ethereum.on('chainChanged', () => onChainChanged?.());
 }
+
+// Removes all sage_* cache entries to free localStorage space.
+function evictSageCache() {
+  const toRemove = [];
+  for (let i = 0; i < localStorage.length; i++) {
+    const k = localStorage.key(i);
+    if (k && k.startsWith('sage_txcache_')) toRemove.push(k);
+  }
+  toRemove.forEach(k => localStorage.removeItem(k));
+  localStorage.removeItem('sage_bridge_times');
+  localStorage.removeItem('sage_radar_cache');
+}
+
+// Reads a TTL-wrapped cache entry. Returns the value if fresh, null if expired or missing.
+function lsGet(key, ttlMs) {
+  try {
+    const raw = localStorage.getItem(key);
+    if (!raw) return null;
+    const entry = JSON.parse(raw);
+    if (!entry || entry.t == null) return null;
+    if (Date.now() - entry.t > ttlMs) { localStorage.removeItem(key); return null; }
+    return entry.v;
+  } catch { return null; }
+}
+
+// Writes a TTL-wrapped cache entry. Evicts sage caches on QuotaExceededError and retries once.
+function lsSet(key, value, ttlMs) {
+  const payload = JSON.stringify({ v: value, t: Date.now() });
+  try {
+    localStorage.setItem(key, payload);
+  } catch (e) {
+    if (e && e.name === 'QuotaExceededError') {
+      try { evictSageCache(); localStorage.setItem(key, payload); } catch {}
+    }
+  }
+}
