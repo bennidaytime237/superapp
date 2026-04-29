@@ -22,21 +22,21 @@
 <script src="theme.js"></script>
 <script src="safe-dom.js"></script>
 </head>
-<body class="bg-hl-bg text-white antialiased min-h-screen flex flex-col">
+<body class="bg-background text-on-surface antialiased min-h-screen flex flex-col">
 
 <!-- Header -->
 <header class="w-full max-w-xl mx-auto h-14 flex justify-between items-center px-6 flex-shrink-0">
   <a href="index.html" class="flex items-center gap-2">
-    <img src="sage-wordmark.svg" alt="Sage" class="h-6 brightness-0 invert"/>
+    <img src="sage-wordmark.svg" alt="Sage" class="h-6 dark:brightness-0 dark:invert"/>
   </a>
   <div class="flex items-center gap-3">
-    <a href="index.html" class="text-xs font-medium text-white/50 hover:text-hl-green transition-colors flex items-center gap-1">
+    <a href="index.html" class="text-xs font-medium text-on-surface-variant hover:text-hl-green transition-colors flex items-center gap-1">
       <span class="material-symbols-outlined text-sm">arrow_back</span>Dashboard
     </a>
     <button onclick="toggleTheme()" title="Toggle dark mode" class="flex items-center gap-2 px-3 py-1.5 bg-surface-container rounded-full text-on-surface-variant hover:text-primary hover:bg-surface-container-high transition-all flex-shrink-0">
       <span class="material-symbols-outlined text-base theme-toggle-icon">dark_mode</span>
     </button>
-    <button id="connect-btn" onclick="connectWallet()" class="flex items-center gap-2 px-3 py-1.5 bg-hl-bg text-hl-green border border-hl-green/30 rounded-full text-xs font-bold active:scale-95 transition-transform hover:border-hl-green/60">
+    <button id="connect-btn" onclick="connectWallet()" class="flex items-center gap-2 px-3 py-1.5 bg-surface-container-lowest text-hl-green border border-hl-green/30 rounded-full text-xs font-bold active:scale-95 transition-transform hover:border-hl-green/60">
       <span class="material-symbols-outlined text-sm">account_balance_wallet</span>
       <span id="connect-label">Connect</span>
     </button>
@@ -45,7 +45,7 @@
 
 <main class="w-full max-w-xl mx-auto px-6 py-8 flex-1 pb-28">
 
-  <!-- Hyperliquid Header -->
+  <!-- Hyperliquid Header (always dark — brand identity) -->
   <div class="bg-[#090909] border border-hl-green/20 rounded-3xl p-6 mb-6">
     <div class="flex items-center gap-3 mb-2">
       <img src="hyperliquid-logo.svg" alt="Hyperliquid" class="w-10 h-10 rounded-xl"/>
@@ -58,62 +58,62 @@
 
   <!-- Perp / Spot Tab -->
   <div class="mb-5">
-    <div class="flex bg-hl-surface border border-hl-border rounded-2xl p-1 gap-1">
+    <div class="flex bg-surface-container-lowest border border-outline-variant/15 rounded-2xl p-1 gap-1">
       <button id="tab-perp" onclick="selectTab('perp')" class="flex-1 py-2.5 rounded-xl text-sm font-bold transition-colors bg-hl-green/10 text-hl-green border border-hl-green/20">Perp</button>
-      <button id="tab-spot" onclick="selectTab('spot')" class="flex-1 py-2.5 rounded-xl text-sm font-bold transition-colors text-white/40 hover:text-white/70">Spot</button>
+      <button id="tab-spot" onclick="selectTab('spot')" class="flex-1 py-2.5 rounded-xl text-sm font-bold transition-colors text-on-surface-variant hover:text-on-surface">Spot</button>
     </div>
   </div>
 
   <!-- Source -->
-  <div class="bg-hl-surface rounded-2xl p-5 border border-hl-border mb-5">
-    <p class="text-xs font-bold text-white/40 uppercase tracking-wider mb-3">You send</p>
+  <div class="bg-surface-container-lowest rounded-2xl p-5 border border-outline-variant/15 mb-5">
+    <p class="text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-3">You send</p>
     <div class="flex items-end justify-between gap-4">
-      <button onclick="openPicker()" class="inline-flex items-center gap-2 bg-hl-bg pl-1.5 pr-4 py-1.5 rounded-full border border-hl-border hover:border-hl-green/30 transition-colors">
+      <button onclick="openPicker()" class="inline-flex items-center gap-2 bg-surface-container-low pl-1.5 pr-4 py-1.5 rounded-full border border-outline-variant/15 hover:border-hl-green/30 transition-colors">
         <div class="relative">
-          <img id="from-token-icon" src="" class="w-8 h-8 rounded-full bg-hl-border"/>
-          <img id="from-chain-icon" src="" class="w-5 h-5 rounded-full absolute -right-1 -bottom-0.5 border-2 border-hl-surface bg-hl-surface"/>
+          <img id="from-token-icon" src="" class="w-8 h-8 rounded-full bg-surface-container"/>
+          <img id="from-chain-icon" src="" class="w-5 h-5 rounded-full absolute -right-1 -bottom-0.5 border-2 border-surface-container-lowest bg-surface-container-lowest"/>
         </div>
-        <span id="from-label" class="font-bold text-sm ml-1 text-white">USDC</span>
-        <span class="material-symbols-outlined text-base text-white/40">expand_more</span>
+        <span id="from-label" class="font-bold text-sm ml-1 text-on-surface">USDC</span>
+        <span class="material-symbols-outlined text-base text-on-surface-variant">expand_more</span>
       </button>
-      <input id="input-amount" type="number" placeholder="0" class="flex-1 text-right text-4xl font-black border-none focus:ring-0 p-0 bg-transparent text-white placeholder:text-white/15 min-w-0" oninput="onAmountChange()"/>
+      <input id="input-amount" type="number" placeholder="0" class="flex-1 text-right text-4xl font-black border-none focus:ring-0 p-0 bg-transparent text-on-background placeholder:text-on-surface-variant/15 min-w-0" oninput="onAmountChange()"/>
     </div>
     <div class="flex justify-between mt-2">
-      <p id="min-error" class="hidden text-xs text-red-400">Minimum deposit is $5 USDC</p>
-      <p id="l2-hint" class="hidden text-xs text-amber-400">⚡ Use Base or Arbitrum as source for sub-cent gas fees</p>
+      <p id="min-error" class="hidden text-xs text-error">Minimum deposit is $5 USDC</p>
+      <p id="l2-hint" class="hidden text-xs text-amber-600 dark:text-amber-400">⚡ Use Base or Arbitrum as source for sub-cent gas fees</p>
       <span class="flex-1"></span>
-      <span class="text-sm text-white/40">Balance: <button onclick="setMax()" class="font-bold hover:text-hl-green transition-colors" id="from-balance">--</button></span>
+      <span class="text-sm text-on-surface-variant">Balance: <button onclick="setMax()" class="font-bold hover:text-hl-green transition-colors" id="from-balance">--</button></span>
     </div>
   </div>
 
   <!-- Output preview -->
-  <div class="bg-hl-surface rounded-2xl p-5 border border-hl-border mb-5">
+  <div class="bg-surface-container-lowest rounded-2xl p-5 border border-outline-variant/15 mb-5">
     <div class="flex items-center justify-between">
       <div class="flex items-center gap-2">
         <img src="https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48/logo.png" class="w-6 h-6 rounded-full"/>
-        <span id="output-label" class="text-sm font-bold text-white">USDC on Hyperliquid Perp</span>
+        <span id="output-label" class="text-sm font-bold text-on-surface">USDC on Hyperliquid Perp</span>
       </div>
       <span id="output-amount" class="text-lg font-black text-hl-green">--</span>
     </div>
-    <div class="flex justify-between mt-2 text-xs text-white/40">
+    <div class="flex justify-between mt-2 text-xs text-on-surface-variant">
       <span id="fee-display">--</span>
       <span id="fee-time">~2 seconds via Across</span>
     </div>
-    <div class="mt-3 pt-3 border-t border-hl-border text-xs text-white/30">
+    <div class="mt-3 pt-3 border-t border-outline-variant/15 text-xs text-on-surface-variant/70">
       Across bridges to USDC on Arbitrum → Hyperliquid Bridge2 contract
     </div>
   </div>
 
   <!-- Action -->
-  <button id="action-btn" onclick="execute()" class="w-full py-4 bg-hl-bg text-hl-green border border-hl-green/30 rounded-full font-black text-lg active:scale-[0.98] transition-transform hover:border-hl-green/60">
+  <button id="action-btn" onclick="execute()" class="w-full py-4 bg-surface-container-lowest text-hl-green border border-hl-green/30 rounded-full font-black text-lg active:scale-[0.98] transition-transform hover:border-hl-green/60">
     Connect Wallet
   </button>
 
   <!-- Tx status -->
   <div id="tx-status" class="hidden mt-5 text-center">
-    <div class="inline-flex items-center gap-2 px-4 py-2 bg-hl-surface border border-hl-border rounded-full">
+    <div class="inline-flex items-center gap-2 px-4 py-2 bg-surface-container-lowest border border-outline-variant/15 rounded-full">
       <div class="w-4 h-4 rounded-full border-2 border-hl-green border-t-transparent animate-spin"></div>
-      <span id="tx-text" class="text-sm font-bold text-white">Bridging...</span>
+      <span id="tx-text" class="text-sm font-bold text-on-surface">Bridging...</span>
     </div>
   </div>
   <div id="tx-done" class="hidden mt-5 text-center">
@@ -124,20 +124,20 @@
   </div>
 
   <div class="flex justify-center mt-6 opacity-40 hover:opacity-70 transition-opacity">
-    <a href="https://across.to" target="_blank" rel="noopener"><img src="powered-by-across.svg" alt="Powered by Across" class="h-5 invert"/></a>
+    <a href="https://across.to" target="_blank" rel="noopener"><img src="powered-by-across.svg" alt="Powered by Across" class="h-5 dark:invert"/></a>
   </div>
 
 </main>
 
 <!-- Token Picker -->
 <div id="picker-modal" class="fixed inset-0 z-50 hidden">
-  <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" onclick="closePicker()"></div>
-  <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md bg-hl-surface border border-hl-border rounded-3xl shadow-2xl p-6 max-h-[70vh] flex flex-col">
+  <div class="absolute inset-0 bg-black/40 backdrop-blur-sm" onclick="closePicker()"></div>
+  <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md bg-surface-container-lowest border border-outline-variant/15 rounded-3xl shadow-2xl p-6 max-h-[70vh] flex flex-col">
     <div class="flex items-center justify-between mb-4">
-      <h3 class="text-lg font-black text-white">Choose source token</h3>
-      <button onclick="closePicker()" class="w-9 h-9 rounded-full bg-hl-bg border border-hl-border flex items-center justify-center hover:border-hl-green/30 transition-colors"><span class="material-symbols-outlined text-white/40">close</span></button>
+      <h3 class="text-lg font-black text-on-surface">Choose source token</h3>
+      <button onclick="closePicker()" class="w-9 h-9 rounded-full bg-surface-container-low border border-outline-variant/15 flex items-center justify-center hover:border-hl-green/30 transition-colors"><span class="material-symbols-outlined text-on-surface-variant">close</span></button>
     </div>
-    <input id="picker-search" type="text" placeholder="Search..." class="w-full px-4 py-3 rounded-xl bg-hl-bg border border-hl-border text-white placeholder:text-white/30 text-sm mb-3 focus:outline-none focus:ring-2 focus:ring-hl-green/20" oninput="filterPicker()"/>
+    <input id="picker-search" type="text" placeholder="Search..." class="w-full px-4 py-3 rounded-xl bg-surface-container-low border border-outline-variant/15 text-on-surface placeholder:text-on-surface-variant/50 text-sm mb-3 focus:outline-none focus:ring-2 focus:ring-hl-green/20" oninput="filterPicker()"/>
     <div id="picker-list" class="overflow-y-auto flex-1 space-y-1"></div>
   </div>
 </div>
@@ -190,7 +190,7 @@ function selectTab(tab){
   activeTab=tab;
   const perp=document.getElementById('tab-perp'), spot=document.getElementById('tab-spot');
   const active='flex-1 py-2.5 rounded-xl text-sm font-bold transition-colors bg-hl-green/10 text-hl-green border border-hl-green/20';
-  const inactive='flex-1 py-2.5 rounded-xl text-sm font-bold transition-colors text-white/40 hover:text-white/70';
+  const inactive='flex-1 py-2.5 rounded-xl text-sm font-bold transition-colors text-on-surface-variant hover:text-on-surface';
   if(tab==='perp'){perp.className=active;spot.className=inactive;}
   else{spot.className=active;perp.className=inactive;}
   document.getElementById('output-label').textContent=`USDC on Hyperliquid ${tab==='perp'?'Perp':'Spot'}`;
@@ -239,12 +239,12 @@ function updateBtn(){
   const amt=parseFloat(document.getElementById('input-amount').value)||0;
   const usdVal=amt*(prices[TOKENS[fromTokenIdx].symbol]||0);
   const minErr=document.getElementById('min-error');
-  const darkBtn='w-full py-4 bg-hl-bg text-hl-green border border-hl-green/30 rounded-full font-black text-lg active:scale-[0.98] transition-transform hover:border-hl-green/60';
-  const dimBtn='w-full py-4 bg-hl-surface text-white/30 border border-hl-border rounded-full font-black text-lg';
-  if(!walletAddress){btn.textContent='Connect Wallet';btn.className=darkBtn;minErr.classList.add('hidden');}
+  const activeBtn='w-full py-4 bg-surface-container-lowest text-hl-green border border-hl-green/30 rounded-full font-black text-lg active:scale-[0.98] transition-transform hover:border-hl-green/60';
+  const dimBtn='w-full py-4 bg-surface-container text-on-surface-variant/60 border border-outline-variant/15 rounded-full font-black text-lg';
+  if(!walletAddress){btn.textContent='Connect Wallet';btn.className=activeBtn;minErr.classList.add('hidden');}
   else if(amt<=0){btn.textContent='Enter amount';btn.className=dimBtn;minErr.classList.add('hidden');}
   else if(usdVal<5&&usdVal>0){minErr.classList.remove('hidden');btn.textContent='Amount too low';btn.className=dimBtn;}
-  else{minErr.classList.add('hidden');btn.textContent=`Deposit to Hyperliquid ${activeTab==='perp'?'Perp':'Spot'}`;btn.className=darkBtn;}
+  else{minErr.classList.add('hidden');btn.textContent=`Deposit to Hyperliquid ${activeTab==='perp'?'Perp':'Spot'}`;btn.className=activeBtn;}
 }
 
 function onAmountChange(){
@@ -366,16 +366,16 @@ function filterPicker(){
 function renderPicker(rows){
   const list = document.getElementById('picker-list');
   const items = rows.map(({c,ci,t,ti,bal}) =>
-    Safe.html`<button data-ti="${ti}" data-ci="${ci}" class="pick-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-hl-bg transition-colors text-left">
+    Safe.html`<button data-ti="${ti}" data-ci="${ci}" class="pick-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-surface-container-low transition-colors text-left">
       <div class="relative flex-shrink-0">
-        <img src="${Safe.url(TOKEN_ICONS[t.symbol]||'')}" class="w-9 h-9 rounded-full bg-hl-border"/>
-        <img src="${Safe.url(chainIcon(c.id))}" class="w-4 h-4 rounded-full absolute -bottom-0.5 -right-0.5 border-2 border-hl-surface bg-hl-surface"/>
+        <img src="${Safe.url(TOKEN_ICONS[t.symbol]||'')}" class="w-9 h-9 rounded-full bg-surface-container"/>
+        <img src="${Safe.url(chainIcon(c.id))}" class="w-4 h-4 rounded-full absolute -bottom-0.5 -right-0.5 border-2 border-surface-container-lowest bg-surface-container-lowest"/>
       </div>
-      <div class="flex-1"><p class="font-bold text-sm text-white">${bal>0?fmt(bal)+' ':''}${t.symbol}</p><p class="text-xs text-white/40">${t.name} · ${c.name}</p></div>
-      <span class="material-symbols-outlined text-white/30 text-base">chevron_right</span>
+      <div class="flex-1"><p class="font-bold text-sm text-on-surface">${bal>0?fmt(bal)+' ':''}${t.symbol}</p><p class="text-xs text-on-surface-variant">${t.name} · ${c.name}</p></div>
+      <span class="material-symbols-outlined text-on-surface-variant text-base">chevron_right</span>
     </button>`
   );
-  Safe.setHTML(list, items.length ? items : Safe.html`<p class="text-sm text-white/40 text-center py-4">No tokens found</p>`);
+  Safe.setHTML(list, items.length ? items : Safe.html`<p class="text-sm text-on-surface-variant text-center py-4">No tokens found</p>`);
   list.querySelectorAll('button.pick-btn').forEach(btn => {
     btn.addEventListener('click', () => selectToken(Number(btn.dataset.ti), Number(btn.dataset.ci)));
   });

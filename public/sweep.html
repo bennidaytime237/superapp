@@ -215,7 +215,7 @@ function renderAssets(){
     const icon=TOKEN_ICONS[item.symbol]||'';
     const cicon=chainIcon(item.chainSlug);
     const stateClass=item.done?'opacity-60':item.failed?'opacity-60':'';
-    const checkClass=item.selected&&!item.done?'bg-primary border-primary':'bg-white border-outline-variant/30';
+    const checkClass=item.selected&&!item.done?'bg-primary border-primary':'bg-surface-container-lowest border-outline-variant/30';
     const statusIcon=item.done
       ?Safe.html`<span class="material-symbols-outlined text-primary text-lg">check_circle</span>`
       :item.failed

@@ -74,18 +74,18 @@
 
     <div class="mb-5">
       <label class="text-sm font-bold text-on-surface mb-2 block">Recipient address</label>
-      <input id="recipient" type="text" placeholder="0x... or name.eth" class="w-full px-4 py-3 rounded-xl border border-primary/20 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-primary/40 bg-white" oninput="validateAddr()"/>
+      <input id="recipient" type="text" placeholder="0x... or name.eth" class="w-full px-4 py-3 rounded-xl border border-primary/20 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-primary/40 bg-surface-container-lowest text-on-surface" oninput="validateAddr()"/>
       <p id="addr-error" class="hidden text-xs text-error mt-1">Invalid address</p>
       <p id="ens-resolved" class="hidden text-xs text-primary mt-1"></p>
     </div>
 
-    <div class="bg-white rounded-2xl p-5 border border-primary/10 mb-5">
+    <div class="bg-surface-container-lowest rounded-2xl p-5 border border-primary/10 mb-5">
       <p class="text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-3">You send</p>
       <div class="flex items-end justify-between gap-4">
         <button onclick="openPicker('pay')" class="inline-flex items-center gap-2 bg-surface-container-low pl-1.5 pr-4 py-1.5 rounded-full border border-outline-variant/10 hover:bg-surface-container-high transition-colors">
           <div class="relative">
             <img id="pay-token-icon" src="" class="w-8 h-8 rounded-full"/>
-            <img id="pay-chain-icon" src="" class="w-5 h-5 rounded-full absolute -right-1 -bottom-0.5 border-2 border-white bg-white"/>
+            <img id="pay-chain-icon" src="" class="w-5 h-5 rounded-full absolute -right-1 -bottom-0.5 border-2 border-surface-container-lowest bg-surface-container-lowest"/>
           </div>
           <span id="pay-label" class="font-bold text-sm ml-1">ETH</span>
           <span class="material-symbols-outlined text-base text-on-surface-variant">expand_more</span>
@@ -134,11 +134,11 @@
 
     <div class="mb-5">
       <label class="text-sm font-bold text-on-surface mb-2 block">Token & Chain</label>
-      <button onclick="openPicker('request')" class="w-full flex items-center justify-between px-4 py-3 bg-white rounded-xl border border-outline-variant/10 hover:border-primary/30 transition-colors">
+      <button onclick="openPicker('request')" class="w-full flex items-center justify-between px-4 py-3 bg-surface-container-lowest rounded-xl border border-outline-variant/10 hover:border-primary/30 transition-colors">
         <div class="flex items-center gap-3">
           <div class="relative">
             <img id="req-token-icon" src="" class="w-8 h-8 rounded-full"/>
-            <img id="req-chain-icon" src="" class="w-5 h-5 rounded-full absolute -right-1 -bottom-0.5 border-2 border-white bg-white"/>
+            <img id="req-chain-icon" src="" class="w-5 h-5 rounded-full absolute -right-1 -bottom-0.5 border-2 border-surface-container-lowest bg-surface-container-lowest"/>
           </div>
           <span id="req-label" class="font-bold text-sm">USDC on Base</span>
         </div>
@@ -148,8 +148,8 @@
 
     <div class="mb-5">
       <label class="text-sm font-bold text-on-surface mb-2 block">Amount</label>
-      <div class="bg-white rounded-xl border border-outline-variant/10 p-5">
-        <input id="amount-input" type="number" placeholder="0.00" class="w-full text-center text-5xl font-black border-none focus:ring-0 p-0 bg-transparent placeholder:text-on-surface-variant/15" oninput="updateReqBtn()"/>
+      <div class="bg-surface-container-lowest rounded-xl border border-outline-variant/10 p-5">
+        <input id="amount-input" type="number" placeholder="0.00" class="w-full text-center text-5xl font-black text-on-background border-none focus:ring-0 p-0 bg-transparent placeholder:text-on-surface-variant/15" oninput="updateReqBtn()"/>
         <div class="flex justify-center gap-2 mt-4">
           <button onclick="setAmt(10)" class="px-4 py-1.5 rounded-full text-sm font-bold border border-outline-variant/15 text-on-surface-variant hover:bg-surface-container-low transition-colors">$10</button>
           <button onclick="setAmt(50)" class="px-4 py-1.5 rounded-full text-sm font-bold border border-outline-variant/15 text-on-surface-variant hover:bg-surface-container-low transition-colors">$50</button>
@@ -161,7 +161,7 @@
 
     <div class="mb-6">
       <label class="text-sm font-bold text-on-surface mb-2 block">Add a note (optional)</label>
-      <textarea id="note-input" rows="3" placeholder="What's this for?" class="w-full px-4 py-3 bg-white rounded-xl border border-outline-variant/10 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none"></textarea>
+      <textarea id="note-input" rows="3" placeholder="What's this for?" class="w-full px-4 py-3 bg-surface-container-lowest rounded-xl border border-outline-variant/10 text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none"></textarea>
     </div>
 
     <button id="req-action-btn" onclick="generateLink()" class="w-full py-4 bg-surface-container-high text-on-surface-variant rounded-full font-black text-lg transition-colors">
@@ -209,9 +209,9 @@
 <!-- Token Picker Modal -->
 <div id="picker-modal" class="fixed inset-0 z-50 hidden">
   <div class="absolute inset-0 bg-black/30 backdrop-blur-sm" onclick="closePicker()"></div>
-  <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md bg-white rounded-3xl shadow-2xl p-6 max-h-[70vh] flex flex-col">
+  <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md bg-surface-container-lowest rounded-3xl shadow-2xl p-6 max-h-[70vh] flex flex-col">
     <div class="flex items-center justify-between mb-4">
-      <h3 class="text-lg font-black">Choose token</h3>
+      <h3 class="text-lg font-black text-on-surface">Choose token</h3>
       <button onclick="closePicker()" class="w-9 h-9 rounded-full bg-surface-container-low flex items-center justify-center"><span class="material-symbols-outlined text-on-surface-variant">close</span></button>
     </div>
     <input id="picker-search" type="text" placeholder="Search..." class="w-full px-4 py-3 rounded-xl border border-outline-variant/15 text-sm mb-3 focus:outline-none focus:ring-2 focus:ring-primary/30" oninput="filterPicker()"/>
@@ -307,7 +307,7 @@ function filterPicker(){const q=document.getElementById('picker-search').value.t
 function renderPicker(rows){
   const plist=document.getElementById('picker-list');
   const items=rows.map(({c,ci,t,ti})=>
-    Safe.html`<button data-ti="${ti}" data-ci="${ci}" class="pick-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-surface-container-low transition-colors text-left"><div class="relative flex-shrink-0"><img src="${Safe.url(TOKEN_ICONS[t.symbol]||'')}" class="w-9 h-9 rounded-full bg-surface-container"/><img src="${Safe.url(chainIcon(c.id))}" class="w-4 h-4 rounded-full absolute -bottom-0.5 -right-0.5 border-2 border-white bg-white"/></div><div class="flex-1"><p class="font-bold text-sm">${t.symbol}</p><p class="text-xs text-on-surface-variant">${t.name} · ${c.name}</p></div><span class="material-symbols-outlined text-on-surface-variant text-base">chevron_right</span></button>`
+    Safe.html`<button data-ti="${ti}" data-ci="${ci}" class="pick-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-surface-container-low transition-colors text-left"><div class="relative flex-shrink-0"><img src="${Safe.url(TOKEN_ICONS[t.symbol]||'')}" class="w-9 h-9 rounded-full bg-surface-container"/><img src="${Safe.url(chainIcon(c.id))}" class="w-4 h-4 rounded-full absolute -bottom-0.5 -right-0.5 border-2 border-surface-container-lowest bg-surface-container-lowest"/></div><div class="flex-1"><p class="font-bold text-sm text-on-surface">${t.symbol}</p><p class="text-xs text-on-surface-variant">${t.name} · ${c.name}</p></div><span class="material-symbols-outlined text-on-surface-variant text-base">chevron_right</span></button>`
   );
   Safe.setHTML(plist,items.length?items:Safe.html`<p class="text-sm text-on-surface-variant text-center py-4">No tokens found</p>`);
   plist.querySelectorAll('button.pick-btn').forEach(btn=>{
