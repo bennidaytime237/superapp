@@ -103,6 +103,30 @@ html.dark #wallet-menu {
   border-color: var(--outline-variant);
 }
 
+/* ─── Form Inputs: theme-aware backgrounds ──────────────────────────────────
+   The @tailwindcss/forms plugin sets background-color: #fff on inputs,
+   making them glaringly white in dark mode. Override with theme tokens. */
+html.dark input:where([type='text'],[type='email'],[type='url'],[type='password'],[type='number'],[type='date'],[type='datetime-local'],[type='month'],[type='search'],[type='tel'],[type='time'],[type='week']),
+html.dark select,
+html.dark select:where([multiple]),
+html.dark textarea {
+  background-color: var(--surface-container);
+  border-color: var(--outline-variant);
+  color: var(--on-surface);
+}
+
+html.dark input:where([type='text'],[type='email'],[type='url'],[type='password'],[type='number'],[type='date'],[type='datetime-local'],[type='month'],[type='search'],[type='tel'],[type='time'],[type='week'])::placeholder,
+html.dark textarea::placeholder {
+  color: var(--on-surface-variant);
+  opacity: 0.5;
+}
+
+/* Inputs explicitly opted out — keep them transparent in dark mode */
+html.dark input.bg-transparent,
+html.dark textarea.bg-transparent {
+  background-color: transparent;
+}
+
 /* Smooth theme transitions */
 *, *::before, *::after {
   transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;

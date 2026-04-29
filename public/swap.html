@@ -105,7 +105,7 @@
 
   <!-- ═══ DIVIDER + SWAP ═══ -->
   <div class="relative h-px bg-outline-variant/15 w-full bridge-spacer-divider">
-    <button onclick="swapTokens()" class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-11 h-11 bg-white border border-outline-variant/10 shadow-md rounded-full flex items-center justify-center text-on-surface-variant hover:text-primary hover:rotate-180 transition-all duration-300">
+    <button onclick="swapTokens()" class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-11 h-11 bg-surface-container-lowest border border-outline-variant/10 shadow-md rounded-full flex items-center justify-center text-on-surface-variant hover:text-primary hover:rotate-180 transition-all duration-300">
       <span class="material-symbols-outlined text-xl">swap_vert</span>
     </button>
   </div>
@@ -256,7 +256,7 @@
   <!-- Backdrop -->
   <div class="absolute inset-0 bg-black/30 backdrop-blur-sm" onclick="closeTokenModal()"></div>
   <!-- Panel -->
-  <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md bg-white rounded-3xl shadow-2xl p-8 max-h-[80vh] flex flex-col">
+  <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md bg-surface-container-lowest rounded-3xl shadow-2xl p-8 max-h-[80vh] flex flex-col">
     <!-- Header -->
     <div class="flex items-center justify-between mb-6">
       <h3 class="text-xl font-black text-on-background">Choose a token</h3>
@@ -817,13 +817,13 @@ function toggleGasTopup() {
     toggle.classList.remove('bg-surface-container-high');
     toggle.classList.add('bg-primary');
     knob.classList.remove('left-0.5', 'bg-on-surface-variant/50');
-    knob.classList.add('left-4', 'bg-white');
+    knob.classList.add('left-4', 'bg-on-primary');
     amountRow.classList.remove('hidden');
   } else {
     toggle.classList.add('bg-surface-container-high');
     toggle.classList.remove('bg-primary');
     knob.classList.add('left-0.5', 'bg-on-surface-variant/50');
-    knob.classList.remove('left-4', 'bg-white');
+    knob.classList.remove('left-4', 'bg-on-primary');
     amountRow.classList.add('hidden');
   }
 }
