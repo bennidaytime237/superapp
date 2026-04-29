@@ -237,6 +237,7 @@ function updateBtn(){
   const dimBtn='w-full py-4 bg-surface-container text-on-surface-variant/60 border border-outline-variant/15 rounded-full font-black text-lg';
   if(!walletAddress){btn.textContent='Connect Wallet';btn.className=activeBtn;minErr.classList.add('hidden');}
   else if(amt<=0){btn.textContent='Enter amount';btn.className=dimBtn;minErr.classList.add('hidden');}
+  else if(fromBal!=null&&amt>fromBal){minErr.classList.add('hidden');btn.textContent='Insufficient balance';btn.className=dimBtn;}
   else if(usdVal<5&&usdVal>0){minErr.classList.remove('hidden');btn.textContent='Amount too low';btn.className=dimBtn;}
   else{minErr.classList.add('hidden');btn.textContent=`Deposit to Hyperliquid ${activeTab==='perp'?'Perp':'Spot'}`;btn.className=activeBtn;}
 }
@@ -284,6 +285,7 @@ async function execute(){
   if(!walletAddress){connectWallet();return;}
   const amount=parseFloat(document.getElementById('input-amount').value)||0;
   if(amount<=0)return;
+  if(fromBal!=null&&amount>fromBal)return;
   const usdVal=amount*(prices[TOKENS[fromTokenIdx].symbol]||0);
   if(usdVal<5&&usdVal>0)return;
   try{

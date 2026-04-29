@@ -267,6 +267,7 @@ function updateBtn() {
   if(!walletAddress){btn.textContent='Connect Wallet';btn.className='w-full py-4 bg-pm-blue text-white rounded-full font-black text-lg active:scale-[0.98] transition-transform';}
   else if(!addr){btn.textContent='Enter Polymarket address';btn.className='w-full py-4 bg-surface-container-high text-on-surface-variant rounded-full font-black text-lg';}
   else if(amt<=0){btn.textContent='Enter amount';btn.className='w-full py-4 bg-surface-container-high text-on-surface-variant rounded-full font-black text-lg';}
+  else if(fromBal!=null&&amt>fromBal){btn.textContent='Insufficient balance';btn.className='w-full py-4 bg-surface-container-high text-on-surface-variant rounded-full font-black text-lg';}
   else{btn.textContent='Deposit to Polymarket';btn.className='w-full py-4 bg-pm-blue text-white rounded-full font-black text-lg active:scale-[0.98] transition-transform';}
 }
 
@@ -314,6 +315,7 @@ async function execute() {
   if(!walletAddress){connectWallet();return;}
   const amount=parseFloat(document.getElementById('input-amount').value)||0;
   if(amount<=0)return;
+  if(fromBal!=null&&amount>fromBal)return;
   const addr=getPmAddr();
   if(!addr)return;
   try {

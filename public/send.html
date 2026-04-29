@@ -221,10 +221,15 @@ function updateBtn() {
   const btn=document.getElementById('action-btn');
   const amt=parseFloat(document.getElementById('input-amount').value)||0;
   const addr=getRecipientAddr();
-  if(!walletAddress){btn.textContent='Connect Wallet';btn.className='w-full py-4 bg-primary text-on-primary rounded-full font-black text-lg active:scale-[0.98] transition-transform';}
-  else if(!addr){btn.textContent='Enter address';btn.className='w-full py-4 bg-surface-container-high text-on-surface-variant rounded-full font-black text-lg';}
-  else if(amt<=0){btn.textContent='Enter amount';btn.className='w-full py-4 bg-surface-container-high text-on-surface-variant rounded-full font-black text-lg';}
-  else{btn.textContent='Send';btn.className='w-full py-4 bg-primary text-on-primary rounded-full font-black text-lg active:scale-[0.98] transition-transform';}
+  const t=TOKENS[selTokenIdx];
+  const dim='w-full py-4 bg-surface-container-high text-on-surface-variant rounded-full font-black text-lg';
+  const active='w-full py-4 bg-primary text-on-primary rounded-full font-black text-lg active:scale-[0.98] transition-transform';
+  if(!walletAddress){btn.textContent='Connect Wallet';btn.className=active;}
+  else if(!addr){btn.textContent='Enter address';btn.className=dim;}
+  else if(amt<=0){btn.textContent='Enter amount';btn.className=dim;}
+  else if(fromBal!=null&&amt>fromBal){btn.textContent='Insufficient balance';btn.className=dim;}
+  else if(amt*10**t.decimals<1){btn.textContent='Amount too small';btn.className=dim;}
+  else{btn.textContent='Send';btn.className=active;}
 }
 
 function onAmountChange() {
@@ -263,6 +268,8 @@ async function execute() {
   const recipient=getRecipientAddr();
   if(!recipient)return;
   const t=TOKENS[selTokenIdx], c=CHAINS[selChainIdx];
+  if(fromBal!=null&&amount>fromBal)return;
+  if(amount*10**t.decimals<1)return;
   try {
     const btn=document.getElementById('action-btn');
     btn.textContent='Confirm in wallet...';
