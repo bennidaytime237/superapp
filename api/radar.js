@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { applyCors } from './_cors.js';
+import { fetchWithRetry } from './_fetch.js';
 
 const AcrossChain = z.object({
   chainId:     z.number(),
@@ -59,9 +60,9 @@ export default async function handler(req, res) {
 
   try {
     const [chainsRes, tokensRes, depositsRes] = await Promise.all([
-      fetch(`${BASE_URL}/swap/chains`, { next: { revalidate: 300 } }),
-      fetch(`${BASE_URL}/swap/tokens`, { next: { revalidate: 300 } }),
-      fetch(`${BASE_URL}/deposits?limit=200`, { next: { revalidate: 30 } }),
+      fetchWithRetry(`${BASE_URL}/swap/chains`, {}, { timeout: 10000 }),
+      fetchWithRetry(`${BASE_URL}/swap/tokens`, {}, { timeout: 10000 }),
+      fetchWithRetry(`${BASE_URL}/deposits?limit=200`, {}, { timeout: 15000 }),
     ]);
 
     if (!chainsRes.ok || !tokensRes.ok || !depositsRes.ok) {
