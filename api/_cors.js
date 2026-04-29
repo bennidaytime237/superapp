@@ -9,6 +9,12 @@ const ALLOWED = (process.env.ALLOWED_ORIGINS || '')
   .map(s => s.trim())
   .filter(Boolean);
 
+/**
+ * Sets CORS headers and handles OPTIONS preflight.
+ * @param {import('http').IncomingMessage} req
+ * @param {import('http').ServerResponse} res
+ * @returns {boolean} true if the request was an OPTIONS preflight (caller should return early)
+ */
 export function applyCors(req, res) {
   const origin = req.headers.origin;
   if (origin && ALLOWED.includes(origin)) {

@@ -28,12 +28,18 @@ const CHAIN_ICONS = {
   'hl-perp': 'https://icons.llamao.fi/icons/chains/rsz_hyperliquid.jpg',
 };
 
-// Returns icon URL for a chain given its numeric ID (or virtual string ID).
+/**
+ * @param {number | string} chainId - Numeric chain ID or virtual key like "hl-spot".
+ * @returns {string} Icon URL, or empty string if unknown.
+ */
 function chainIcon(chainId) {
   return CHAIN_ICONS[chainId] || '';
 }
 
-// Returns icon URL for a chain given its llama slug string.
+/**
+ * @param {string} slug - LlamaFi chain slug, e.g. "ethereum", "arbitrum".
+ * @returns {string} Icon URL.
+ */
 function chainIconBySlug(slug) {
   return `https://icons.llamao.fi/icons/chains/rsz_${slug}.jpg`;
 }
