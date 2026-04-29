@@ -35,6 +35,8 @@
 </style>
 <script src="theme.js"></script>
 <script src="safe-dom.js"></script>
+<script src="config.js"></script>
+<script src="wallet.js"></script>
 </head>
 <body class="bg-surface text-on-surface selection:bg-primary-fixed selection:text-on-primary-fixed min-h-screen">
 
@@ -396,7 +398,6 @@ function closeMobileMenu(e) { if (e.target === document.getElementById('mobile-m
 
 <script>
 // ── Config ──
-const TW = 'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains';
 const CHAINS = {
   1:     { name:'Ethereum',  slug:'ethereum' },
   42161: { name:'Arbitrum',  slug:'arbitrum' },
@@ -418,14 +419,6 @@ const CHAINS = {
   999:   { name:'HyperEVM',  slug:'hyperliquid%20evm' },
   232:   { name:'Lens',      slug:'lens%20network' },
 };
-const CHAIN_ICONS = {1:'https://icons.llamao.fi/icons/chains/rsz_ethereum.jpg',42161:'https://icons.llamao.fi/icons/chains/rsz_arbitrum.jpg',8453:'https://icons.llamao.fi/icons/chains/rsz_base.jpg',10:'https://icons.llamao.fi/icons/chains/rsz_optimism.jpg',137:'https://icons.llamao.fi/icons/chains/rsz_polygon.jpg',56:'https://icons.llamao.fi/icons/chains/rsz_bsc.jpg',324:'https://icons.llamao.fi/icons/chains/rsz_zksync%20era.jpg',59144:'https://icons.llamao.fi/icons/chains/rsz_linea.jpg',34443:'https://icons.llamao.fi/icons/chains/rsz_mode.jpg',1135:'https://icons.llamao.fi/icons/chains/rsz_lisk.jpg',480:'https://icons.llamao.fi/icons/chains/rsz_world%20chain.jpg',81457:'https://icons.llamao.fi/icons/chains/rsz_blast.jpg',534352:'https://icons.llamao.fi/icons/chains/rsz_scroll.jpg',7777777:'https://icons.llamao.fi/icons/chains/rsz_zora.jpg',130:'https://raw.githubusercontent.com/Uniswap/assets/master/blockchains/unichain/info/logo.png',57073:'https://icons.llamao.fi/icons/chains/rsz_ink.jpg',1868:'https://icons.llamao.fi/icons/chains/rsz_soneium.jpg',999:'https://icons.llamao.fi/icons/chains/rsz_hyperliquid.jpg',232:'https://icons.llamao.fi/icons/chains/rsz_lens%20network.jpg'};
-function chainIcon(chainId) {
-  if (CHAIN_ICONS[chainId]) return CHAIN_ICONS[chainId];
-  const c = CHAINS[chainId];
-  if (!c) return '';
-  return `https://icons.llamao.fi/icons/chains/rsz_${c.slug}.jpg`;
-}
-const TOKEN_ICON_MAP = {'ETH':`${TW}/ethereum/assets/0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2/logo.png`,'WETH':`${TW}/ethereum/assets/0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2/logo.png`,'USDC':`${TW}/ethereum/assets/0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48/logo.png`,'USDC.e':`${TW}/ethereum/assets/0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48/logo.png`,'USDT':`${TW}/ethereum/assets/0xdAC17F958D2ee523a2206206994597C13D831ec7/logo.png`,'DAI':`${TW}/ethereum/assets/0x6B175474E89094C44Da98b954EedeAC495271d0F/logo.png`,'WBTC':`${TW}/ethereum/assets/0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599/logo.png`,'MATIC':`${TW}/polygon/info/logo.png`,'POL':`${TW}/polygon/info/logo.png`,'BNB':`${TW}/binance/info/logo.png`};
 function tokenIcon(symbol) {
   if (TOKEN_ICON_MAP[symbol]) return TOKEN_ICON_MAP[symbol];
   const ethAddr = TOKEN_ADDRS[symbol]?.[1];

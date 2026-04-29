@@ -21,6 +21,8 @@
 </style>
 <script src="theme.js"></script>
 <script src="safe-dom.js"></script>
+<script src="config.js"></script>
+<script src="wallet.js"></script>
 </head>
 <body class="bg-background text-on-surface antialiased h-screen flex flex-col overflow-hidden">
 
@@ -119,7 +121,6 @@
 </div>
 
 <script>
-const TW = 'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains';
 const ACROSS_API = 'https://app.across.to/api';
 
 
@@ -190,21 +191,15 @@ function tokenIconUrl(token, chainId) {
   if (token.addresses?.[1]) return `${TW}/ethereum/assets/${token.addresses[1]}/logo.png`;
   return '';
 }
-const CHAIN_ICONS = {1:'https://icons.llamao.fi/icons/chains/rsz_ethereum.jpg',42161:'https://icons.llamao.fi/icons/chains/rsz_arbitrum.jpg',8453:'https://icons.llamao.fi/icons/chains/rsz_base.jpg',10:'https://icons.llamao.fi/icons/chains/rsz_optimism.jpg',137:'https://icons.llamao.fi/icons/chains/rsz_polygon.jpg',56:'https://icons.llamao.fi/icons/chains/rsz_bsc.jpg',324:'https://icons.llamao.fi/icons/chains/rsz_zksync%20era.jpg',59144:'https://icons.llamao.fi/icons/chains/rsz_linea.jpg',34443:'https://icons.llamao.fi/icons/chains/rsz_mode.jpg',1135:'https://icons.llamao.fi/icons/chains/rsz_lisk.jpg',480:'https://icons.llamao.fi/icons/chains/rsz_world%20chain.jpg',81457:'https://icons.llamao.fi/icons/chains/rsz_blast.jpg',534352:'https://icons.llamao.fi/icons/chains/rsz_scroll.jpg',7777777:'https://icons.llamao.fi/icons/chains/rsz_zora.jpg',130:'https://raw.githubusercontent.com/Uniswap/assets/master/blockchains/unichain/info/logo.png',57073:'https://icons.llamao.fi/icons/chains/rsz_ink.jpg',1868:'https://icons.llamao.fi/icons/chains/rsz_soneium.jpg',999:'https://icons.llamao.fi/icons/chains/rsz_hyperliquid.jpg',232:'https://icons.llamao.fi/icons/chains/rsz_lens.jpg','hl-spot':'https://icons.llamao.fi/icons/chains/rsz_hyperliquid.jpg','hl-perp':'https://icons.llamao.fi/icons/chains/rsz_hyperliquid.jpg'};
-function chainLogoUrl(chainId) {
-  if (CHAIN_ICONS[chainId]) return CHAIN_ICONS[chainId];
-  const c = SOURCE_CHAINS.find(c=>c.chainId===chainId) || DEST_CHAINS.find(c=>c.chainId===chainId);
-  if (!c) return '';
-  return `https://icons.llamao.fi/icons/chains/rsz_${c.slug}.jpg`;
-}
+const chainLogoUrl = chainIcon;
 
 async function connectWallet() {
   if (!window.ethereum) { alert('Install MetaMask'); return; }
   try {
     const accs = await window.ethereum.request({ method:'eth_requestAccounts' });
     walletAddress = accs[0];
-    document.getElementById('connect-label').textContent = walletAddress.slice(0,6)+'...'+walletAddress.slice(-4);
-    resolveWalletENS();
+    document.getElementById('connect-label').textContent = formatAddr(walletAddress);
+    resolveWalletENS(walletAddress);
     fetchBalance();
     updateBtn();
   } catch {}
@@ -464,7 +459,6 @@ async function executeGas() {
 }
 
 
-function resolveWalletENS(){if(!walletAddress)return;fetch(`/api/ens?address=${walletAddress}`).then(r=>r.json()).then(d=>{if(d.name)document.getElementById('connect-label').textContent=d.name;}).catch(()=>{});}
 async function sendTx(tx) {
   const chainHex = '0x' + tx.chainId.toString(16);
   const current = await window.ethereum.request({ method:'eth_chainId' });
@@ -495,12 +489,20 @@ function fmt(n) {
   updateBtn();
   await fetchPrices();
   onAmountChange();
-  if (window.ethereum) {
-    const accs = await window.ethereum.request({ method:'eth_accounts' });
-    if (accs.length > 0) { walletAddress = accs[0]; document.getElementById('connect-label').textContent = walletAddress.slice(0,6)+'...'+walletAddress.slice(-4); resolveWalletENS(); fetchBalance(); updateBtn(); }
-    window.ethereum.on('accountsChanged', a => { walletAddress = a[0]||null; document.getElementById('connect-label').textContent = walletAddress?walletAddress.slice(0,6)+'...'+walletAddress.slice(-4):'Connect'; fetchBalance(); updateBtn(); });
-    window.ethereum.on('chainChanged', () => { if (walletAddress) { fetchBalance(); updateBtn(); } });
-  }
+  await setupWallet({
+    onConnected(addr) {
+      walletAddress=addr;
+      document.getElementById('connect-label').textContent=formatAddr(addr);
+      resolveWalletENS(addr);
+      fetchBalance(); updateBtn();
+    },
+    onDisconnected() {
+      walletAddress=null;
+      document.getElementById('connect-label').textContent='Connect';
+      fetchBalance(); updateBtn();
+    },
+    onChainChanged() { if(walletAddress){fetchBalance();updateBtn();} }
+  });
 })();
 </script>
 
