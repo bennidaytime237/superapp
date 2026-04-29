@@ -21,6 +21,8 @@
 </style>
 <script src="theme.js"></script>
 <script src="safe-dom.js"></script>
+<script src="config.js"></script>
+<script src="wallet.js"></script>
 </head>
 <body class="bg-background text-on-surface antialiased min-h-screen flex flex-col">
 
@@ -175,14 +177,7 @@ const TOKENS = [
     addresses:{1:'0x6B175474E89094C44Da98b954EedeAC495271d0F',42161:'0xDA10009cBd5D07dd0CeCc66161FC93D7c9000da1'}},
 ];
 
-const TOKEN_ICONS = {
-  ETH:'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2/logo.png',
-  USDC:'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48/logo.png',
-  USDT:'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0xdAC17F958D2ee523a2206206994597C13D831ec7/logo.png',
-  DAI:'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0x6B175474E89094C44Da98b954EedeAC495271d0F/logo.png',
-  WBTC:'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599/logo.png',
-};
-function chainIcon(id){const c=CHAINS.find(x=>x.id===id);return c?`https://icons.llamao.fi/icons/chains/rsz_${c.slug}.jpg`:'';}
+
 
 let walletAddress=null, fromTokenIdx=1, fromChainIdx=0, fromBal=null, cachedBalances=null, prices={}, lastQuote=null, quoteTimer=null, activeTab='perp';
 
@@ -201,11 +196,10 @@ async function connectWallet(){
   if(!window.ethereum){alert('Install MetaMask');return;}
   const accs=await window.ethereum.request({method:'eth_requestAccounts'});
   walletAddress=accs[0];
-  document.getElementById('connect-label').textContent=walletAddress.slice(0,6)+'...'+walletAddress.slice(-4);
-  resolveWalletENS();
+  document.getElementById('connect-label').textContent=formatAddr(walletAddress);
+  resolveWalletENS(walletAddress);
   fetchBalance();updateBtn();
 }
-function resolveWalletENS(){if(!walletAddress)return;fetch(`/api/ens?address=${walletAddress}`).then(r=>r.json()).then(d=>{if(d.name)document.getElementById('connect-label').textContent=d.name;}).catch(()=>{});}
 
 async function fetchBalance(){
   if(!walletAddress)return;
@@ -387,12 +381,20 @@ function fmt(n){if(n>=1000)return n.toLocaleString('en-US',{maximumFractionDigit
 (async function(){
   updateDisplay();updateBtn();
   await fetchPrices();
-  if(window.ethereum){
-    const accs=await window.ethereum.request({method:'eth_accounts'});
-    if(accs.length>0){walletAddress=accs[0];document.getElementById('connect-label').textContent=walletAddress.slice(0,6)+'...'+walletAddress.slice(-4);resolveWalletENS();fetchBalance();updateBtn();}
-    window.ethereum.on('accountsChanged',a=>{walletAddress=a[0]||null;document.getElementById('connect-label').textContent=walletAddress?walletAddress.slice(0,6)+'...'+walletAddress.slice(-4):'Connect';fetchBalance();updateBtn();});
-    window.ethereum.on('chainChanged',()=>{if(walletAddress){fetchBalance();updateBtn();}});
-  }
+  await setupWallet({
+    onConnected(addr){
+      walletAddress=addr;
+      document.getElementById('connect-label').textContent=formatAddr(addr);
+      resolveWalletENS(addr);
+      fetchBalance();updateBtn();
+    },
+    onDisconnected(){
+      walletAddress=null;
+      document.getElementById('connect-label').textContent='Connect';
+      fetchBalance();updateBtn();
+    },
+    onChainChanged(){if(walletAddress){fetchBalance();updateBtn();}}
+  });
 })();
 </script>
 
