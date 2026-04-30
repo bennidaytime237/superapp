@@ -23,7 +23,7 @@
 <script src="safe-dom.js"></script>
 <script src="config.js"></script>
 <script src="wallet.js"></script>
-<script src="disclaimer.js"></script>
+
 </head>
 <body class="bg-background text-on-surface antialiased min-h-screen flex flex-col">
 
@@ -381,5 +381,6 @@ function selectToken(ti,ci){selTokenIdx=ti;selChainIdx=ci;closePicker();updateDi
 function toggleMobileMenu() { document.getElementById('mobile-menu').classList.toggle('hidden'); }
 function closeMobileMenu(e) { if (e.target === document.getElementById('mobile-menu')) document.getElementById('mobile-menu').classList.add('hidden'); }
 </script>
+<script src="disclaimer.js"></script>
 </body>
 </html>
