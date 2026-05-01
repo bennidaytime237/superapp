@@ -195,7 +195,7 @@ function tokenIconUrl(token, chainId) {
 const chainLogoUrl = chainIcon;
 
 async function connectWallet() {
-  if (!window.ethereum) { alert('Install MetaMask'); return; }
+  if (!window.ethereum) { showNoWalletMessage(); return; }
   try {
     const accs = await window.ethereum.request({ method:'eth_requestAccounts' });
     walletAddress = accs[0];

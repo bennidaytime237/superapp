@@ -379,7 +379,7 @@ const chainLogoUrl = chainIcon;
 
 // ── Wallet ──
 async function connectWallet() {
-  if (!window.ethereum) { alert('Install MetaMask to continue'); return; }
+  if (!window.ethereum) { showNoWalletMessage(); return; }
   try {
     const accs = await window.ethereum.request({ method: 'eth_requestAccounts' });
     walletAddress = accs[0];

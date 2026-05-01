@@ -509,7 +509,7 @@ function disconnect() {
 
 async function connectWallet() {
   if (!window.ethereum) {
-    alert('Please install MetaMask to connect your wallet.');
+    showNoWalletMessage();
     return;
   }
   try {

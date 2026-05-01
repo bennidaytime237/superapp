@@ -197,7 +197,7 @@ function selectTab(tab){
 }
 
 async function connectWallet(){
-  if(!window.ethereum){alert('Install MetaMask');return;}
+  if(!window.ethereum){showNoWalletMessage();return;}
   const accs=await window.ethereum.request({method:'eth_requestAccounts'});
   walletAddress=accs[0];
   document.getElementById('connect-label').textContent=formatAddr(walletAddress);
