@@ -253,7 +253,7 @@ function updateConnectBtn() {
 }
 
 async function connectWallet() {
-  if (!window.ethereum) { alert('Install MetaMask'); return; }
+  if (!window.ethereum) { showNoWalletMessage(); return; }
   const accs = await window.ethereum.request({ method:'eth_requestAccounts' });
   walletAddress = accs[0];
   updateConnectBtn();
