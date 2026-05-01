@@ -18,6 +18,11 @@
   .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
   input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
   input[type=number] { -moz-appearance: textfield; }
+
+  /* Keep content clear of the mobile bottom nav */
+  @media (max-width: 767px) {
+    main { padding-bottom: 6rem; }
+  }
 </style>
 <script src="theme.js"></script>
 <script src="safe-dom.js"></script>

@@ -33,6 +33,12 @@
   .compact .bridge-spacer-divider { margin-top: 0.5rem; margin-bottom: 0.5rem; }
   .compact .bridge-amount { font-size: 2.25rem; }
   .compact { padding-top: 0.75rem; padding-bottom: 0.75rem; }
+
+  /* Keep content clear of the mobile bottom nav */
+  @media (max-width: 767px) {
+    #bridge-main { padding-bottom: 6rem; }
+    #bridge-main.compact { padding-bottom: 6rem; }
+  }
 </style>
 <script src="theme.js"></script>
 <script src="safe-dom.js"></script>
