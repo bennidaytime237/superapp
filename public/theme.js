@@ -17,3 +17,8 @@ function _updateThemeIcons() {
 }
 
 document.addEventListener('DOMContentLoaded', _updateThemeIcons);
+
+// ── Click delegation for theme toggle ───────────────────────────────────────
+document.addEventListener('click', function(e) {
+  if (e.target.closest('[data-action="toggle-theme"]')) toggleTheme();
+});
