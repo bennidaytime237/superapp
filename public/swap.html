@@ -807,7 +807,11 @@ function setGasUsd(n) {
 
 function setMax() {
   if (fromBal != null) {
-    document.getElementById('input-amount').value = fromBal;
+    const token = TOKENS[fromTokenIdx];
+    const chainId = CHAINS[fromChainIdx].id;
+    const GAS_RESERVE = { 1: 0.005, 56: 0.001, 137: 0.05 };
+    const reserve = token.native ? (GAS_RESERVE[chainId] ?? 0.0005) : 0;
+    document.getElementById('input-amount').value = Math.max(0, fromBal - reserve);
     onAmountChange();
   }
 }

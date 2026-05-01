@@ -310,7 +310,7 @@ async function execute() {
   }
 }
 
-function setMax(){if(fromBal!=null){document.getElementById('input-amount').value=fromBal;onAmountChange();}}
+function setMax(){if(fromBal!=null){const t=TOKENS[selTokenIdx];const cid=CHAINS[selChainIdx].id;const GAS_RESERVE={1:0.005,56:0.001,137:0.05};const reserve=t.native?(GAS_RESERVE[cid]??0.0005):0;document.getElementById('input-amount').value=Math.max(0,fromBal-reserve);onAmountChange();}}
 
 // Picker
 let allRows=[];
