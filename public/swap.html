@@ -735,13 +735,15 @@ function validateRecipient() {
   const val = document.getElementById('recipient-address').value.trim();
   const err = document.getElementById('recipient-error');
   const label = document.getElementById('to-label');
-  if (!val) { err.classList.add('hidden'); label.textContent = 'Wallet'; return; }
+  if (!val) { err.classList.add('hidden'); label.textContent = 'Wallet'; onAmountChange(); return; }
   if (EthUtils.isValidAddress(val)) {
     err.classList.add('hidden');
     label.textContent = val.slice(0,6) + '...' + val.slice(-4);
+    onAmountChange();
   } else {
     err.classList.remove('hidden');
     label.textContent = 'Wallet';
+    onAmountChange();
   }
 }
 
@@ -841,6 +843,21 @@ function onAmountChange() {
     document.getElementById('output-amount').textContent = '--';
     document.getElementById('output-usd').textContent = '';
     document.getElementById('fee-display').textContent = '--';
+    document.getElementById('fee-route').textContent = '';
+    return;
+  }
+  if (fromBal != null && val > fromBal) {
+    document.getElementById('output-amount').textContent = '--';
+    document.getElementById('output-usd').textContent = '';
+    document.getElementById('fee-display').textContent = 'Insufficient balance';
+    document.getElementById('fee-route').textContent = '';
+    return;
+  }
+  const recipientInput = (document.getElementById('recipient-address')?.value || '').trim();
+  if (recipientInput && !EthUtils.isValidAddress(recipientInput)) {
+    document.getElementById('output-amount').textContent = '--';
+    document.getElementById('output-usd').textContent = '';
+    document.getElementById('fee-display').textContent = 'Invalid recipient address';
     document.getElementById('fee-route').textContent = '';
     return;
   }
