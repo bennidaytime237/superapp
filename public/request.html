@@ -9,16 +9,10 @@
 <title>Request Payment - Sage</title>
 <link rel="icon" type="image/svg+xml" href="favicon.svg"/>
 <link rel="stylesheet" href="tailwind.output.css"/>
+<link rel="stylesheet" href="page-styles.css"/>
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&display=swap" rel="stylesheet"/>
 <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
 <link rel="stylesheet" href="theme.css"/>
-<style>
-  body { font-family: 'Outfit', sans-serif; }
-  b, strong, .font-bold, .font-extrabold, .font-black, .font-semibold { letter-spacing: 0.01em; }
-  .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
-  input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
-  input[type=number] { -moz-appearance: textfield; }
-</style>
 <script src="theme.js"></script>
 <script src="safe-dom.js"></script>
 <script src="config.js"></script>
@@ -36,10 +30,10 @@
     <a href="index.html" class="text-xs font-medium text-on-surface-variant hover:text-primary transition-colors flex items-center gap-1">
       <span class="material-symbols-outlined text-sm">arrow_back</span>Dashboard
     </a>
-    <button onclick="toggleTheme()" title="Toggle dark mode" aria-label="Toggle dark mode" class="flex items-center gap-2 px-3 py-1.5 bg-surface-container rounded-full text-on-surface-variant hover:text-primary hover:bg-surface-container-high transition-all flex-shrink-0">
+    <button data-action="toggle-theme" title="Toggle dark mode" aria-label="Toggle dark mode" class="flex items-center gap-2 px-3 py-1.5 bg-surface-container rounded-full text-on-surface-variant hover:text-primary hover:bg-surface-container-high transition-all flex-shrink-0">
       <span class="material-symbols-outlined text-base theme-toggle-icon">dark_mode</span>
     </button>
-    <button id="connect-btn" onclick="connectWallet()" class="flex items-center gap-2 px-3 py-1.5 bg-primary text-on-primary rounded-full text-xs font-bold active:scale-95 transition-transform">
+    <button id="connect-btn" data-action="connect-wallet" class="flex items-center gap-2 px-3 py-1.5 bg-primary text-on-primary rounded-full text-xs font-bold active:scale-95 transition-transform">
       <span class="material-symbols-outlined text-sm">account_balance_wallet</span>
       <span id="connect-label">Connect</span>
     </button>
@@ -68,7 +62,7 @@
     <!-- Token & Chain -->
     <div class="mb-5">
       <label class="text-sm font-bold text-on-surface mb-2 block">Token & Chain</label>
-      <button onclick="openPicker()" class="w-full flex items-center justify-between px-4 py-3 bg-surface-container-lowest rounded-xl border border-outline-variant/10 hover:border-primary/30 transition-colors">
+      <button data-action="open-picker" class="w-full flex items-center justify-between px-4 py-3 bg-surface-container-lowest rounded-xl border border-outline-variant/10 hover:border-primary/30 transition-colors">
         <div class="flex items-center gap-3">
           <div class="relative">
             <img id="sel-token-icon" src="" class="w-8 h-8 rounded-full"/>
@@ -84,12 +78,12 @@
     <div class="mb-5">
       <label class="text-sm font-bold text-on-surface mb-2 block">Amount</label>
       <div class="bg-surface-container-lowest rounded-xl border border-outline-variant/10 p-5">
-        <input id="amount-input" type="number" placeholder="0.00" class="w-full text-center text-5xl font-black text-on-background border-none focus:ring-0 p-0 bg-transparent placeholder:text-on-surface-variant/15" oninput="updateBtn()"/>
+        <input id="amount-input" type="number" placeholder="0.00" class="w-full text-center text-5xl font-black text-on-background border-none focus:ring-0 p-0 bg-transparent placeholder:text-on-surface-variant/15"/>
         <div class="flex justify-center gap-2 mt-4">
-          <button onclick="setAmt(10)" class="px-4 py-1.5 rounded-full text-sm font-bold border border-outline-variant/15 text-on-surface-variant hover:bg-surface-container-low transition-colors">$10</button>
-          <button onclick="setAmt(50)" class="px-4 py-1.5 rounded-full text-sm font-bold border border-outline-variant/15 text-on-surface-variant hover:bg-surface-container-low transition-colors">$50</button>
-          <button onclick="setAmt(100)" class="px-4 py-1.5 rounded-full text-sm font-bold border border-outline-variant/15 text-on-surface-variant hover:bg-surface-container-low transition-colors">$100</button>
-          <button onclick="setAmt(500)" class="px-4 py-1.5 rounded-full text-sm font-bold border border-outline-variant/15 text-on-surface-variant hover:bg-surface-container-low transition-colors">$500</button>
+          <button data-action="set-amt" data-arg="10" class="px-4 py-1.5 rounded-full text-sm font-bold border border-outline-variant/15 text-on-surface-variant hover:bg-surface-container-low transition-colors">$10</button>
+          <button data-action="set-amt" data-arg="50" class="px-4 py-1.5 rounded-full text-sm font-bold border border-outline-variant/15 text-on-surface-variant hover:bg-surface-container-low transition-colors">$50</button>
+          <button data-action="set-amt" data-arg="100" class="px-4 py-1.5 rounded-full text-sm font-bold border border-outline-variant/15 text-on-surface-variant hover:bg-surface-container-low transition-colors">$100</button>
+          <button data-action="set-amt" data-arg="500" class="px-4 py-1.5 rounded-full text-sm font-bold border border-outline-variant/15 text-on-surface-variant hover:bg-surface-container-low transition-colors">$500</button>
         </div>
       </div>
     </div>
@@ -101,7 +95,7 @@
     </div>
 
     <!-- Action -->
-    <button id="action-btn" onclick="generateLink()" class="w-full py-4 bg-surface-container-high text-on-surface-variant rounded-full font-black text-lg transition-colors">
+    <button id="action-btn" data-action="generate-link" class="w-full py-4 bg-surface-container-high text-on-surface-variant rounded-full font-black text-lg transition-colors">
       Connect Wallet
     </button>
   </div>
@@ -126,13 +120,13 @@
 
       <!-- Action buttons -->
       <div class="flex justify-center gap-4 mb-6">
-        <button onclick="copyLink()" id="copy-btn" class="flex flex-col items-center gap-1.5">
+        <button data-action="copy-link" id="copy-btn" class="flex flex-col items-center gap-1.5">
           <div class="w-12 h-12 rounded-full bg-white/15 flex items-center justify-center">
             <span class="material-symbols-outlined text-on-primary">content_copy</span>
           </div>
           <span class="text-xs font-bold text-on-primary" id="copy-label">Copy</span>
         </button>
-        <button onclick="shareLink()" class="flex flex-col items-center gap-1.5">
+        <button data-action="share-link" class="flex flex-col items-center gap-1.5">
           <div class="w-12 h-12 rounded-full bg-white/15 flex items-center justify-center">
             <span class="material-symbols-outlined text-on-primary">share</span>
           </div>
@@ -141,7 +135,7 @@
       </div>
     </div>
 
-    <button onclick="resetForm()" class="w-full py-4 bg-primary-container text-on-primary-container rounded-full font-black text-lg hover:opacity-90 transition-opacity">
+    <button data-action="reset-form" class="w-full py-4 bg-primary-container text-on-primary-container rounded-full font-black text-lg hover:opacity-90 transition-opacity">
       Create New Request
     </button>
   </div>
@@ -150,181 +144,17 @@
 
 <!-- Token Picker Modal -->
 <div id="picker-modal" role="dialog" aria-modal="true" aria-labelledby="picker-modal-title" class="fixed inset-0 z-50 hidden">
-  <div class="absolute inset-0 bg-black/30 backdrop-blur-sm" onclick="closePicker()"></div>
+  <div class="absolute inset-0 bg-black/30 backdrop-blur-sm" data-action="close-picker"></div>
   <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md bg-surface-container-lowest rounded-3xl shadow-2xl p-6 max-h-[70vh] flex flex-col">
     <div class="flex items-center justify-between mb-4">
       <h3 id="picker-modal-title" class="text-lg font-black text-on-surface">Choose token</h3>
-      <button onclick="closePicker()" aria-label="Close" class="w-9 h-9 rounded-full bg-surface-container-low flex items-center justify-center"><span class="material-symbols-outlined text-on-surface-variant">close</span></button>
+      <button data-action="close-picker" aria-label="Close" class="w-9 h-9 rounded-full bg-surface-container-low flex items-center justify-center"><span class="material-symbols-outlined text-on-surface-variant">close</span></button>
     </div>
-    <input id="picker-search" type="text" placeholder="Search..." class="w-full px-4 py-3 rounded-xl border border-outline-variant/15 text-sm mb-3 focus:outline-none focus:ring-2 focus:ring-primary/30" oninput="filterPicker()"/>
+    <input id="picker-search" type="text" placeholder="Search..." class="w-full px-4 py-3 rounded-xl border border-outline-variant/15 text-sm mb-3 focus:outline-none focus:ring-2 focus:ring-primary/30"/>
     <div id="picker-list" class="overflow-y-auto flex-1 space-y-1"></div>
   </div>
 </div>
 
-<script>
-const CHAINS = [
-  { id:8453, name:'Base', slug:'base' },
-  { id:42161, name:'Arbitrum', slug:'arbitrum' },
-  { id:1, name:'Ethereum', slug:'ethereum' },
-  { id:10, name:'Optimism', slug:'optimism' },
-  { id:137, name:'Polygon', slug:'polygon' },
-  { id:324, name:'zkSync', slug:'zksync%20era' },
-  { id:59144, name:'Linea', slug:'linea' },
-];
-const TOKENS = [
-  { symbol:'USDC', name:'USD Coin', decimals:6, native:false,
-    addresses:{1:'0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48',42161:'0xaf88d065e77c8cC2239327C5EDb3A432268e5831',8453:'0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913',10:'0x0b2C639c533813f4Aa9D7837CAf62653d097Ff85',137:'0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359'} },
-  { symbol:'ETH', name:'Ethereum', decimals:18, native:true,
-    addresses:{1:null,42161:null,8453:null,10:null} },
-  { symbol:'USDT', name:'Tether', decimals:6, native:false,
-    addresses:{1:'0xdAC17F958D2ee523a2206206994597C13D831ec7',42161:'0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9',10:'0x94b008aA00579c1307B0EF2c499aD98a8ce58e58'} },
-  { symbol:'DAI', name:'Dai', decimals:18, native:false,
-    addresses:{1:'0x6B175474E89094C44Da98b954EedeAC495271d0F',42161:'0xDA10009cBd5D07dd0CeCc66161FC93D7c9000da1'} },
-  { symbol:'WBTC', name:'Wrapped BTC', decimals:8, native:false,
-    addresses:{1:'0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599',42161:'0x2f2a2543B76A4166549F7aaB2e75Bef0aefC5B0f'} },
-  { symbol:'POL', name:'Polygon', decimals:18, native:true,
-    addresses:{137:null} },
-];
-
-let walletAddress=null, selTokenIdx=0, selChainIdx=0, generatedUrl='';
-
-async function connectWallet() {
-  if(!window.ethereum){alert('Install MetaMask');return;}
-  const accs=await window.ethereum.request({method:'eth_requestAccounts'});
-  walletAddress=accs[0];
-  document.getElementById('connect-label').textContent=formatAddr(walletAddress);
-  document.getElementById('my-address').textContent=formatAddr(walletAddress);
-  resolveWalletENS();
-  updateBtn();
-}
-function resolveWalletENS(){
-  if(!walletAddress)return;
-  fetch(`/api/ens?address=${walletAddress}`).then(r=>r.json()).then(d=>{
-    if(d.name){
-      document.getElementById('connect-label').textContent=d.name;
-      const ensEl=document.getElementById('my-ens');
-      ensEl.textContent=d.name;ensEl.classList.remove('hidden');
-    }
-  }).catch(()=>{});
-}
-
-function setAmt(n){document.getElementById('amount-input').value=n;updateBtn();}
-
-function updateDisplay(){
-  const t=TOKENS[selTokenIdx], c=CHAINS[selChainIdx];
-  document.getElementById('sel-token-icon').src=TOKEN_ICONS[t.symbol]||'';
-  document.getElementById('sel-chain-icon').src=chainIcon(c.id);
-  document.getElementById('sel-label').textContent=`${t.symbol} on ${c.name}`;
-}
-
-function updateBtn(){
-  const btn=document.getElementById('action-btn');
-  const amt=parseFloat(document.getElementById('amount-input').value)||0;
-  if(!walletAddress){btn.textContent='Connect Wallet';btn.className='w-full py-4 bg-primary text-on-primary rounded-full font-black text-lg active:scale-[0.98] transition-transform';}
-  else if(amt<=0){btn.textContent='Enter amount';btn.className='w-full py-4 bg-surface-container-high text-on-surface-variant rounded-full font-black text-lg';}
-  else{btn.textContent='Create Payment Link';btn.className='w-full py-4 bg-primary text-on-primary rounded-full font-black text-lg active:scale-[0.98] transition-transform';}
-}
-
-function generateLink(){
-  if(!walletAddress){connectWallet();return;}
-  const amt=parseFloat(document.getElementById('amount-input').value)||0;
-  if(amt<=0)return;
-  const t=TOKENS[selTokenIdx], c=CHAINS[selChainIdx];
-  const note=document.getElementById('note-input').value.trim();
-  const params=new URLSearchParams({to:walletAddress,token:t.symbol,chain:c.id,amount:amt});
-  if(note)params.set('note',note);
-  generatedUrl=`${window.location.origin}/send.html?${params}`;
-
-  // Show share view
-  document.getElementById('form-view').classList.add('hidden');
-  document.getElementById('share-view').classList.remove('hidden');
-  document.getElementById('share-url').textContent=generatedUrl;
-  document.getElementById('share-summary').textContent=`${amt} ${t.symbol} on ${c.name}`;
-  const noteEl=document.getElementById('share-note');
-  if(note){noteEl.textContent=`"${note}"`;noteEl.classList.remove('hidden');}
-  else{noteEl.classList.add('hidden');}
-}
-
-function copyLink(){
-  navigator.clipboard.writeText(generatedUrl);
-  const label=document.getElementById('copy-label');
-  label.textContent='Copied!';
-  setTimeout(()=>{label.textContent='Copy';},2000);
-}
-
-function shareLink(){
-  if(navigator.share){
-    navigator.share({title:'Payment Request',text:'Pay me via Sage',url:generatedUrl}).catch(()=>{});
-  } else { copyLink(); }
-}
-
-function resetForm(){
-  document.getElementById('form-view').classList.remove('hidden');
-  document.getElementById('share-view').classList.add('hidden');
-  document.getElementById('amount-input').value='';
-  document.getElementById('note-input').value='';
-  updateBtn();
-}
-
-// Picker
-let allRows=[];
-function openPicker(){
-  document.getElementById('picker-search').value='';
-  allRows=[];
-  CHAINS.forEach((c,ci)=>{TOKENS.forEach((t,ti)=>{
-    const has=t.native?t.addresses.hasOwnProperty(c.id):t.addresses[c.id];
-    if(!has)return;
-    allRows.push({c,ci,t,ti});
-  });});
-  renderPicker(allRows);
-  document.getElementById('picker-modal').classList.remove('hidden');
-  document.getElementById('picker-search').focus();
-}
-function closePicker(){document.getElementById('picker-modal').classList.add('hidden');}
-document.addEventListener('keydown', e => {
-  if (e.key === 'Escape' && !document.getElementById('picker-modal').classList.contains('hidden')) closePicker();
-});
-function filterPicker(){
-  const q=document.getElementById('picker-search').value.toLowerCase();
-  renderPicker(q?allRows.filter(r=>r.t.symbol.toLowerCase().includes(q)||r.t.name.toLowerCase().includes(q)||r.c.name.toLowerCase().includes(q)):allRows);
-}
-function renderPicker(rows){
-  const list = document.getElementById('picker-list');
-  const items = rows.map(({c,ci,t,ti}) =>
-    Safe.html`<button data-ti="${ti}" data-ci="${ci}" class="pick-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-surface-container-low transition-colors text-left">
-      <div class="relative flex-shrink-0">
-        <img src="${Safe.url(TOKEN_ICONS[t.symbol]||'')}" class="w-9 h-9 rounded-full bg-surface-container"/>
-        <img src="${Safe.url(chainIcon(c.id))}" class="w-4 h-4 rounded-full absolute -bottom-0.5 -right-0.5 border-2 border-surface-container-lowest bg-surface-container-lowest"/>
-      </div>
-      <div class="flex-1"><p class="font-bold text-sm">${t.symbol}</p><p class="text-xs text-on-surface-variant">${t.name} · ${c.name}</p></div>
-    </button>`
-  );
-  Safe.setHTML(list, items.length ? items : Safe.html`<p class="text-sm text-on-surface-variant text-center py-4">No tokens found</p>`);
-  list.querySelectorAll('button.pick-btn').forEach(btn => {
-    btn.addEventListener('click', () => selectToken(Number(btn.dataset.ti), Number(btn.dataset.ci)));
-  });
-}
-function selectToken(ti,ci){selTokenIdx=ti;selChainIdx=ci;closePicker();updateDisplay();}
-
-(async function(){
-  updateDisplay();updateBtn();
-  await setupWallet({
-    onConnected(addr){
-      walletAddress=addr;
-      document.getElementById('connect-label').textContent=formatAddr(addr);
-      document.getElementById('my-address').textContent=formatAddr(addr);
-      resolveWalletENS();updateBtn();
-    },
-    onDisconnected(){
-      walletAddress=null;
-      document.getElementById('connect-label').textContent='Connect';
-      document.getElementById('my-address').textContent='Connect wallet';
-      updateBtn();
-    },
-    onChainChanged(){if(walletAddress)updateBtn();}
-  });
-})();
-</script>
 
 <!-- Mobile Bottom Nav -->
 <nav class="fixed bottom-5 left-4 right-4 z-50 md:hidden flex items-center justify-around py-3 px-2 bg-surface-container/95 backdrop-blur-xl rounded-full shadow-[0_8px_40px_rgba(0,0,0,0.12)] border border-outline-variant/15">
@@ -340,14 +170,14 @@ function selectToken(ti,ci){selTokenIdx=ti;selChainIdx=ci;closePicker();updateDi
     <span class="material-symbols-outlined">send</span>
     <span class="font-headline text-[10px] font-bold uppercase mt-1">Pay</span>
   </a>
-  <button onclick="toggleMobileMenu()" class="flex flex-col items-center justify-center text-on-surface-variant p-3 transition-transform active:scale-90">
+  <button data-action="toggle-mobile-menu" class="flex flex-col items-center justify-center text-on-surface-variant p-3 transition-transform active:scale-90">
     <span class="material-symbols-outlined">menu</span>
     <span class="font-headline text-[10px] font-bold uppercase mt-1">More</span>
   </button>
 </nav>
 
 <!-- Mobile More Menu -->
-<div id="mobile-menu" class="hidden fixed inset-0 z-40 md:hidden" onclick="closeMobileMenu(event)">
+<div id="mobile-menu" class="hidden fixed inset-0 z-40 md:hidden" data-action="close-mobile-menu">
   <div class="absolute bottom-24 left-4 right-4 bg-surface-container rounded-2xl shadow-xl border border-outline-variant/10 overflow-hidden">
     <div class="p-2">
       <a href="transactions.html" class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-surface-container-high transition-colors">
@@ -377,10 +207,7 @@ function selectToken(ti,ci){selTokenIdx=ti;selChainIdx=ci;closePicker();updateDi
     </div>
   </div>
 </div>
-<script>
-function toggleMobileMenu() { document.getElementById('mobile-menu').classList.toggle('hidden'); }
-function closeMobileMenu(e) { if (e.target === document.getElementById('mobile-menu')) document.getElementById('mobile-menu').classList.add('hidden'); }
-</script>
+<script defer src="request.js"></script>
 <script src="disclaimer.js"></script>
 </body>
 </html>

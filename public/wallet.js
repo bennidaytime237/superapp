@@ -1,6 +1,55 @@
 // Shared wallet utilities used by all pages.
 // Requires config.js (for nothing currently, but load order: config → wallet → page).
 
+// ── Global image error handler (replaces onerror inline attributes) ──────────
+// Images with data-img-fallback are hidden on load failure.
+// Images with data-fallback-src get their src swapped first, then hidden if that also fails.
+document.addEventListener('error', function(e) {
+  var img = e.target;
+  if (!img || img.tagName !== 'IMG' || !img.hasAttribute('data-img-fallback')) return;
+  var fallback = img.getAttribute('data-fallback-src');
+  if (fallback && img.src !== fallback) {
+    img.src = fallback;
+  } else {
+    img.style.display = 'none';
+  }
+}, true); // capture phase — error doesn't bubble
+
+// ── Shared click delegation for wallet / navigation actions ──────────────────
+document.addEventListener('click', function(e) {
+  var el = e.target.closest('[data-action]');
+  if (!el) return;
+  var action = el.dataset.action;
+  var arg = el.dataset.arg;
+  switch (action) {
+    case 'connect-wallet':
+      if (typeof connectWallet === 'function') connectWallet();
+      break;
+    case 'wallet-button':
+      if (typeof walletAddress !== 'undefined' && walletAddress) {
+        if (typeof toggleWalletMenu === 'function') toggleWalletMenu();
+      } else {
+        if (typeof connectWallet === 'function') connectWallet();
+      }
+      break;
+    case 'copy-address':
+      if (typeof copyAddress === 'function') copyAddress();
+      break;
+    case 'disconnect':
+      if (typeof disconnect === 'function') disconnect();
+      break;
+    case 'toggle-mobile-menu':
+      if (typeof toggleMobileMenu === 'function') toggleMobileMenu();
+      break;
+    case 'close-mobile-menu':
+      if (typeof closeMobileMenu === 'function') closeMobileMenu(e);
+      break;
+    case 'navigate':
+      if (arg) window.location.href = arg;
+      break;
+  }
+});
+
 /**
  * @param {string} address - Full 0x-prefixed Ethereum address.
  * @returns {string} Shortened form, e.g. "0x1234...5678".
