@@ -166,10 +166,10 @@
         </div>
       </div>
       <div class="flex divide-x divide-outline-variant/10 border-t border-outline-variant/10">
-        <button onclick="downloadSVG('sage-logo.svg', 'sage-logo.svg')" class="flex-1 flex items-center justify-center gap-2 px-4 py-3 text-sm font-medium text-on-surface hover:bg-surface-container-low transition-colors">
+        <button data-action="download-svg" data-src="sage-logo.svg" data-filename="sage-logo.svg" class="flex-1 flex items-center justify-center gap-2 px-4 py-3 text-sm font-medium text-on-surface hover:bg-surface-container-low transition-colors">
           <span class="material-symbols-outlined text-base">download</span>SVG
         </button>
-        <button onclick="downloadAsPNG('sage-logo.svg', 'sage-logo.png', 512, 512)" class="flex-1 flex items-center justify-center gap-2 px-4 py-3 text-sm font-medium text-on-surface hover:bg-surface-container-low transition-colors">
+        <button data-action="download-png" data-src="sage-logo.svg" data-filename="sage-logo.png" data-width="512" data-height="512" class="flex-1 flex items-center justify-center gap-2 px-4 py-3 text-sm font-medium text-on-surface hover:bg-surface-container-low transition-colors">
           <span class="material-symbols-outlined text-base">download</span>PNG
         </button>
       </div>
@@ -190,10 +190,10 @@
         </div>
       </div>
       <div class="flex divide-x divide-outline-variant/10 border-t border-outline-variant/10">
-        <button onclick="downloadSVG('sage-wordmark.svg', 'sage-wordmark.svg')" class="flex-1 flex items-center justify-center gap-2 px-4 py-3 text-sm font-medium text-on-surface hover:bg-surface-container-low transition-colors">
+        <button data-action="download-svg" data-src="sage-wordmark.svg" data-filename="sage-wordmark.svg" class="flex-1 flex items-center justify-center gap-2 px-4 py-3 text-sm font-medium text-on-surface hover:bg-surface-container-low transition-colors">
           <span class="material-symbols-outlined text-base">download</span>SVG
         </button>
-        <button onclick="downloadAsPNG('sage-wordmark.svg', 'sage-wordmark.png', 1638, 645)" class="flex-1 flex items-center justify-center gap-2 px-4 py-3 text-sm font-medium text-on-surface hover:bg-surface-container-low transition-colors">
+        <button data-action="download-png" data-src="sage-wordmark.svg" data-filename="sage-wordmark.png" data-width="1638" data-height="645" class="flex-1 flex items-center justify-center gap-2 px-4 py-3 text-sm font-medium text-on-surface hover:bg-surface-container-low transition-colors">
           <span class="material-symbols-outlined text-base">download</span>PNG
         </button>
       </div>
@@ -237,7 +237,7 @@
           <p class="text-sm font-bold text-on-background">Brand Kit</p>
           <p class="text-xs text-on-surface-variant">Full asset pack — logos, fonts, and usage guidelines</p>
         </div>
-        <button id="brand-kit-btn" onclick="downloadBrandKit()" class="flex-shrink-0 flex items-center gap-2 px-4 py-2.5 bg-primary text-on-primary rounded-full text-sm font-bold active:scale-95 transition-transform">
+        <button id="brand-kit-btn" data-action="download-brand-kit" class="flex-shrink-0 flex items-center gap-2 px-4 py-2.5 bg-primary text-on-primary rounded-full text-sm font-bold active:scale-95 transition-transform">
           <span class="material-symbols-outlined text-base">download</span>
           <span>Download</span>
         </button>
