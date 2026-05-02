@@ -204,22 +204,22 @@
       <p class="text-xs text-on-surface-variant mb-4">Core palette used across all Sage touchpoints.</p>
       <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <div class="space-y-2">
-          <div class="h-14 rounded-xl" style="background:#94B186;"></div>
+          <div class="rounded-xl" style="height:3.5rem;background:#94B186;"></div>
           <p class="text-xs font-bold text-on-surface">Sage Green</p>
           <p class="text-xs text-on-surface-variant font-mono">#94B186</p>
         </div>
         <div class="space-y-2">
-          <div class="h-14 rounded-xl" style="background:#9DBA96;"></div>
+          <div class="rounded-xl" style="height:3.5rem;background:#9DBA96;"></div>
           <p class="text-xs font-bold text-on-surface">Sage Light</p>
           <p class="text-xs text-on-surface-variant font-mono">#9DBA96</p>
         </div>
         <div class="space-y-2">
-          <div class="h-14 rounded-xl bg-[#1a1f1a]"></div>
+          <div class="rounded-xl" style="height:3.5rem;background:#1a1f1a;"></div>
           <p class="text-xs font-bold text-on-surface">Dark Base</p>
           <p class="text-xs text-on-surface-variant font-mono">#1a1f1a</p>
         </div>
         <div class="space-y-2">
-          <div class="h-14 rounded-xl bg-white border border-outline-variant/20"></div>
+          <div class="rounded-xl" style="height:3.5rem;background:#FFFFFF;border:1px solid rgba(0,0,0,0.1);"></div>
           <p class="text-xs font-bold text-on-surface">Light Base</p>
           <p class="text-xs text-on-surface-variant font-mono">#FFFFFF</p>
         </div>
@@ -268,28 +268,48 @@
 </nav>
 
 <script>
-function downloadSVG(src, filename) {
+function triggerDownload(url, filename) {
   var a = document.createElement('a');
-  a.href = src;
+  a.href = url;
   a.download = filename;
+  document.body.appendChild(a);
   a.click();
+  document.body.removeChild(a);
+}
+
+function downloadSVG(src, filename) {
+  fetch(src)
+    .then(function(r) { return r.blob(); })
+    .then(function(blob) {
+      var url = URL.createObjectURL(blob);
+      triggerDownload(url, filename);
+      setTimeout(function() { URL.revokeObjectURL(url); }, 1000);
+    });
 }
 
 function downloadAsPNG(svgSrc, filename, svgW, svgH) {
-  var scale = 2;
-  var canvas = document.createElement('canvas');
-  canvas.width = svgW * scale;
-  canvas.height = svgH * scale;
-  var ctx = canvas.getContext('2d');
-  var img = new Image();
-  img.onload = function() {
-    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-    var a = document.createElement('a');
-    a.href = canvas.toDataURL('image/png');
-    a.download = filename;
-    a.click();
-  };
-  img.src = svgSrc;
+  fetch(svgSrc)
+    .then(function(r) { return r.text(); })
+    .then(function(svgText) {
+      var scale = 2;
+      var canvas = document.createElement('canvas');
+      canvas.width = svgW * scale;
+      canvas.height = svgH * scale;
+      var ctx = canvas.getContext('2d');
+      var blob = new Blob([svgText], { type: 'image/svg+xml' });
+      var blobUrl = URL.createObjectURL(blob);
+      var img = new Image();
+      img.onload = function() {
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        URL.revokeObjectURL(blobUrl);
+        canvas.toBlob(function(pngBlob) {
+          var url = URL.createObjectURL(pngBlob);
+          triggerDownload(url, filename);
+          setTimeout(function() { URL.revokeObjectURL(url); }, 1000);
+        }, 'image/png');
+      };
+      img.src = blobUrl;
+    });
 }
 
 function downloadBrandKit() {
@@ -297,10 +317,7 @@ function downloadBrandKit() {
   fetch(file, { method: 'HEAD' })
     .then(function(r) {
       if (r.ok) {
-        var a = document.createElement('a');
-        a.href = file;
-        a.download = file;
-        a.click();
+        triggerDownload(file, file);
       } else {
         showBrandKitSoon();
       }
