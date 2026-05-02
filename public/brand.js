@@ -35,6 +35,19 @@ function downloadBrandKit() {
   triggerDownload('sage-brand-kit.zip', 'sage-brand-kit.zip');
 }
 
+document.addEventListener('click', function(e) {
+  var btn = e.target.closest('[data-action]');
+  if (!btn) return;
+  var action = btn.dataset.action;
+  if (action === 'download-svg') {
+    downloadSVG(btn.dataset.src, btn.dataset.filename);
+  } else if (action === 'download-png') {
+    downloadAsPNG(btn.dataset.src, btn.dataset.filename, +btn.dataset.width, +btn.dataset.height);
+  } else if (action === 'download-brand-kit') {
+    downloadBrandKit();
+  }
+});
+
 function showBrandKitSoon() {
   var btn = document.getElementById('brand-kit-btn');
   var msg = document.getElementById('brand-kit-soon');
