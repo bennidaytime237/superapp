@@ -150,11 +150,11 @@
 
     <!-- Gas top-up option -->
     <div id="gas-topup-row" class="hidden mt-3">
-      <button onclick="toggleGasTopup()" class="flex items-center gap-2 w-full text-left">
-        <div id="gas-toggle" class="relative w-9 h-5 rounded-full bg-surface-container-high transition-colors flex-shrink-0">
-          <div id="gas-toggle-knob" class="absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-on-surface-variant/50 transition-all"></div>
+      <button onclick="toggleGasTopup()" class="flex items-center gap-3 w-full text-left px-3 py-2 rounded-xl bg-surface-container-low hover:bg-surface-container transition-colors">
+        <div id="gas-toggle" class="relative w-11 h-6 rounded-full bg-outline-variant transition-colors flex-shrink-0 shadow-sm">
+          <div id="gas-toggle-knob" class="absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-surface-container-lowest transition-all shadow-md"></div>
         </div>
-        <span class="text-xs font-bold text-on-surface-variant">Add gas on <span id="gas-dest-name">--</span></span>
+        <span class="text-sm font-bold text-on-surface">Add gas on <span id="gas-dest-name" class="text-primary">--</span></span>
       </button>
       <div id="gas-amount-row" class="hidden flex gap-2 mt-2">
         <button onclick="setGasUsd(1)" id="gas-btn-1" class="px-3 py-1.5 rounded-full text-xs font-bold bg-surface-container text-on-surface-variant hover:bg-surface-container-high transition-colors">$1</button>
@@ -787,16 +787,16 @@ function toggleGasTopup() {
   const knob = document.getElementById('gas-toggle-knob');
   const amountRow = document.getElementById('gas-amount-row');
   if (gasTopupEnabled) {
-    toggle.classList.remove('bg-surface-container-high');
+    toggle.classList.remove('bg-outline-variant');
     toggle.classList.add('bg-primary');
-    knob.classList.remove('left-0.5', 'bg-on-surface-variant/50');
-    knob.classList.add('left-4', 'bg-on-primary');
+    knob.classList.remove('left-0.5', 'bg-surface-container-lowest');
+    knob.classList.add('left-5', 'bg-on-primary');
     amountRow.classList.remove('hidden');
   } else {
-    toggle.classList.add('bg-surface-container-high');
+    toggle.classList.add('bg-outline-variant');
     toggle.classList.remove('bg-primary');
-    knob.classList.add('left-0.5', 'bg-on-surface-variant/50');
-    knob.classList.remove('left-4', 'bg-on-primary');
+    knob.classList.add('left-0.5', 'bg-surface-container-lowest');
+    knob.classList.remove('left-5', 'bg-on-primary');
     amountRow.classList.add('hidden');
   }
 }
