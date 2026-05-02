@@ -17,6 +17,7 @@
 <script src="safe-dom.js"></script>
 <script src="config.js"></script>
 <script src="wallet.js"></script>
+<script src="brand.js"></script>
 </head>
 <body class="bg-surface text-on-surface selection:bg-primary-fixed selection:text-on-primary-fixed min-h-screen">
 
@@ -204,22 +205,22 @@
       <p class="text-xs text-on-surface-variant mb-4">Core palette used across all Sage touchpoints.</p>
       <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <div class="space-y-2">
-          <div class="rounded-xl" style="height:3.5rem;background:#94B186;"></div>
+          <div class="color-swatch swatch-sage-green"></div>
           <p class="text-xs font-bold text-on-surface">Sage Green</p>
           <p class="text-xs text-on-surface-variant font-mono">#94B186</p>
         </div>
         <div class="space-y-2">
-          <div class="rounded-xl" style="height:3.5rem;background:#9DBA96;"></div>
+          <div class="color-swatch swatch-sage-light"></div>
           <p class="text-xs font-bold text-on-surface">Sage Light</p>
           <p class="text-xs text-on-surface-variant font-mono">#9DBA96</p>
         </div>
         <div class="space-y-2">
-          <div class="rounded-xl" style="height:3.5rem;background:#1a1f1a;"></div>
+          <div class="color-swatch swatch-dark-base"></div>
           <p class="text-xs font-bold text-on-surface">Dark Base</p>
           <p class="text-xs text-on-surface-variant font-mono">#1a1f1a</p>
         </div>
         <div class="space-y-2">
-          <div class="rounded-xl" style="height:3.5rem;background:#FFFFFF;border:1px solid rgba(0,0,0,0.1);"></div>
+          <div class="color-swatch swatch-light-base"></div>
           <p class="text-xs font-bold text-on-surface">Light Base</p>
           <p class="text-xs text-on-surface-variant font-mono">#FFFFFF</p>
         </div>
@@ -267,71 +268,6 @@
   </a>
 </nav>
 
-<script>
-function triggerDownload(url, filename) {
-  var a = document.createElement('a');
-  a.href = url;
-  a.download = filename;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-}
-
-function downloadSVG(src, filename) {
-  fetch(src)
-    .then(function(r) { return r.blob(); })
-    .then(function(blob) {
-      var url = URL.createObjectURL(blob);
-      triggerDownload(url, filename);
-      setTimeout(function() { URL.revokeObjectURL(url); }, 1000);
-    });
-}
-
-function downloadAsPNG(svgSrc, filename, svgW, svgH) {
-  fetch(svgSrc)
-    .then(function(r) { return r.text(); })
-    .then(function(svgText) {
-      var scale = 2;
-      var canvas = document.createElement('canvas');
-      canvas.width = svgW * scale;
-      canvas.height = svgH * scale;
-      var ctx = canvas.getContext('2d');
-      var blob = new Blob([svgText], { type: 'image/svg+xml' });
-      var blobUrl = URL.createObjectURL(blob);
-      var img = new Image();
-      img.onload = function() {
-        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-        URL.revokeObjectURL(blobUrl);
-        canvas.toBlob(function(pngBlob) {
-          var url = URL.createObjectURL(pngBlob);
-          triggerDownload(url, filename);
-          setTimeout(function() { URL.revokeObjectURL(url); }, 1000);
-        }, 'image/png');
-      };
-      img.src = blobUrl;
-    });
-}
-
-function downloadBrandKit() {
-  var file = 'sage-brand-kit.zip';
-  fetch(file, { method: 'HEAD' })
-    .then(function(r) {
-      if (r.ok) {
-        triggerDownload(file, file);
-      } else {
-        showBrandKitSoon();
-      }
-    })
-    .catch(function() { showBrandKitSoon(); });
-}
-
-function showBrandKitSoon() {
-  var btn = document.getElementById('brand-kit-btn');
-  var msg = document.getElementById('brand-kit-soon');
-  if (btn) btn.classList.add('hidden');
-  if (msg) msg.classList.remove('hidden');
-}
-</script>
 
 </body>
 </html>
