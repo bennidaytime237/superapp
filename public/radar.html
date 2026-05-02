@@ -28,41 +28,101 @@
 </style>
 <script src="theme.js"></script>
 <script src="safe-dom.js"></script>
+<script src="config.js"></script>
+<script src="wallet.js"></script>
 
 </head>
 <body class="bg-surface text-on-surface selection:bg-primary-fixed selection:text-on-primary-fixed min-h-screen">
 
 <!-- Sidebar Navigation (Desktop) -->
-<aside class="hidden md:flex flex-col fixed left-0 top-0 h-full w-64 p-4 bg-surface-container-low z-40">
-  <a href="index.html" class="mb-10 px-4 py-2 flex items-center gap-2">
+<aside class="hidden md:flex flex-col fixed left-0 top-0 h-full w-64 px-4 pt-4 pb-4 bg-surface-container-low z-40">
+  <a href="index.html" class="mb-8 px-4 py-2 flex items-center gap-2">
     <img src="sage-wordmark.svg" alt="Sage" class="h-7"/>
   </a>
-  <nav class="flex-1 space-y-1">
-    <a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:text-primary hover:bg-white/50 rounded-full transition-all" href="index.html">
+  <nav class="flex-1 space-y-1.5">
+    <a class="flex items-center gap-3 px-4 py-2.5 text-on-surface-variant hover:text-primary hover:bg-white/50 rounded-full transition-all" href="index.html">
       <span class="material-symbols-outlined">grid_view</span>
       <span class="font-medium text-sm">Dashboard</span>
     </a>
-    <a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:text-primary hover:bg-white/50 rounded-full transition-all" href="swap.html">
+    <a class="flex items-center gap-3 px-4 py-2.5 text-on-surface-variant hover:text-primary hover:bg-white/50 rounded-full transition-all" href="send.html">
+      <span class="material-symbols-outlined">send</span>
+      <span class="font-medium text-sm">Send</span>
+    </a>
+    <a class="flex items-center gap-3 px-4 py-2.5 text-on-surface-variant hover:text-primary hover:bg-white/50 rounded-full transition-all" href="request.html">
+      <span class="material-symbols-outlined">request_page</span>
+      <span class="font-medium text-sm">Request</span>
+    </a>
+    <a class="flex items-center gap-3 px-4 py-2.5 text-on-surface-variant hover:text-primary hover:bg-white/50 rounded-full transition-all" href="swap.html">
       <span class="material-symbols-outlined">swap_horiz</span>
       <span class="font-medium text-sm">Bridge</span>
     </a>
-    <a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:text-primary hover:bg-white/50 rounded-full transition-all" href="transactions.html">
+    <a class="flex items-center gap-3 px-4 py-2.5 text-on-surface-variant hover:text-primary hover:bg-white/50 rounded-full transition-all" href="transactions.html">
       <span class="material-symbols-outlined">receipt_long</span>
       <span class="font-medium text-sm">Transactions</span>
     </a>
-    <a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:text-primary hover:bg-white/50 rounded-full transition-all" href="gas.html">
+    <a class="flex items-center gap-3 px-4 py-2.5 text-on-surface-variant hover:text-primary hover:bg-white/50 rounded-full transition-all" href="gas.html">
       <span class="material-symbols-outlined">local_gas_station</span>
       <span class="font-medium text-sm">Gas</span>
     </a>
-    <a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:text-primary hover:bg-white/50 rounded-full transition-all" href="sweep.html">
+    <a class="flex items-center gap-3 px-4 py-2.5 text-on-surface-variant hover:text-primary hover:bg-white/50 rounded-full transition-all" href="sweep.html">
       <span class="material-symbols-outlined">move_to_inbox</span>
       <span class="font-medium text-sm">Sweep</span>
     </a>
-    <a class="flex items-center gap-3 px-4 py-3 bg-surface-container-lowest text-primary rounded-full shadow-sm" href="radar.html">
+    <a class="flex items-center gap-3 px-4 py-2.5 bg-surface-container-lowest text-primary rounded-full shadow-sm" href="radar.html">
       <span class="material-symbols-outlined">radar</span>
       <span class="font-medium text-sm">Radar</span>
     </a>
   </nav>
+
+  <!-- Hyperliquid Promo -->
+  <a href="hyperliquid.html" class="block mb-3 p-3.5 bg-[#090909] border border-[#68f5a5]/20 rounded-2xl hover:border-[#68f5a5]/40 transition-all">
+    <div class="flex items-center gap-3">
+      <img src="hyperliquid-logo.svg" alt="Hyperliquid" class="w-8 h-8 rounded-lg flex-shrink-0"/>
+      <div class="leading-relaxed">
+        <p class="text-xs font-medium text-white">Hyperliquid Deposit</p>
+        <p class="text-[10px] text-white/30">Bridge any token to Hyperliquid</p>
+      </div>
+    </div>
+  </a>
+
+  <!-- Polymarket Promo -->
+  <a href="polymarket.html" class="block mb-3 p-3.5 bg-[#0d2149] rounded-2xl hover:brightness-110 transition-all">
+    <div class="flex items-center gap-3">
+      <img src="polymarket-logo.svg" alt="Polymarket" class="w-8 h-8 rounded-lg flex-shrink-0"/>
+      <div class="leading-relaxed">
+        <p class="text-xs font-medium text-white">Polymarket Deposit</p>
+        <p class="text-[10px] text-white/50">Bridge any token to your account</p>
+      </div>
+    </div>
+  </a>
+
+  <!-- Wallet Summary -->
+  <div id="sidebar-wallet" class="mt-auto p-4 bg-surface-container rounded-3xl">
+    <div id="sidebar-disconnected">
+      <p class="text-xs text-on-surface-variant mb-3 text-center tracking-wide">Connect your wallet to get started</p>
+      <button onclick="connectWallet()" class="w-full py-3 px-4 bg-primary text-on-primary rounded-full text-sm font-bold tracking-wide shadow-sm active:scale-[0.98] transition-transform">
+        Connect Wallet
+      </button>
+    </div>
+    <div id="sidebar-connected" class="hidden">
+      <div class="flex items-center gap-3 mb-3">
+        <div class="w-10 h-10 rounded-full bg-primary flex items-center justify-center">
+          <span class="material-symbols-outlined text-on-primary text-sm">account_balance_wallet</span>
+        </div>
+        <div>
+          <p class="text-xs font-bold text-on-surface">Connected</p>
+          <p id="sidebar-addr" class="text-xs text-on-surface-variant font-mono">0x...</p>
+        </div>
+      </div>
+      <button onclick="window.location.href='swap.html'" class="w-full py-3 px-4 bg-primary text-on-primary rounded-full text-sm font-bold shadow-sm active:scale-[0.98] transition-transform">
+        Bridge
+      </button>
+    </div>
+  </div>
+  <a href="https://across.to" target="_blank" rel="noopener" class="flex justify-center mt-3 opacity-30 hover:opacity-60 transition-opacity">
+    <img src="powered-by-across.svg" alt="Powered by Across" class="h-3 dark:hidden"/>
+    <img src="powered-by-across-light.svg" alt="Powered by Across" class="h-3 hidden dark:block"/>
+  </a>
 </aside>
 
 <!-- Main -->
