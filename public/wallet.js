@@ -104,6 +104,53 @@ async function setupWallet({ onConnected, onDisconnected, onChainChanged } = {})
   window.ethereum.on('chainChanged', () => onChainChanged?.());
 }
 
+/** Updates the sidebar wallet section to show connected state. */
+function updateSidebarWallet(address) {
+  const disc = document.getElementById('sidebar-disconnected');
+  const conn = document.getElementById('sidebar-connected');
+  const addr = document.getElementById('sidebar-addr');
+  if (disc) disc.classList.add('hidden');
+  if (conn) conn.classList.remove('hidden');
+  if (addr) addr.textContent = formatAddr(address);
+}
+
+/** Resets the sidebar wallet section to disconnected state. */
+function clearSidebarWallet() {
+  const disc = document.getElementById('sidebar-disconnected');
+  const conn = document.getElementById('sidebar-connected');
+  if (disc) disc.classList.remove('hidden');
+  if (conn) conn.classList.add('hidden');
+}
+
+/**
+ * Default connectWallet implementation — pages that need more (balance fetch, etc.)
+ * define their own async function connectWallet() which overrides this one.
+ */
+async function connectWallet() {
+  if (!window.ethereum) { showNoWalletMessage(); return; }
+  const accs = await window.ethereum.request({ method: 'eth_requestAccounts' });
+  if (accs[0]) {
+    updateSidebarWallet(accs[0]);
+    const btn = document.getElementById('connect-btn');
+    const lbl = document.getElementById('connect-label');
+    if (lbl) lbl.textContent = formatAddr(accs[0]);
+    if (btn) btn.onclick = null;
+  }
+}
+
+// Auto-sync sidebar wallet state on every page that has the sidebar.
+document.addEventListener('DOMContentLoaded', async () => {
+  if (!window.ethereum) return;
+  try {
+    const accs = await window.ethereum.request({ method: 'eth_accounts' });
+    if (accs[0]) updateSidebarWallet(accs[0]);
+    window.ethereum.on('accountsChanged', a => {
+      if (a[0]) updateSidebarWallet(a[0]);
+      else clearSidebarWallet();
+    });
+  } catch {}
+});
+
 /** Removes all sage_* cache entries to free localStorage space. */
 function evictSageCache() {
   const toRemove = [];
