@@ -17,6 +17,7 @@
 <script src="safe-dom.js"></script>
 <script src="config.js"></script>
 <script src="wallet.js"></script>
+<script src="logo-dropdown.js"></script>
 
 </head>
 <body class="bg-surface text-on-surface selection:bg-primary-fixed selection:text-on-primary-fixed min-h-screen">
@@ -29,7 +30,7 @@
     </a>
     <button id="sidebar-logo-dropdown-btn" onclick="toggleLogoDropdown(event)" class="relative p-1 rounded-full hover:bg-surface-container transition-colors" title="Logo menu">
       <span class="material-symbols-outlined text-sm">more_vert</span>
-      <div id="sidebar-logo-dropdown-menu" style="display:none;" class="hidden absolute left-0 top-full mt-1 bg-surface-container-lowest rounded-lg shadow-lg border border-outline-variant/10 overflow-hidden z-50 min-w-[160px]">
+      <div id="sidebar-logo-dropdown-menu" class="hidden absolute left-0 top-full mt-1 bg-surface-container-lowest rounded-lg shadow-lg border border-outline-variant/10 overflow-hidden z-50 min-w-[160px]">
         <button onclick="downloadLogoAsPNG()" class="w-full px-4 py-3 text-sm font-medium text-on-surface hover:bg-surface-container-low transition-colors text-left flex items-center gap-2">
           <span class="material-symbols-outlined text-base">download</span>PNG
         </button>
@@ -137,22 +138,22 @@
   <header class="flex justify-between items-center w-full px-6 py-4 bg-surface sticky top-0 z-30">
     <div class="flex items-center gap-2">
       <div class="flex items-center gap-1">
-    <a href="index.html"><img src="sage-wordmark.svg" alt="Sage" class="h-6 md:hidden"/></a>
-    <button id="logo-dropdown-btn" onclick="toggleLogoDropdown(event)" class="relative p-1 rounded-full hover:bg-surface-container transition-colors md:hidden" title="Logo menu">
-      <span class="material-symbols-outlined text-sm">more_vert</span>
-      <div id="logo-dropdown-menu" style="display:none;" class="hidden absolute left-0 top-full mt-1 bg-surface-container-lowest rounded-lg shadow-lg border border-outline-variant/10 overflow-hidden z-50 min-w-[160px]">
-        <button onclick="downloadLogoAsPNG()" class="w-full px-4 py-3 text-sm font-medium text-on-surface hover:bg-surface-container-low transition-colors text-left flex items-center gap-2">
-          <span class="material-symbols-outlined text-base">download</span>PNG
-        </button>
-        <button onclick="downloadLogoAsSVG()" class="w-full px-4 py-3 text-sm font-medium text-on-surface hover:bg-surface-container-low transition-colors text-left flex items-center gap-2">
-          <span class="material-symbols-outlined text-base">download</span>SVG
-        </button>
-        <button onclick="followOnX()" class="w-full px-4 py-3 text-sm font-medium text-on-surface hover:bg-surface-container-low transition-colors text-left flex items-center gap-2">
-          <span class="material-symbols-outlined text-base">link</span>Follow on X
+        <a href="index.html"><img src="sage-wordmark.svg" alt="Sage" class="h-6 md:hidden"/></a>
+        <button id="logo-dropdown-btn" onclick="toggleLogoDropdown(event)" class="relative p-1 rounded-full hover:bg-surface-container transition-colors" title="Logo menu">
+          <span class="material-symbols-outlined text-sm">more_vert</span>
+          <div id="logo-dropdown-menu" class="hidden absolute left-0 top-full mt-1 bg-surface-container-lowest rounded-lg shadow-lg border border-outline-variant/10 overflow-hidden z-50 min-w-[160px]">
+            <button onclick="downloadLogoAsPNG()" class="w-full px-4 py-3 text-sm font-medium text-on-surface hover:bg-surface-container-low transition-colors text-left flex items-center gap-2">
+              <span class="material-symbols-outlined text-base">download</span>PNG
+            </button>
+            <button onclick="downloadLogoAsSVG()" class="w-full px-4 py-3 text-sm font-medium text-on-surface hover:bg-surface-container-low transition-colors text-left flex items-center gap-2">
+              <span class="material-symbols-outlined text-base">download</span>SVG
+            </button>
+            <button onclick="followOnX()" class="w-full px-4 py-3 text-sm font-medium text-on-surface hover:bg-surface-container-low transition-colors text-left flex items-center gap-2">
+              <span class="material-symbols-outlined text-base">link</span>Follow on X
+            </button>
+          </div>
         </button>
       </div>
-    </button>
-  </div>
       <h2 class="hidden md:block font-headline font-bold text-xl tracking-tight text-on-background">Portfolio Overview</h2>
     </div>
     <div class="flex items-center gap-3 relative">

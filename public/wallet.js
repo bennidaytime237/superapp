@@ -71,6 +71,66 @@ function resolveWalletENS(address) {
 }
 
 /**
+ * Shows a dismissible banner when no EIP-1193 wallet is detected.
+ * On mobile it offers a deep-link to open the current page inside
+ * MetaMask's built-in browser. On desktop it links to the extension
+ * download page. No third-party library required.
+ */
+function showNoWalletMessage() {
+  const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+  const existing = document.getElementById('no-wallet-banner');
+  if (existing) existing.remove();
+
+  const banner = document.createElement('div');
+  banner.id = 'no-wallet-banner';
+  banner.setAttribute('style',
+    'position:fixed;bottom:1.5rem;left:50%;transform:translateX(-50%);' +
+    'z-index:9999;width:min(360px,calc(100vw - 2rem));' +
+    'background:#1c1c1e;border:1px solid rgba(255,255,255,0.12);' +
+    'border-radius:16px;padding:1rem 2.5rem 1rem 1.25rem;' +
+    'color:#fff;box-shadow:0 8px 32px rgba(0,0,0,0.4);' +
+    'display:flex;flex-direction:column;gap:0.5rem'
+  );
+
+  const closeBtn = document.createElement('button');
+  closeBtn.setAttribute('style',
+    'position:absolute;top:0.75rem;right:0.75rem;background:none;border:none;' +
+    'color:rgba(255,255,255,0.5);cursor:pointer;font-size:1.1rem;line-height:1;padding:0'
+  );
+  closeBtn.textContent = '✕';
+  closeBtn.onclick = () => banner.remove();
+
+  const title = document.createElement('span');
+  title.setAttribute('style', 'font-weight:600;font-size:0.875rem');
+  title.textContent = 'No wallet detected';
+
+  const subtitle = document.createElement('span');
+  subtitle.setAttribute('style', 'font-size:0.8rem;color:rgba(255,255,255,0.55)');
+
+  const link = document.createElement('a');
+  link.setAttribute('style',
+    'margin-top:0.25rem;background:#f6851b;color:#fff;text-align:center;' +
+    'padding:0.5rem 1rem;border-radius:999px;font-size:0.8rem;font-weight:600;text-decoration:none'
+  );
+
+  if (isMobile) {
+    subtitle.textContent = 'Open this page inside a wallet browser to connect.';
+    link.href = 'https://metamask.app.link/dapp/' + location.href.replace(/^https?:\/\//, '');
+    link.textContent = 'Open in MetaMask';
+  } else {
+    subtitle.textContent = 'Install the MetaMask extension to connect your wallet.';
+    link.href = 'https://metamask.io/download';
+    link.target = '_blank';
+    link.rel = 'noopener';
+    link.textContent = 'Get MetaMask →';
+  }
+
+  banner.append(closeBtn, title, subtitle, link);
+  document.body.appendChild(banner);
+  setTimeout(() => { if (banner.isConnected) banner.remove(); }, 8000);
+}
+
+/**
  * @typedef {Object} SetupWalletOpts
  * @property {(addr: string) => void} [onConnected]    - Called on auto-connect and accountsChanged (new account).
  * @property {() => void}             [onDisconnected] - Called when accountsChanged fires with empty array.
@@ -92,6 +152,53 @@ async function setupWallet({ onConnected, onDisconnected, onChainChanged } = {})
   });
   window.ethereum.on('chainChanged', () => onChainChanged?.());
 }
+
+/** Updates the sidebar wallet section to show connected state. */
+function updateSidebarWallet(address) {
+  const disc = document.getElementById('sidebar-disconnected');
+  const conn = document.getElementById('sidebar-connected');
+  const addr = document.getElementById('sidebar-addr');
+  if (disc) disc.classList.add('hidden');
+  if (conn) conn.classList.remove('hidden');
+  if (addr) addr.textContent = formatAddr(address);
+}
+
+/** Resets the sidebar wallet section to disconnected state. */
+function clearSidebarWallet() {
+  const disc = document.getElementById('sidebar-disconnected');
+  const conn = document.getElementById('sidebar-connected');
+  if (disc) disc.classList.remove('hidden');
+  if (conn) conn.classList.add('hidden');
+}
+
+/**
+ * Default connectWallet implementation — pages that need more (balance fetch, etc.)
+ * define their own async function connectWallet() which overrides this one.
+ */
+async function connectWallet() {
+  if (!window.ethereum) { showNoWalletMessage(); return; }
+  const accs = await window.ethereum.request({ method: 'eth_requestAccounts' });
+  if (accs[0]) {
+    updateSidebarWallet(accs[0]);
+    const btn = document.getElementById('connect-btn');
+    const lbl = document.getElementById('connect-label');
+    if (lbl) lbl.textContent = formatAddr(accs[0]);
+    if (btn) btn.onclick = null;
+  }
+}
+
+// Auto-sync sidebar wallet state on every page that has the sidebar.
+document.addEventListener('DOMContentLoaded', async () => {
+  if (!window.ethereum) return;
+  try {
+    const accs = await window.ethereum.request({ method: 'eth_accounts' });
+    if (accs[0]) updateSidebarWallet(accs[0]);
+    window.ethereum.on('accountsChanged', a => {
+      if (a[0]) updateSidebarWallet(a[0]);
+      else clearSidebarWallet();
+    });
+  } catch {}
+});
 
 /** Removes all sage_* cache entries to free localStorage space. */
 function evictSageCache() {

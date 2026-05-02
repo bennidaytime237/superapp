@@ -3,14 +3,13 @@ function toggleLogoDropdown(event) {
   const button = event.currentTarget;
   const menu = button.querySelector('[id$="-dropdown-menu"]');
   if (menu) {
-    const isHidden = menu.style.display === 'none' || menu.classList.contains('hidden');
-    menu.style.display = isHidden ? 'block' : 'none';
+    menu.classList.toggle('hidden');
   }
 }
 
 function closeLogoDropdown() {
   document.querySelectorAll('[id$="-dropdown-menu"]').forEach(menu => {
-    menu.style.display = 'none';
+    menu.classList.add('hidden');
   });
 }
 
