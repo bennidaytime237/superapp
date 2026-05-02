@@ -8,13 +8,7 @@ function triggerDownload(url, filename) {
 }
 
 function downloadSVG(src, filename) {
-  fetch(src)
-    .then(function(r) { return r.blob(); })
-    .then(function(blob) {
-      var url = URL.createObjectURL(blob);
-      triggerDownload(url, filename);
-      setTimeout(function() { URL.revokeObjectURL(url); }, 1000);
-    });
+  triggerDownload(src, filename);
 }
 
 function downloadAsPNG(svgSrc, filename, svgW, svgH) {
@@ -31,27 +25,14 @@ function downloadAsPNG(svgSrc, filename, svgW, svgH) {
       var img = new Image();
       img.onload = function() {
         ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-        canvas.toBlob(function(pngBlob) {
-          var url = URL.createObjectURL(pngBlob);
-          triggerDownload(url, filename);
-          setTimeout(function() { URL.revokeObjectURL(url); }, 1000);
-        }, 'image/png');
+        triggerDownload(canvas.toDataURL('image/png'), filename);
       };
       img.src = dataUri;
     });
 }
 
 function downloadBrandKit() {
-  var file = 'sage-brand-kit.zip';
-  fetch(file, { method: 'HEAD' })
-    .then(function(r) {
-      if (r.ok) {
-        triggerDownload(file, file);
-      } else {
-        showBrandKitSoon();
-      }
-    })
-    .catch(function() { showBrandKitSoon(); });
+  triggerDownload('sage-brand-kit.zip', 'sage-brand-kit.zip');
 }
 
 function showBrandKitSoon() {
