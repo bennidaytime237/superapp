@@ -9,37 +9,10 @@
 <title>Bridge - Sage</title>
 <link rel="icon" type="image/svg+xml" href="favicon.svg"/>
 <link rel="stylesheet" href="tailwind.output.css"/>
+<link rel="stylesheet" href="page-styles.css"/>
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&display=swap" rel="stylesheet"/>
 <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
 <link rel="stylesheet" href="theme.css"/>
-<style>
-  body { font-family: 'Outfit', sans-serif; }
-  b, strong, .font-bold, .font-extrabold, .font-black, .font-semibold { letter-spacing: 0.01em; }
-  .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
-
-  input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
-  input[type=number] { -moz-appearance: textfield; }
-  html { height: 100%; }
-
-  /* Default (expanded) spacing */
-  .bridge-spacer-lg { margin-bottom: 1.25rem; }
-  .bridge-spacer-sm { margin-bottom: 0.75rem; }
-  .bridge-spacer-divider { margin-top: 1.25rem; margin-bottom: 1.25rem; }
-  .bridge-amount { font-size: 3rem; }
-
-  /* Compact mode when fee breakdown is open */
-  .compact .bridge-spacer-lg { margin-bottom: 0.5rem; }
-  .compact .bridge-spacer-sm { margin-bottom: 0.375rem; }
-  .compact .bridge-spacer-divider { margin-top: 0.5rem; margin-bottom: 0.5rem; }
-  .compact .bridge-amount { font-size: 2.25rem; }
-  .compact { padding-top: 0.75rem; padding-bottom: 0.75rem; }
-
-  /* Keep content clear of the mobile bottom nav */
-  @media (max-width: 767px) {
-    #bridge-main { padding-bottom: 6rem; }
-    #bridge-main.compact { padding-bottom: 6rem; }
-  }
-</style>
 <script src="theme.js"></script>
 <script src="safe-dom.js"></script>
 <script src="eth-utils.js"></script>
@@ -186,10 +159,10 @@
     <a href="index.html" class="md:hidden text-xs font-medium text-on-surface-variant hover:text-primary transition-colors flex items-center gap-1">
       <span class="material-symbols-outlined text-sm">arrow_back</span>Dashboard
     </a>
-    <button onclick="toggleTheme()" title="Toggle dark mode" aria-label="Toggle dark mode" class="flex items-center gap-2 px-3 py-1.5 bg-surface-container rounded-full text-on-surface-variant hover:text-primary hover:bg-surface-container-high transition-all flex-shrink-0">
+    <button data-action="toggle-theme" title="Toggle dark mode" aria-label="Toggle dark mode" class="flex items-center gap-2 px-3 py-1.5 bg-surface-container rounded-full text-on-surface-variant hover:text-primary hover:bg-surface-container-high transition-all flex-shrink-0">
       <span class="material-symbols-outlined text-base theme-toggle-icon">dark_mode</span>
     </button>
-    <button id="connect-btn" onclick="connectWallet()" class="flex items-center gap-2 px-3 py-1.5 bg-primary text-on-primary rounded-full text-xs font-bold active:scale-95 transition-transform">
+    <button id="connect-btn" data-action="connect-wallet" class="flex items-center gap-2 px-3 py-1.5 bg-primary text-on-primary rounded-full text-xs font-bold active:scale-95 transition-transform">
       <span class="material-symbols-outlined text-sm">account_balance_wallet</span>
       <span id="connect-label">Connect</span>
     </button>
@@ -217,7 +190,7 @@
   <div class="bridge-spacer-sm">
     <p class="text-base text-on-surface-variant bridge-spacer-sm">From <span id="from-wallet-label" class="font-bold text-on-surface">Wallet</span></p>
     <div class="flex items-end justify-between gap-6">
-      <button onclick="cycleToken('from')" class="inline-flex items-center gap-2 bg-surface-container-low pl-1.5 pr-4 py-1.5 rounded-full border border-outline-variant/10 hover:bg-surface-container-high transition-colors">
+      <button data-action="cycle-token" data-arg="from" class="inline-flex items-center gap-2 bg-surface-container-low pl-1.5 pr-4 py-1.5 rounded-full border border-outline-variant/10 hover:bg-surface-container-high transition-colors">
         <div class="relative">
           <img id="from-token-icon" src="" alt="" class="w-8 h-8 rounded-full"/>
           <img id="from-chain-icon" src="" alt="" class="w-5 h-5 rounded-full absolute -right-1 -bottom-0.5 border-2 border-surface-container-lowest bg-surface-container-lowest"/>
@@ -225,23 +198,23 @@
         <span id="from-token-label" class="font-bold text-base ml-1">ETH</span>
         <span class="material-symbols-outlined text-base text-on-surface-variant">expand_more</span>
       </button>
-      <input id="input-amount" class="flex-1 text-right text-5xl font-black text-on-background border-none focus:ring-0 p-0 bg-transparent placeholder:text-on-surface-variant/15 min-w-0 leading-none bridge-amount" placeholder="0" type="number" oninput="onAmountChange()"/>
+      <input id="input-amount" class="flex-1 text-right text-5xl font-black text-on-background border-none focus:ring-0 p-0 bg-transparent placeholder:text-on-surface-variant/15 min-w-0 leading-none bridge-amount" placeholder="0" type="number"/>
     </div>
     <!-- Balance / warning -->
     <div id="balance-warning" class="flex justify-end mt-3">
       <div id="balance-normal" class="inline-flex items-center gap-2 text-sm text-on-surface-variant">
-        <span>Balance: <button onclick="setMax()" class="font-bold hover:underline underline-offset-2" id="from-balance">--</button></span>
+        <span>Balance: <button data-action="set-max" class="font-bold hover:underline underline-offset-2" id="from-balance">--</button></span>
       </div>
       <div id="balance-warn" class="hidden inline-flex items-center gap-2 text-sm text-on-surface-variant bg-sage-peach-light px-3 py-1.5 rounded-lg">
         <span class="text-amber-600 text-base">&#9888;</span>
-        <span>You only have <button onclick="setMax()" class="font-bold underline underline-offset-2 decoration-dotted" id="from-balance-warn">--</button> available</span>
+        <span>You only have <button data-action="set-max" class="font-bold underline underline-offset-2 decoration-dotted" id="from-balance-warn">--</button> available</span>
       </div>
     </div>
   </div>
 
   <!-- ═══ DIVIDER + SWAP ═══ -->
   <div class="relative h-px bg-outline-variant/15 w-full bridge-spacer-divider">
-    <button onclick="swapTokens()" class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-11 h-11 bg-surface-container-lowest border border-outline-variant/10 shadow-md rounded-full flex items-center justify-center text-on-surface-variant hover:text-primary hover:rotate-180 transition-all duration-300">
+    <button data-action="swap-tokens" class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-11 h-11 bg-surface-container-lowest border border-outline-variant/10 shadow-md rounded-full flex items-center justify-center text-on-surface-variant hover:text-primary hover:rotate-180 transition-all duration-300">
       <span class="material-symbols-outlined text-xl">swap_vert</span>
     </button>
   </div>
@@ -250,7 +223,7 @@
   <div class="bridge-spacer-sm">
     <p class="text-base text-on-surface-variant bridge-spacer-sm">To <span class="font-bold text-on-surface" id="to-label">Wallet</span></p>
     <div class="flex items-end justify-between gap-6">
-      <button onclick="cycleToken('to')" class="inline-flex items-center gap-2 bg-surface-container-low pl-1.5 pr-4 py-1.5 rounded-full border border-outline-variant/10 hover:bg-surface-container-high transition-colors">
+      <button data-action="cycle-token" data-arg="to" class="inline-flex items-center gap-2 bg-surface-container-low pl-1.5 pr-4 py-1.5 rounded-full border border-outline-variant/10 hover:bg-surface-container-high transition-colors">
         <div class="relative">
           <img id="to-token-icon" src="" alt="" class="w-8 h-8 rounded-full"/>
           <img id="to-chain-icon" src="" alt="" class="w-5 h-5 rounded-full absolute -right-1 -bottom-0.5 border-2 border-surface-container-lowest bg-surface-container-lowest"/>
@@ -265,28 +238,28 @@
     </div>
     <!-- Custom recipient (bridge only) -->
     <div id="recipient-row" class="hidden mt-3">
-      <button onclick="toggleRecipient()" class="text-xs font-bold text-primary hover:underline flex items-center gap-1">
+      <button data-action="toggle-recipient" class="text-xs font-bold text-primary hover:underline flex items-center gap-1">
         <span class="material-symbols-outlined text-sm" id="recipient-toggle-icon">add</span>
         <span id="recipient-toggle-text">Send to a different address</span>
       </button>
       <div id="recipient-input-wrap" class="hidden mt-2">
-        <input id="recipient-address" type="text" placeholder="0x..." class="w-full px-4 py-3 rounded-xl border border-outline-variant/15 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-primary/30" oninput="validateRecipient()"/>
+        <input id="recipient-address" type="text" placeholder="0x..." class="w-full px-4 py-3 rounded-xl border border-outline-variant/15 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-primary/30"/>
         <p id="recipient-error" class="hidden text-xs text-error mt-1">Invalid Ethereum address</p>
       </div>
     </div>
 
     <!-- Gas top-up option -->
     <div id="gas-topup-row" class="hidden mt-3">
-      <button onclick="toggleGasTopup()" class="flex items-center gap-3 w-full text-left px-3 py-2 rounded-xl bg-surface-container-low hover:bg-surface-container transition-colors">
+      <button data-action="toggle-gas-topup" class="flex items-center gap-3 w-full text-left px-3 py-2 rounded-xl bg-surface-container-low hover:bg-surface-container transition-colors">
         <div id="gas-toggle" class="relative w-11 h-6 rounded-full bg-outline-variant transition-colors flex-shrink-0 shadow-sm">
           <div id="gas-toggle-knob" class="absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-surface-container-lowest transition-all shadow-md"></div>
         </div>
         <span class="text-sm font-bold text-on-surface">Add gas on <span id="gas-dest-name" class="text-primary">--</span></span>
       </button>
       <div id="gas-amount-row" class="hidden flex gap-2 mt-2">
-        <button onclick="setGasUsd(1)" id="gas-btn-1" class="px-3 py-1.5 rounded-full text-xs font-bold bg-surface-container text-on-surface-variant hover:bg-surface-container-high transition-colors">$1</button>
-        <button onclick="setGasUsd(2)" id="gas-btn-2" class="px-3 py-1.5 rounded-full text-xs font-bold bg-primary text-on-primary">$2</button>
-        <button onclick="setGasUsd(5)" id="gas-btn-5" class="px-3 py-1.5 rounded-full text-xs font-bold bg-surface-container text-on-surface-variant hover:bg-surface-container-high transition-colors">$5</button>
+        <button data-action="set-gas-usd" data-arg="1" id="gas-btn-1" class="px-3 py-1.5 rounded-full text-xs font-bold bg-surface-container text-on-surface-variant hover:bg-surface-container-high transition-colors">$1</button>
+        <button data-action="set-gas-usd" data-arg="2" id="gas-btn-2" class="px-3 py-1.5 rounded-full text-xs font-bold bg-primary text-on-primary">$2</button>
+        <button data-action="set-gas-usd" data-arg="5" id="gas-btn-5" class="px-3 py-1.5 rounded-full text-xs font-bold bg-surface-container text-on-surface-variant hover:bg-surface-container-high transition-colors">$5</button>
         <span id="gas-topup-symbol" class="text-xs text-on-surface-variant self-center ml-1">of ETH</span>
       </div>
     </div>
@@ -294,7 +267,7 @@
 
   <!-- ═══ FEE BREAKDOWN ═══ -->
   <div class="mt-2 mb-2">
-    <button onclick="toggleFeeBreakdown()" class="w-full flex items-center justify-between py-2 text-left">
+    <button data-action="toggle-fee-breakdown" class="w-full flex items-center justify-between py-2 text-left">
       <div class="flex items-center gap-2">
         <span id="fee-display" class="text-sm font-bold text-on-surface">--</span>
         <span id="fee-label" class="text-sm text-on-surface-variant">total fee</span>
@@ -314,7 +287,7 @@
   </div>
 
   <!-- ═══ REVIEW BUTTON ═══ -->
-  <button id="action-btn" onclick="executeSwap()" class="w-full py-4 bg-surface-container-high text-on-surface-variant rounded-full font-black text-lg transition-colors">
+  <button id="action-btn" data-action="execute-swap" class="w-full py-4 bg-surface-container-high text-on-surface-variant rounded-full font-black text-lg transition-colors">
     Review
   </button>
 
@@ -335,7 +308,7 @@
     <a href="index.html" class="p-2 text-on-surface-variant hover:text-primary transition-colors">
       <span class="material-symbols-outlined">home</span>
     </a>
-    <button onclick="closeTxScreen()" class="p-2 text-on-surface-variant hover:text-primary transition-colors">
+    <button data-action="close-tx-screen" class="p-2 text-on-surface-variant hover:text-primary transition-colors">
       <span class="material-symbols-outlined">close</span>
     </button>
   </div>
@@ -368,7 +341,7 @@
         <p id="tx-time-final" class="text-4xl font-black text-primary tabular-nums"></p>
       </div>
       <div class="flex flex-col gap-3 w-full mt-6">
-        <button onclick="closeTxScreen()" class="w-full py-4 bg-primary text-on-primary rounded-full font-bold text-base">
+        <button data-action="close-tx-screen" class="w-full py-4 bg-primary text-on-primary rounded-full font-bold text-base">
           New transaction
         </button>
         <a id="tx-share-btn" href="" target="_blank" class="hidden w-full py-4 bg-surface-container-low text-on-surface rounded-full font-bold text-base text-center hover:bg-surface-container-high transition-colors">
@@ -381,7 +354,7 @@
       <!-- Auto-redirect countdown -->
       <div class="w-full mt-2">
         <div class="h-1 bg-surface-container-high rounded-full overflow-hidden">
-          <div id="tx-countdown-bar" class="h-full bg-primary rounded-full transition-all" style="width:100%"></div>
+          <div id="tx-countdown-bar" class="h-full bg-primary rounded-full transition-all"></div>
         </div>
         <p id="tx-countdown-text" class="text-xs text-on-surface-variant mt-2">Returning to dashboard in 20s</p>
       </div>
@@ -393,13 +366,13 @@
 <!-- Token Picker Modal -->
 <div id="token-modal" role="dialog" aria-modal="true" aria-labelledby="token-modal-title" class="fixed inset-0 z-50 hidden">
   <!-- Backdrop -->
-  <div class="absolute inset-0 bg-black/30 backdrop-blur-sm" onclick="closeTokenModal()"></div>
+  <div class="absolute inset-0 bg-black/30 backdrop-blur-sm" data-action="close-token-modal"></div>
   <!-- Panel -->
   <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md bg-surface-container-lowest rounded-3xl shadow-2xl p-8 max-h-[80vh] flex flex-col">
     <!-- Header -->
     <div class="flex items-center justify-between mb-6">
       <h3 id="token-modal-title" class="text-xl font-black text-on-background">Choose a token</h3>
-      <button onclick="closeTokenModal()" aria-label="Close token picker" class="w-10 h-10 rounded-full bg-surface-container-low flex items-center justify-center hover:bg-surface-container-high transition-colors">
+      <button data-action="close-token-modal" aria-label="Close token picker" class="w-10 h-10 rounded-full bg-surface-container-low flex items-center justify-center hover:bg-surface-container-high transition-colors">
         <span class="material-symbols-outlined text-on-surface-variant">close</span>
       </button>
     </div>
@@ -407,15 +380,15 @@
     <div class="mb-3">
       <div class="flex items-center justify-between mb-2">
         <p class="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Chain</p>
-        <button id="chain-toggle" onclick="toggleAllChains()" class="text-xs font-bold text-primary hover:underline">View all</button>
+        <button id="chain-toggle" data-action="toggle-all-chains" class="text-xs font-bold text-primary hover:underline">View all</button>
       </div>
       <div id="chain-grid" class="grid grid-cols-6 gap-2">
         <!-- Populated by JS -->
       </div>
-      <input id="chain-search" type="text" placeholder="Search chains..." class="hidden w-full px-3 py-2 rounded-lg border border-outline-variant/15 text-xs mt-2 focus:outline-none focus:ring-2 focus:ring-primary/30" oninput="filterChainGrid()"/>
+      <input id="chain-search" type="text" placeholder="Search chains..." class="hidden w-full px-3 py-2 rounded-lg border border-outline-variant/15 text-xs mt-2 focus:outline-none focus:ring-2 focus:ring-primary/30"/>
     </div>
     <!-- Token search -->
-    <input id="token-search" type="text" placeholder="Search tokens..." class="w-full px-4 py-3 rounded-xl border border-outline-variant/15 text-sm mb-3 focus:outline-none focus:ring-2 focus:ring-primary/30" oninput="filterTokenList()"/>
+    <input id="token-search" type="text" placeholder="Search tokens..." class="w-full px-4 py-3 rounded-xl border border-outline-variant/15 text-sm mb-3 focus:outline-none focus:ring-2 focus:ring-primary/30"/>
     <!-- Token list -->
     <div id="token-list" class="overflow-y-auto max-h-[40vh] space-y-1">
       <!-- Populated by JS -->
@@ -423,1117 +396,6 @@
   </div>
 </div>
 
-<script>
-// ── Config ──
-const ACROSS_API = 'https://app.across.to/api';
-
-let CHAINS = [
-  { id: 1, name: 'Ethereum', slug: 'ethereum' },
-  { id: 42161, name: 'Arbitrum', slug: 'arbitrum' },
-  { id: 8453, name: 'Base', slug: 'base' },
-  { id: 10, name: 'Optimism', slug: 'optimism' },
-  { id: 137, name: 'Polygon', slug: 'polygon' },
-
-  { id: 324, name: 'zkSync Era', slug: 'zksync%20era' },
-  { id: 59144, name: 'Linea', slug: 'linea' },
-  { id: 34443, name: 'Mode', slug: 'mode' },
-  { id: 1135, name: 'Lisk', slug: 'lisk' },
-  { id: 480, name: 'World Chain', slug: 'world%20chain' },
-  { id: 81457, name: 'Blast', slug: 'blast' },
-  { id: 534352, name: 'Scroll', slug: 'scroll' },
-  { id: 7777777, name: 'Zora', slug: 'zora' },
-  { id: 130, name: 'Unichain', slug: 'unichain' },
-  { id: 57073, name: 'Ink', slug: 'ink' },
-  { id: 1868, name: 'Soneium', slug: 'soneium' },
-  { id: 999, name: 'HyperEVM', slug: 'hyperliquid%20evm' },
-  { id: 232, name: 'Lens', slug: 'lens%20network' },
-  // Virtual destinations — Hyperliquid deposits via Arbitrum
-  { id: 'hl-spot', name: 'Hyperliquid Spot', slug: 'hyperliquid%20evm', virtual: true },
-  { id: 'hl-perp', name: 'Hyperliquid Perp', slug: 'hyperliquid%20evm', virtual: true },
-];
-
-let TOKENS = [
-  { symbol: 'ETH', name: 'Ethereum', decimals: 18, native: true,
-    addresses: { 1:null, 42161:null, 8453:null, 10:null, 324:null, 59144:null, 34443:null, 81457:null, 534352:null, 7777777:null, 480:null, 1135:null, 57073:null, 1868:null, 130:null, 999:null, 232:null },
-    wrapAddresses: { 1:'0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2', 42161:'0x82aF49447D8a07e3bd95BD0d56f35241523fBab1', 8453:'0x4200000000000000000000000000000000000006', 10:'0x4200000000000000000000000000000000000006', 324:'0x5AEa5775959fBC2557Cc8789bC1bf90A239D9a91', 59144:'0xe5D7C2a44FfDDf6b295A15c148167daaAf5Cf34f', 34443:'0x4200000000000000000000000000000000000006', 81457:'0x4300000000000000000000000000000000000004', 534352:'0x5300000000000000000000000000000000000004', 7777777:'0x4200000000000000000000000000000000000006', 480:'0x4200000000000000000000000000000000000006', 1135:'0x4200000000000000000000000000000000000006', 57073:'0x4200000000000000000000000000000000000006', 1868:'0x4200000000000000000000000000000000000006', 130:'0x4200000000000000000000000000000000000006', 999:'0x4200000000000000000000000000000000000006', 232:'0x4200000000000000000000000000000000000006' }},
-  { symbol: 'USDC', name: 'USD Coin', decimals: 6, native: false,
-    addresses: { 1:'0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48', 42161:'0xaf88d065e77c8cC2239327C5EDb3A432268e5831', 8453:'0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913', 10:'0x0b2C639c533813f4Aa9D7837CAf62653d097Ff85', 137:'0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359' }},
-  { symbol: 'USDT', name: 'Tether', decimals: 6, native: false,
-    addresses: { 1:'0xdAC17F958D2ee523a2206206994597C13D831ec7', 42161:'0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9', 10:'0x94b008aA00579c1307B0EF2c499aD98a8ce58e58' }},
-  { symbol: 'WBTC', name: 'Wrapped BTC', decimals: 8, native: false,
-    addresses: { 1:'0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599', 42161:'0x2f2a2543B76A4166549F7aaB2e75Bef0aefC5B0f' }},
-  { symbol: 'DAI', name: 'Dai', decimals: 18, native: false,
-    addresses: { 1:'0x6B175474E89094C44Da98b954EedeAC495271d0F', 42161:'0xDA10009cBd5D07dd0CeCc66161FC93D7c9000da1' }},
-  { symbol: 'WETH', name: 'Wrapped ETH', decimals: 18, native: false,
-    addresses: { 1:'0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2', 42161:'0x82aF49447D8a07e3bd95BD0d56f35241523fBab1', 8453:'0x4200000000000000000000000000000000000006', 10:'0x4200000000000000000000000000000000000006' }},
-  { symbol: 'UMA', name: 'UMA', decimals: 18, native: false,
-    addresses: { 1:'0x04Fa0d235C4abf4BcF4787aF4CF447DE572eF828', 42161:'0xd693Ec944A85eeca4247eC1c3b130DCa9B0C3b22', 10:'0xE7798f023fC62146e8Aa1b36Da45fb70855a77Ea', 137:'0x3066818837c5e6eD6601bd5a91B0762a89fB4EB5' }},
-  { symbol: 'ACX', name: 'Across Protocol', decimals: 18, native: false,
-    addresses: { 1:'0x44108f0223A3C3028F5Fe7AEC7f9bb2E66beF82F', 42161:'0x53691596d1BCe8CEa565b3fBC4d3b90d8b025213', 10:'0xFf733b2A3557a7ed6697007ab5D11B79FdD1b76B', 137:'0xF328b73B6c685831F238c30a23Fc19140CB4D8FC' }},
-  { symbol: 'POOL', name: 'PoolTogether', decimals: 18, native: false,
-    addresses: { 1:'0x0cEC1A9154Ff802e7934Fc916Ed7Ca50bDE6844e', 10:'0x395Ae52bB17aef68C2888d941736A71dC6d4e125' }},
-  { symbol: 'SNX', name: 'Synthetix', decimals: 18, native: false,
-    addresses: { 1:'0xC011a73ee8576Fb46F5E1c5751cA3B9Fe0af2a6F', 10:'0x8700dAec35aF8Ff88c16BdF0418774CB3D7599B4' }},
-  { symbol: 'POL', name: 'Polygon', decimals: 18, native: true,
-    addresses: { 137:null },
-    wrapAddresses: { 137:'0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270' }},
-
-];
-
-// ── Hyperliquid deposit via Across embedded actions ──
-const HL_BRIDGE2 = '0x2Df1c51E09aECF9cacB7bc98cB1742757f163dF7';
-const USDC_ARB = '0xaf88d065e77c8cC2239327C5EDb3A432268e5831';
-const HL_MIN_DEPOSIT = 5_000_000; // 5 USDC in 6 decimals
-
-function isHyperliquidDest() {
-  const dest = CHAINS[toChainIdx];
-  return dest?.virtual && (dest.id === 'hl-spot' || dest.id === 'hl-perp');
-}
-
-// ── State ──
-let mode = 'bridge';
-let fromChainIdx = 0, toChainIdx = 1;
-let fromTokenIdx = 0, toTokenIdx = 1;
-let slippage = 'auto';
-let walletAddress = null;
-let fromBal = null; // raw number
-let prices = {};
-let quoteTimer = null;
-let lastQuote = null; // stores Across swap/approval response
-
-// ── Icon helpers ──
-function tokenIconUrl(token) {
-  if (TOKEN_ICON_MAP[token.symbol]) return TOKEN_ICON_MAP[token.symbol];
-  const ethAddr = token.addresses?.[1];
-  if (ethAddr) return `${TW}/ethereum/assets/${ethAddr}/logo.png`;
-  return '';
-}
-const chainLogoUrl = chainIcon;
-
-// ── Wallet ──
-async function connectWallet() {
-  if (!window.ethereum) { showNoWalletMessage(); return; }
-  try {
-    const accs = await window.ethereum.request({ method: 'eth_requestAccounts' });
-    walletAddress = accs[0];
-    document.getElementById('connect-label').textContent = formatAddr(walletAddress);
-    resolveWalletENS();
-    updateBalance();
-    updateActionBtn();
-  } catch(e) { console.error(e); }
-}
-function resolveWalletENS(){
-  if(!walletAddress)return;
-  const short=walletAddress.slice(0,6)+'...'+walletAddress.slice(-4);
-  document.getElementById('from-wallet-label').textContent=short;
-  fetch(`/api/ens?address=${walletAddress}`).then(r=>r.json()).then(d=>{
-    if(d.name){document.getElementById('connect-label').textContent=d.name;document.getElementById('from-wallet-label').textContent=d.name;}
-  }).catch(()=>{});
-}
-
-async function updateBalance() {
-  if (!walletAddress) return;
-  const token = TOKENS[fromTokenIdx];
-  const chainId = CHAINS[fromChainIdx].id;
-  try {
-    const res = await fetch(`/api/balances?address=${walletAddress}&_t=${Date.now()}`);
-    const data = await res.json();
-    cachedBalances = data;
-    console.log('Balances response:', JSON.stringify(data), 'Looking for:', chainId, token.symbol);
-    // find balance for this token on this chain (API may return string or number keys)
-    const chainData = data[chainId] || data[String(chainId)] || {};
-    const bal = chainData[token.symbol] || 0;
-    fromBal = bal;
-    document.getElementById('from-balance').textContent = `${fmtNum(bal)} ${token.symbol}`;
-    document.getElementById('from-balance-warn').textContent = `${fmtNum(bal)} ${token.symbol}`;
-    updateBalanceWarning();
-  } catch (e) { console.error('Balance fetch failed:', e); fromBal = null; }
-}
-
-// ── Prices ──
-async function fetchPrices() {
-  try {
-    const res = await fetch('/api/prices');
-    const raw = await res.json();
-    prices = {
-      ETH: raw.ethereum?.usd || 0,
-      WETH: raw.ethereum?.usd || 0,
-      WBTC: raw['wrapped-bitcoin']?.usd || raw.bitcoin?.usd || 0,
-      USDC: 1, USDT: 1, DAI: 1,
-      POL: raw['polygon-ecosystem-token']?.usd || raw['matic-network']?.usd || 0,
-      MATIC: raw['polygon-ecosystem-token']?.usd || raw['matic-network']?.usd || 0,
-      BNB: raw.binancecoin?.usd || 0,
-      UMA: raw.uma?.usd || 0,
-      ACX: raw['across-protocol']?.usd || 0,
-      POOL: raw['pooltogether-v2']?.usd || 0,
-      SNX: raw.havven?.usd || 0,
-    };
-  } catch { prices = { ETH:2500, WETH:2500, WBTC:90000, USDC:1, USDT:1, DAI:1, POL:0.4 }; }
-  updateRate();
-}
-
-// ── Mode ──
-
-// ── Token picker modal ──
-let pickerSide = 'from';
-let cachedBalances = null;
-let allModalRows = [];
-let modalChainFilter = null; // null = all chains
-
-function cycleToken(side) { openTokenModal(side); }
-
-function openTokenModal(side) {
-  pickerSide = side;
-  modalChainFilter = null;
-  showAllChains = false;
-  document.getElementById('token-search').value = '';
-  document.getElementById('chain-search').value = '';
-  document.getElementById('chain-search').classList.add('hidden');
-  buildChainGrid();
-  buildTokenList();
-  document.getElementById('token-modal').classList.remove('hidden');
-  document.body.style.overflow = 'hidden';
-  document.getElementById('token-search').focus();
-}
-
-let showAllChains = false;
-
-function buildChainGrid(chainsToShow) {
-  const grid = document.getElementById('chain-grid');
-  let defaultList = CHAINS.filter(c => !c.virtual);
-  const list = chainsToShow || (showAllChains ? defaultList : defaultList.slice(0, 11));
-  grid.innerHTML = `<button onclick="setChainFilter(null)" class="flex flex-col items-center justify-center w-12 h-12 rounded-xl text-[10px] font-bold transition-colors ${modalChainFilter === null ? 'bg-primary text-on-primary' : 'bg-surface-container-low text-on-surface-variant hover:bg-surface-container-high'}">All</button>` +
-    list.map(c => {
-      const active = modalChainFilter === c.id;
-      return `<button onclick="setChainFilter(${typeof c.id === 'string' ? "'"+c.id+"'" : c.id})" class="flex flex-col items-center justify-center w-12 h-12 rounded-xl transition-colors ${active ? 'bg-primary' : 'bg-surface-container-low hover:bg-surface-container-high'}" title="${c.name}">
-        <img src="https://icons.llamao.fi/icons/chains/rsz_${c.slug}.jpg" class="w-6 h-6 rounded-full" onerror="this.src='${TW}/${c.slug}/info/logo.png'"/>
-      </button>`;
-    }).join('');
-  document.getElementById('chain-toggle').textContent = showAllChains ? 'Show less' : 'View all';
-}
-
-function toggleAllChains() {
-  showAllChains = !showAllChains;
-  const searchEl = document.getElementById('chain-search');
-  searchEl.classList.toggle('hidden', !showAllChains);
-  if (!showAllChains) searchEl.value = '';
-  buildChainGrid();
-}
-
-function filterChainGrid() {
-  const q = document.getElementById('chain-search').value.toLowerCase().trim();
-  if (!q) { buildChainGrid(); return; }
-  const filtered = CHAINS.filter(c => !c.virtual && c.name.toLowerCase().includes(q));
-  buildChainGrid(filtered);
-}
-
-function setChainFilter(chainId) {
-  modalChainFilter = chainId;
-  buildChainGrid();
-  buildTokenList();
-}
-
-function buildTokenList() {
-  allModalRows = [];
-  CHAINS.forEach((chain) => {
-    if (chain.virtual) return;
-    TOKENS.forEach((token, tIdx) => {
-      if (!token.symbol) return;
-      const hasAddr = token.native
-        ? (token.addresses.hasOwnProperty(chain.id))
-        : (token.addresses[chain.id]);
-      if (!hasAddr) return;
-      allModalRows.push({ chain, token, tIdx });
-    });
-  });
-
-  allModalRows.sort((a, b) => {
-    const balA = cachedBalances?.[a.chain.id]?.[a.token.symbol] || 0;
-    const balB = cachedBalances?.[b.chain.id]?.[b.token.symbol] || 0;
-    if (balA > 0 && balB <= 0) return -1;
-    if (balB > 0 && balA <= 0) return 1;
-    if (a.token.symbol < b.token.symbol) return -1;
-    if (a.token.symbol > b.token.symbol) return 1;
-    return a.chain.name.localeCompare(b.chain.name);
-  });
-
-  filterTokenList();
-}
-
-function renderModalRows(rows) {
-  const list = document.getElementById('token-list');
-  const selToken = pickerSide === 'from' ? TOKENS[fromTokenIdx] : TOKENS[toTokenIdx];
-  const selChain = pickerSide === 'from'
-    ? CHAINS[fromChainIdx]
-    : CHAINS[toChainIdx];
-
-  const items = rows.map(({ chain, token, tIdx }) => {
-    const bal = cachedBalances?.[chain.id]?.[token.symbol] || 0;
-    const price = prices[token.symbol] || 0;
-    const usdVal = bal * price;
-    const isSelected = selToken.symbol === token.symbol && selChain.id === chain.id;
-    const highlight = isSelected ? 'bg-primary-container/20' : 'hover:bg-surface-container-low';
-    const tIcon = tokenIconUrl(token);
-    const cIcon = `https://icons.llamao.fi/icons/chains/rsz_${chain.slug}.jpg`;
-    const usdEl = bal > 0 ? Safe.html`<span class="text-xs text-on-surface-variant font-medium">$${fmtNum(usdVal)}</span>` : Safe.html``;
-
-    return Safe.html`<button data-tidx="${tIdx}" data-chain-id="${chain.id}" class="token-pick w-full flex items-center gap-3 px-4 py-3 ${highlight} rounded-xl transition-colors text-left" data-search="${token.symbol + ' ' + token.name + ' ' + chain.name}">
-      <div class="relative flex-shrink-0">
-        <img src="${Safe.url(tIcon)}" alt="${token.symbol}" class="w-10 h-10 rounded-full bg-surface-container" onerror="this.style.display='none'"/>
-        <img src="${Safe.url(cIcon)}" alt="${chain.name}" class="w-5 h-5 rounded-full absolute -bottom-0.5 -right-0.5 border-2 border-surface-container-lowest bg-surface-container-lowest"/>
-      </div>
-      <div class="flex-1 min-w-0">
-        <p class="font-bold text-[15px] ${bal > 0 ? 'text-on-background' : 'text-on-surface-variant'}">${bal > 0 ? fmtNum(bal) + ' ' : '0 '}${token.symbol}</p>
-        <p class="text-xs text-on-surface-variant">${token.name} · ${chain.name}</p>
-      </div>
-      ${usdEl}
-      <span class="material-symbols-outlined text-on-surface-variant text-base flex-shrink-0">chevron_right</span>
-    </button>`;
-  });
-  Safe.setHTML(list, items);
-  list.querySelectorAll('button.token-pick').forEach(btn => {
-    btn.addEventListener('click', () => selectToken(Number(btn.dataset.tidx), Number(btn.dataset.chainId)));
-  });
-}
-
-function filterTokenList() {
-  const q = document.getElementById('token-search').value.toLowerCase().trim();
-  let rows = allModalRows;
-  if (modalChainFilter !== null) {
-    rows = rows.filter(({ chain }) => chain.id === modalChainFilter);
-  }
-  if (q) {
-    rows = rows.filter(({ token }) =>
-      token.symbol.toLowerCase().includes(q) ||
-      token.name.toLowerCase().includes(q)
-    );
-  }
-  renderModalRows(rows);
-}
-
-function closeTokenModal() {
-  document.getElementById('token-modal').classList.add('hidden');
-  document.body.style.overflow = '';
-}
-document.addEventListener('keydown', e => {
-  if (e.key === 'Escape' && !document.getElementById('token-modal').classList.contains('hidden')) closeTokenModal();
-});
-
-function selectToken(tokenIdx, chainId) {
-  const chainIdx = CHAINS.findIndex(c => c.id === chainId);
-  if (pickerSide === 'from') {
-    fromTokenIdx = tokenIdx;
-    if (chainIdx >= 0) fromChainIdx = chainIdx;
-    if (fromTokenIdx === toTokenIdx && fromChainIdx === toChainIdx) {
-      toTokenIdx = (toTokenIdx + 1) % TOKENS.length;
-    }
-  } else {
-    toTokenIdx = tokenIdx;
-    if (chainIdx >= 0) toChainIdx = chainIdx;
-    if (fromTokenIdx === toTokenIdx && fromChainIdx === toChainIdx) {
-      toChainIdx = (toChainIdx + 1) % CHAINS.length;
-    }
-  }
-  closeTokenModal();
-  updateTokenDisplay();
-  updateRoute();
-  updateBalance();
-  onAmountChange();
-}
-
-function swapChains() {
-  [fromChainIdx, toChainIdx] = [toChainIdx, fromChainIdx];
-  updateTokenDisplay();
-  updateBalance();
-  onAmountChange();
-}
-
-function swapTokens() {
-  [fromTokenIdx, toTokenIdx] = [toTokenIdx, fromTokenIdx];
-  [fromChainIdx, toChainIdx] = [toChainIdx, fromChainIdx];
-  updateTokenDisplay();
-  updateRoute();
-  updateBalance();
-  // swap amounts
-  const inp = document.getElementById('input-amount');
-  const out = document.getElementById('output-amount');
-  const outVal = out.textContent;
-  inp.value = (outVal && outVal !== '--') ? outVal.replace(/,/g,'') : '';
-  out.textContent = '--';
-  onAmountChange();
-}
-
-// ── Display updates ──
-function updateTokenDisplay() {
-  const ft = TOKENS[fromTokenIdx], tt = TOKENS[toTokenIdx];
-  const fromChainId = CHAINS[fromChainIdx].id;
-  const toChainId = CHAINS[toChainIdx].id;
-  const fromChain = CHAINS.find(c => c.id === fromChainId);
-  const toChain = CHAINS.find(c => c.id === toChainId);
-  // Chain icons (big, background)
-  document.getElementById('from-chain-icon').src = chainLogoUrl(fromChainId);
-  document.getElementById('to-chain-icon').src = chainLogoUrl(toChainId);
-  // Token icons (small, overlay)
-  document.getElementById('from-token-icon').src = tokenIconUrl(ft);
-  document.getElementById('from-token-label').textContent = ft.symbol;
-  document.getElementById('to-token-icon').src = tokenIconUrl(tt);
-  document.getElementById('to-token-label').textContent = tt.symbol;
-  updateRate();
-  updateGasTopupVisibility();
-}
-
-function updateRate() {
-  const fp = prices[TOKENS[fromTokenIdx].symbol] || 0;
-  const tp = prices[TOKENS[toTokenIdx].symbol] || 0;
-  if (fp && tp) {
-    const rate = fp / tp;
-    document.getElementById('rate-display').textContent = `1 ${TOKENS[fromTokenIdx].symbol} = ${fmtNum(rate)} ${TOKENS[toTokenIdx].symbol}`;
-  }
-}
-
-function isSameChain() { return !CHAINS[toChainIdx]?.virtual && fromChainIdx === toChainIdx; }
-
-function updateRoute() {
-  document.getElementById('fee-route').textContent = `${CHAINS[fromChainIdx].name} → ${CHAINS[toChainIdx].name} · Across`;
-}
-
-let routeAvailable = false;
-let gasTopupEnabled = false;
-let gasTopupUsd = 2;
-
-function updateActionBtn() {
-  const btn = document.getElementById('action-btn');
-  const val = parseFloat(document.getElementById('input-amount').value) || 0;
-  if (!walletAddress) {
-    btn.textContent = 'Connect Wallet';
-    btn.className = 'w-full py-4 bg-primary text-on-primary rounded-full font-black text-lg active:scale-[0.98] transition-transform';
-    btn.disabled = false;
-  } else if (val <= 0) {
-    btn.textContent = 'Enter amount';
-    btn.className = 'w-full py-4 bg-surface-container-high text-on-surface-variant rounded-full font-black text-lg';
-    btn.disabled = false;
-  } else if (fromBal != null && val > fromBal) {
-    btn.textContent = 'Insufficient balance';
-    btn.className = 'w-full py-4 bg-surface-container-high text-on-surface-variant/50 rounded-full font-black text-lg cursor-not-allowed';
-    btn.disabled = true;
-  } else if (!routeAvailable && lastQuote === null) {
-    btn.textContent = 'Route unavailable';
-    btn.className = 'w-full py-4 bg-surface-container-high text-on-surface-variant/50 rounded-full font-black text-lg cursor-not-allowed';
-    btn.disabled = true;
-  } else {
-    btn.textContent = isHyperliquidDest() ? 'Deposit to Hyperliquid' : 'Bridge';
-    btn.className = 'w-full py-4 bg-primary text-on-primary rounded-full font-black text-lg active:scale-[0.98] transition-transform';
-    btn.disabled = false;
-  }
-}
-
-function setSlippage(val) {
-  slippage = val;
-}
-
-function toggleFeeBreakdown() {
-  const bd = document.getElementById('fee-breakdown');
-  const chev = document.getElementById('fee-chevron');
-  const main = document.getElementById('bridge-main');
-  bd.classList.toggle('hidden');
-  const open = !bd.classList.contains('hidden');
-  chev.style.transform = open ? 'rotate(180deg)' : '';
-  main.classList.toggle('compact', open);
-}
-
-// ── Custom recipient ──
-function getRecipient() {
-  const inp = document.getElementById('recipient-address');
-  const val = (inp?.value || '').trim();
-  if (val && EthUtils.isValidAddress(val)) return val;
-  return walletAddress;
-}
-
-function toggleRecipient() {
-  const wrap = document.getElementById('recipient-input-wrap');
-  const icon = document.getElementById('recipient-toggle-icon');
-  const text = document.getElementById('recipient-toggle-text');
-  const showing = !wrap.classList.contains('hidden');
-  wrap.classList.toggle('hidden');
-  icon.textContent = showing ? 'add' : 'close';
-  text.textContent = showing ? 'Send to a different address' : 'Cancel';
-  if (showing) {
-    document.getElementById('recipient-address').value = '';
-    document.getElementById('recipient-error').classList.add('hidden');
-    document.getElementById('to-label').textContent = 'Wallet';
-  }
-}
-
-function validateRecipient() {
-  const val = document.getElementById('recipient-address').value.trim();
-  const err = document.getElementById('recipient-error');
-  const label = document.getElementById('to-label');
-  if (!val) { err.classList.add('hidden'); label.textContent = 'Wallet'; onAmountChange(); return; }
-  if (EthUtils.isValidAddress(val)) {
-    err.classList.add('hidden');
-    label.textContent = val.slice(0,6) + '...' + val.slice(-4);
-    onAmountChange();
-  } else {
-    err.classList.remove('hidden');
-    label.textContent = 'Wallet';
-    onAmountChange();
-  }
-}
-
-function updateRecipientVisibility() {
-  document.getElementById('recipient-row').classList.remove('hidden');
-}
-
-// ── Gas top-up helpers ──
-function getNativeWrap(chainId) {
-  for (const t of TOKENS) {
-    if (t.native && t.wrapAddresses?.[chainId]) return { addr: t.wrapAddresses[chainId], symbol: t.symbol };
-  }
-  return null;
-}
-
-function updateGasTopupVisibility() {
-  const row = document.getElementById('gas-topup-row');
-  const destChain = CHAINS[toChainIdx];
-  // Hide for Hyperliquid virtual destinations
-  if (!destChain || destChain.virtual || isHyperliquidDest()) {
-    row.classList.add('hidden');
-    gasTopupEnabled = false;
-    return;
-  }
-  const nativeWrap = getNativeWrap(destChain.id);
-  if (!nativeWrap) { row.classList.add('hidden'); return; }
-  row.classList.remove('hidden');
-  document.getElementById('gas-dest-name').textContent = destChain.name;
-  document.getElementById('gas-topup-symbol').textContent = `of ${nativeWrap.symbol}`;
-}
-
-function toggleGasTopup() {
-  gasTopupEnabled = !gasTopupEnabled;
-  const toggle = document.getElementById('gas-toggle');
-  const knob = document.getElementById('gas-toggle-knob');
-  const amountRow = document.getElementById('gas-amount-row');
-  if (gasTopupEnabled) {
-    toggle.classList.remove('bg-outline-variant');
-    toggle.classList.add('bg-primary');
-    knob.classList.remove('left-0.5', 'bg-surface-container-lowest');
-    knob.classList.add('left-5', 'bg-on-primary');
-    amountRow.classList.remove('hidden');
-  } else {
-    toggle.classList.add('bg-outline-variant');
-    toggle.classList.remove('bg-primary');
-    knob.classList.add('left-0.5', 'bg-surface-container-lowest');
-    knob.classList.remove('left-5', 'bg-on-primary');
-    amountRow.classList.add('hidden');
-  }
-}
-
-function setGasUsd(n) {
-  gasTopupUsd = n;
-  [1, 2, 5].forEach(v => {
-    const btn = document.getElementById(`gas-btn-${v}`);
-    if (v === n) {
-      btn.className = 'px-3 py-1.5 rounded-full text-xs font-bold bg-primary text-on-primary';
-    } else {
-      btn.className = 'px-3 py-1.5 rounded-full text-xs font-bold bg-surface-container text-on-surface-variant hover:bg-surface-container-high transition-colors';
-    }
-  });
-}
-
-function setMax() {
-  if (fromBal != null) {
-    const token = TOKENS[fromTokenIdx];
-    const chainId = CHAINS[fromChainIdx].id;
-    const GAS_RESERVE = { 1: 0.005, 56: 0.001, 137: 0.05 };
-    const reserve = token.native ? (GAS_RESERVE[chainId] ?? 0.0005) : 0;
-    document.getElementById('input-amount').value = Math.max(0, fromBal - reserve);
-    onAmountChange();
-  }
-}
-function setHalf() {
-  if (fromBal != null) {
-    document.getElementById('input-amount').value = (fromBal / 2).toFixed(6);
-    onAmountChange();
-  }
-}
-
-// ── Quote / Amount ──
-function updateBalanceWarning() {
-  const val = parseFloat(document.getElementById('input-amount').value) || 0;
-  const overBalance = fromBal != null && val > fromBal && val > 0;
-  document.getElementById('balance-normal').classList.toggle('hidden', overBalance);
-  document.getElementById('balance-warn').classList.toggle('hidden', !overBalance);
-}
-
-function onAmountChange() {
-  clearTimeout(quoteTimer);
-  lastQuote = null;
-  routeAvailable = true; // assume available until quote returns
-  updateBalanceWarning();
-  updateActionBtn();
-  const val = parseFloat(document.getElementById('input-amount').value) || 0;
-  if (val <= 0) {
-    document.getElementById('output-amount').textContent = '--';
-    document.getElementById('output-usd').textContent = '';
-    document.getElementById('fee-display').textContent = '--';
-    document.getElementById('fee-route').textContent = '';
-    return;
-  }
-  if (fromBal != null && val > fromBal) {
-    document.getElementById('output-amount').textContent = '--';
-    document.getElementById('output-usd').textContent = '';
-    document.getElementById('fee-display').textContent = 'Insufficient balance';
-    document.getElementById('fee-route').textContent = '';
-    return;
-  }
-  const recipientInput = (document.getElementById('recipient-address')?.value || '').trim();
-  if (recipientInput && !EthUtils.isValidAddress(recipientInput)) {
-    document.getElementById('output-amount').textContent = '--';
-    document.getElementById('output-usd').textContent = '';
-    document.getElementById('fee-display').textContent = 'Invalid recipient address';
-    document.getElementById('fee-route').textContent = '';
-    return;
-  }
-  // Instant estimate from prices
-  const fp = prices[TOKENS[fromTokenIdx].symbol] || 0;
-  const tp = prices[TOKENS[toTokenIdx].symbol] || 0;
-  if (fp && tp) {
-    const est = (val * fp / tp);
-    document.getElementById('output-amount').textContent = fmtNum(est);
-    document.getElementById('output-usd').textContent = `≈ $${fmtNum(val * fp)}`;
-  }
-  // Fetch best route
-  document.getElementById('fee-display').textContent = '...';
-  document.getElementById('fee-route').textContent = 'Fetching Across quote...';
-  quoteTimer = setTimeout(() => fetchBestQuote(val), 300);
-}
-
-// ── Quote fetcher ──
-async function fetchBestQuote(amount) {
-  try {
-  const fromToken = TOKENS[fromTokenIdx];
-  const toToken = TOKENS[toTokenIdx];
-  const originChain = CHAINS[fromChainIdx].id;
-  const destChain = CHAINS[toChainIdx].id;
-  const fp = prices[fromToken.symbol] || 0;
-  const tp = prices[toToken.symbol] || 0;
-  const amountWei = BigInt(Math.floor(amount * 10 ** fromToken.decimals)).toString();
-  const sameChain = originChain === destChain;
-
-  const candidates = [];
-
-  if (isHyperliquidDest()) {
-    try {
-      const hlResult = await fetchHyperliquidQuote(originChain, fromToken, amountWei);
-      if (hlResult) candidates.push(hlResult);
-    } catch (e) { console.warn('Hyperliquid quote failed:', e); }
-  } else {
-    try {
-      const acrossResult = await fetchAcrossQuote(originChain, destChain, fromToken, toToken, amountWei);
-      if (acrossResult) candidates.push(acrossResult);
-    } catch (e) { console.warn('Across quote failed:', e); }
-  }
-
-
-  if (candidates.length === 0) {
-    routeAvailable = false;
-    document.getElementById('fee-display').textContent = 'No route found';
-    document.getElementById('fee-route').textContent = '';
-    document.getElementById('output-amount').textContent = '--';
-    document.getElementById('output-usd').textContent = '';
-    updateActionBtn();
-    return;
-  }
-
-  // Pick best output
-  candidates.sort((a, b) => b.outputNum - a.outputNum);
-  const best = candidates[0];
-  routeAvailable = true;
-  lastQuote = best.quote;
-  lastQuote._routeType = best.type;
-  lastQuote._provider = best.provider;
-  lastQuote._route = best.route;
-
-  // Update UI
-  document.getElementById('output-amount').textContent = fmtNum(best.outputNum);
-  document.getElementById('output-usd').textContent = `≈ $${fmtNum(best.outputNum * tp)}`;
-  document.getElementById('fee-display').textContent = best.feeDisplay;
-  document.getElementById('fee-route').textContent = `via ${best.provider}`;
-
-  // Breakdown
-  document.getElementById('bd-route').textContent = best.route;
-  document.getElementById('bd-provider').textContent = best.provider;
-  document.getElementById('bd-fee').textContent = best.feeDisplay;
-  document.getElementById('bd-time').textContent = best.time;
-  document.getElementById('bd-slip').textContent = slippage === 'auto' ? 'Auto' : (parseFloat(slippage) * 100) + '%';
-  } catch (e) {
-    console.error('fetchBestQuote error:', e);
-    document.getElementById('fee-display').textContent = 'Quote error';
-    document.getElementById('fee-route').textContent = '';
-  }
-}
-
-// ── Across crosschain quote ──
-async function fetchAcrossQuote(originChain, destChain, fromToken, toToken, amountWei) {
-  const inputAddr = fromToken.native ? fromToken.wrapAddresses?.[originChain] : fromToken.addresses[originChain];
-  const outputAddr = toToken.native ? toToken.wrapAddresses?.[destChain] : toToken.addresses[destChain];
-  if (!inputAddr || !outputAddr) return null;
-
-  const recipient = getRecipient();
-  const params = new URLSearchParams({
-    tradeType: 'exactInput', amount: amountWei, inputToken: inputAddr, outputToken: outputAddr,
-    originChainId: originChain, destinationChainId: destChain,
-    depositor: walletAddress || '0x0000000000000000000000000000000000000000',
-    recipient: recipient || walletAddress || '0x0000000000000000000000000000000000000000',
-    slippage: slippage,
-  });
-
-  const ctrl = new AbortController();
-  const t = setTimeout(() => ctrl.abort(), 8000);
-  const res = await fetch(`${ACROSS_API}/swap/approval?${params}`, { signal: ctrl.signal });
-  clearTimeout(t);
-  if (!res.ok) return null;
-  const data = await res.json();
-
-  console.log('Across response keys:', Object.keys(data), 'steps:', data.steps, 'expectedOutput:', data.expectedOutput);
-  // Try multiple possible field paths for the output amount
-  const rawOutput = data.steps?.bridge?.outputAmount ?? data.expectedOutput ?? data.outputAmount ?? data.minExpectedInputTokenAmount ?? null;
-  if (!rawOutput) { console.warn('Across: no output field found in response'); return null; }
-  let outputNum = 0;
-  try { outputNum = Number(BigInt(rawOutput)) / 10 ** toToken.decimals; } catch { outputNum = parseFloat(rawOutput) / 10 ** toToken.decimals || 0; }
-  if (!outputNum || outputNum <= 0) return null;
-  const fp = prices[fromToken.symbol] || 0;
-  const tp = prices[toToken.symbol] || 0;
-  const amount = Number(BigInt(amountWei)) / 10 ** fromToken.decimals;
-  const inputUsd = amount * fp;
-  const outputUsd = outputNum * tp;
-  const feeUsd = Math.max(0, inputUsd - outputUsd);
-  const fromChainName = CHAINS.find(c => c.id === originChain)?.name || originChain;
-  const toChainName = CHAINS.find(c => c.id === destChain)?.name || destChain;
-
-  return {
-    outputNum,
-    provider: 'Across Protocol',
-    route: `${fromToken.symbol}(${fromChainName}) → ${toToken.symbol}(${toChainName})`,
-    feeDisplay: feeUsd > 0.001 ? `~$${fmtNum(feeUsd)}` : '<$0.01',
-    time: '~2 seconds',
-    type: 'across',
-    quote: data,
-  };
-}
-
-
-// ── Hyperliquid deposit quote ──
-// Routes: any token on any chain → USDC on Arbitrum → Bridge2 deposit → Hyperliquid
-async function fetchHyperliquidQuote(originChain, fromToken, amountWei) {
-  const inputAddr = fromToken.native ? fromToken.wrapAddresses?.[originChain] : fromToken.addresses[originChain];
-  if (!inputAddr) return null;
-
-  // Output is always USDC on Arbitrum
-  const outputAddr = USDC_ARB;
-  const destChain = 42161; // Arbitrum
-
-  // Use Across POST /swap/approval with embedded action to deposit to Bridge2
-  // The action: transfer USDC to Bridge2 contract (simple ERC20 transfer triggers deposit)
-  const params = new URLSearchParams({
-    tradeType: 'exactInput', amount: amountWei,
-    inputToken: inputAddr, outputToken: outputAddr,
-    originChainId: originChain, destinationChainId: destChain,
-    depositor: walletAddress || '0x0000000000000000000000000000000000000000',
-    recipient: HL_BRIDGE2, // USDC goes directly to Bridge2 — triggers deposit for depositor
-    slippage: 'auto',
-  });
-
-  const ctrl = new AbortController();
-  const t = setTimeout(() => ctrl.abort(), 8000);
-  const res = await fetch(`${ACROSS_API}/swap/approval?${params}`, { signal: ctrl.signal });
-  clearTimeout(t);
-  if (!res.ok) return null;
-  const data = await res.json();
-
-  const fp = prices[fromToken.symbol] || 0;
-  const rawOutput = data.steps?.bridge?.outputAmount || data.expectedOutput || '0';
-  const outputNum = Number(BigInt(rawOutput)) / 1e6; // USDC 6 decimals
-  const rawFee = data.fees?.total || data.fees?.totalRelayFee?.total || '0';
-  const totalFee = Number(BigInt(rawFee)) / 10 ** fromToken.decimals;
-
-  if (outputNum < 5) {
-    return { outputNum, provider: 'Hyperliquid', route: 'Below 5 USDC minimum', feeDisplay: '--', time: '--', type: 'error', quote: null };
-  }
-
-  const dest = CHAINS[toChainIdx];
-  const destLabel = dest.id === 'hl-spot' ? 'Spot' : 'Perp';
-
-  return {
-    outputNum,
-    provider: 'Across → Hyperliquid',
-    route: `${fromToken.symbol} → USDC → Hyperliquid ${destLabel}`,
-    feeDisplay: `~$${fmtNum(totalFee * fp)}`,
-    time: '~2 min',
-    type: 'hyperliquid',
-    quote: data,
-  };
-}
-
-// ── Execute ──
-let txStartTime = 0;
-let txTimerInterval = null;
-
-function showTxScreen(statusText, detailText) {
-  const screen = document.getElementById('tx-screen');
-  screen.classList.remove('hidden');
-  screen.classList.add('flex');
-  document.getElementById('tx-loading').classList.remove('hidden');
-  document.getElementById('tx-success').classList.add('hidden');
-  document.getElementById('tx-status').textContent = statusText;
-  document.getElementById('tx-detail').textContent = detailText;
-  document.getElementById('tx-timer').textContent = '';
-}
-
-function startTxTimer() {
-  txStartTime = Date.now();
-  clearInterval(txTimerInterval);
-  txTimerInterval = setInterval(() => {
-    const elapsed = ((Date.now() - txStartTime) / 1000).toFixed(1);
-    document.getElementById('tx-timer').textContent = elapsed + 's';
-  }, 100);
-}
-
-let txRedirectTimer = null;
-let txCountdownInterval = null;
-
-const EXPLORERS = {
-  1:'https://etherscan.io/tx/',42161:'https://arbiscan.io/tx/',8453:'https://basescan.org/tx/',
-  10:'https://optimistic.etherscan.io/tx/',137:'https://polygonscan.com/tx/',324:'https://explorer.zksync.io/tx/',
-  59144:'https://lineascan.build/tx/',34443:'https://explorer.mode.network/tx/',81457:'https://blastscan.io/tx/',
-  534352:'https://scrollscan.com/tx/',7777777:'https://explorer.zora.energy/tx/',
-};
-
-function showTxSuccess(summary, elapsedSec, txHash, chainId) {
-  clearInterval(txTimerInterval);
-  document.getElementById('tx-loading').classList.add('hidden');
-  document.getElementById('tx-success').classList.remove('hidden');
-
-  // Save to localStorage for dashboard activity feed
-  try {
-    const historyKey = 'sage_tx_' + (walletAddress || 'unknown').toLowerCase();
-    const history = JSON.parse(localStorage.getItem(historyKey) || '[]');
-    history.unshift({
-      type: 'bridge',
-      summary,
-      time: elapsedSec,
-      fromToken: TOKENS[fromTokenIdx].symbol,
-      toToken: TOKENS[toTokenIdx].symbol,
-      fromChain: CHAINS[fromChainIdx].name,
-      toChain: CHAINS[toChainIdx].name,
-      fromChainId: CHAINS[fromChainIdx].id,
-      amount: document.getElementById('input-amount').value,
-      timestamp: Date.now(),
-      txHash: txHash || null,
-    });
-    if (history.length > 20) history.length = 20;
-    localStorage.setItem(historyKey, JSON.stringify(history));
-  } catch {}
-  document.getElementById('tx-summary').textContent = summary;
-  document.getElementById('tx-time-final').textContent = elapsedSec.toFixed(1) + 's';
-
-  // Show share button if under 5 seconds
-  const shareBtn = document.getElementById('tx-share-btn');
-  if (elapsedSec < 5) {
-    const text = encodeURIComponent('I just moved money onchain with Sage. Cents. Seconds. Sage. \u{1F33F}');
-    shareBtn.href = `https://x.com/intent/tweet?text=${text}`;
-    shareBtn.classList.remove('hidden');
-  } else {
-    shareBtn.classList.add('hidden');
-  }
-
-  // Auto-redirect countdown (20s)
-  startCountdown(20);
-}
-
-function startCountdown(seconds) {
-  clearTimeout(txRedirectTimer);
-  clearInterval(txCountdownInterval);
-  const bar = document.getElementById('tx-countdown-bar');
-  const text = document.getElementById('tx-countdown-text');
-  let remaining = seconds;
-  bar.style.width = '100%';
-  text.textContent = `Returning to dashboard in ${remaining}s`;
-
-  txCountdownInterval = setInterval(() => {
-    remaining--;
-    const pct = Math.max(0, (remaining / seconds) * 100);
-    bar.style.width = pct + '%';
-    text.textContent = `Returning to dashboard in ${remaining}s`;
-    if (remaining <= 0) clearInterval(txCountdownInterval);
-  }, 1000);
-
-  txRedirectTimer = setTimeout(() => {
-    window.location.href = 'index.html';
-  }, seconds * 1000);
-}
-
-function cancelCountdown() {
-  clearTimeout(txRedirectTimer);
-  clearInterval(txCountdownInterval);
-  const bar = document.getElementById('tx-countdown-bar');
-  const text = document.getElementById('tx-countdown-text');
-  if (bar) bar.style.width = '0%';
-  if (text) text.textContent = '';
-}
-
-function closeTxScreen() {
-  clearInterval(txTimerInterval);
-  cancelCountdown();
-  document.getElementById('tx-screen').classList.add('hidden');
-  document.getElementById('tx-screen').classList.remove('flex');
-  lastQuote = null;
-  document.getElementById('input-amount').value = '';
-  document.getElementById('output-amount').textContent = '--';
-  document.getElementById('output-usd').textContent = '';
-  updateActionBtn();
-  updateBalance();
-}
-
-async function executeSwap() {
-  if (!walletAddress) { connectWallet(); return; }
-  const amount = parseFloat(document.getElementById('input-amount').value) || 0;
-  if (amount <= 0) return;
-  if (fromBal != null && amount > fromBal) return;
-
-  const fromSym = TOKENS[fromTokenIdx].symbol;
-  const toSym = TOKENS[toTokenIdx].symbol;
-  const fromChainName = CHAINS[fromChainIdx].name;
-  const toChainName = CHAINS[toChainIdx].name;
-
-  try {
-    if (!lastQuote) await fetchBestQuote(amount);
-    if (!lastQuote) throw new Error('Could not get quote');
-    const routeType = lastQuote._routeType;
-    const provider = lastQuote._provider;
-
-    if (routeType === 'across') {
-      // Standard Across bridge
-      if (lastQuote.approvalTxns?.length) {
-        showTxScreen('Approving...', `Approve ${fromSym} for bridging`);
-        for (const tx of lastQuote.approvalTxns) { await sendTx(tx); }
-      }
-      showTxScreen('Confirm in wallet...', `${amount} ${fromSym} → ${toSym}`);
-      const hash = await sendTx(lastQuote.swapTx);
-      startTxTimer();
-      showTxScreen('Bridging...', `${fromChainName} → ${toChainName} via Across`);
-
-      // Fire gas top-up bridge in parallel (don't wait for main fill first)
-      if (gasTopupEnabled) {
-        try {
-          await executeGasTopup();
-        } catch (e) { console.warn('Gas top-up failed (non-fatal):', e); }
-      }
-
-      await pollFill(CHAINS[fromChainIdx].id, hash);
-      const elapsed = (Date.now() - txStartTime) / 1000;
-      showTxSuccess(`${amount} ${fromSym} on ${fromChainName} → ${toSym} on ${toChainName}`, elapsed, hash, CHAINS[fromChainIdx].id);
-
-    } else if (routeType === 'hyperliquid') {
-      // Same as Across bridge — USDC lands on Bridge2 and Hyperliquid credits the user
-      if (lastQuote.approvalTxns?.length) {
-        showTxScreen('Approving...', `Approve ${fromSym}`);
-        for (const tx of lastQuote.approvalTxns) { await sendTx(tx); }
-      }
-      showTxScreen('Confirm in wallet...', `${amount} ${fromSym} → Hyperliquid`);
-      const hash = await sendTx(lastQuote.swapTx);
-      const dest = CHAINS[toChainIdx];
-      const destLabel = dest.id === 'hl-spot' ? 'Spot' : 'Perp';
-      startTxTimer();
-      showTxScreen('Depositing...', `→ Hyperliquid ${destLabel}`);
-      await pollFill(CHAINS[fromChainIdx].id, hash);
-      const elapsed = (Date.now() - txStartTime) / 1000;
-      showTxSuccess(`${amount} ${fromSym} → USDC on Hyperliquid ${destLabel}`, elapsed, hash, CHAINS[fromChainIdx].id);
-    }
-  } catch (e) {
-    console.error('Tx failed:', e);
-    closeTxScreen();
-    const btn = document.getElementById('action-btn');
-    btn.textContent = e.code === 4001 ? 'Rejected' : 'Failed';
-    setTimeout(() => updateActionBtn(), 2000);
-  }
-}
-
-async function executeGasTopup() {
-  const fromToken = TOKENS[fromTokenIdx];
-  const originChain = CHAINS[fromChainIdx].id;
-  const destChain = CHAINS[toChainIdx].id;
-  const nativeWrap = getNativeWrap(destChain);
-  if (!nativeWrap) return;
-
-  const inputAddr = fromToken.native ? fromToken.wrapAddresses?.[originChain] : fromToken.addresses[originChain];
-  if (!inputAddr) return;
-
-  // Convert USD amount to source token amount
-  const srcPrice = prices[fromToken.symbol] || 1;
-  const gasAmountInSrc = gasTopupUsd / srcPrice;
-  const gasAmountWei = BigInt(Math.floor(gasAmountInSrc * 10 ** fromToken.decimals)).toString();
-
-  const params = new URLSearchParams({
-    tradeType: 'exactInput', amount: gasAmountWei,
-    inputToken: inputAddr, outputToken: nativeWrap.addr,
-    originChainId: originChain, destinationChainId: destChain,
-    depositor: walletAddress,
-    recipient: getRecipient(),
-    slippage: 'auto',
-  });
-
-  const ctrl = new AbortController();
-  const t = setTimeout(() => ctrl.abort(), 8000);
-  const res = await fetch(`${ACROSS_API}/swap/approval?${params}`, { signal: ctrl.signal });
-  clearTimeout(t);
-  if (!res.ok) return;
-  const data = await res.json();
-
-  if (data.approvalTxns?.length) {
-    showTxScreen('Approving gas...', `Approve ${fromToken.symbol}`);
-    for (const tx of data.approvalTxns) { await sendTx(tx); }
-  }
-  showTxScreen('Adding gas...', `+$${gasTopupUsd} of ${nativeWrap.symbol} on ${CHAINS[toChainIdx].name} — confirm in wallet`);
-  await sendTx(data.swapTx);
-}
-
-async function sendTx(tx) {
-  // Switch chain if needed
-  const targetChainHex = '0x' + tx.chainId.toString(16);
-  const currentChain = await window.ethereum.request({ method: 'eth_chainId' });
-  if (currentChain !== targetChainHex) {
-    try {
-      await window.ethereum.request({ method: 'wallet_switchEthereumChain', params: [{ chainId: targetChainHex }] });
-    } catch (e) {
-      if (e.code === 4902) throw new Error(`Please add chain ${tx.chainId} to MetaMask`);
-      throw e;
-    }
-  }
-
-  const txParams = {
-    from: walletAddress, to: tx.to, data: tx.data,
-    value: tx.value && tx.value !== '0' ? '0x' + BigInt(tx.value).toString(16) : '0x0',
-    chainId: targetChainHex,
-  };
-  if (tx.gas) txParams.gas = '0x' + BigInt(tx.gas).toString(16);
-  const txHash = await window.ethereum.request({
-    method: 'eth_sendTransaction',
-    params: [txParams],
-  });
-  return txHash;
-}
-
-async function waitForTx(hash, chainId) {
-  const chainHex = '0x' + chainId.toString(16);
-  for (let i = 0; i < 60; i++) {
-    const receipt = await window.ethereum.request({
-      method: 'eth_getTransactionReceipt', params: [hash],
-    });
-    if (receipt && receipt.status) return receipt;
-    await new Promise(r => setTimeout(r, 2000));
-  }
-}
-
-async function pollFill(originChainId, txHash) {
-  for (let i = 0; i < 120; i++) {
-    try {
-      const res = await fetch(`${ACROSS_API}/deposit/status?originChainId=${originChainId}&depositTxHash=${txHash}`);
-      const data = await res.json();
-      if (data.status === 'filled') return;
-    } catch {}
-    await new Promise(r => setTimeout(r, 2000));
-  }
-}
-
-// ── Helpers ──
-function fmtNum(n) {
-  if (n >= 1000) return n.toLocaleString('en-US', { maximumFractionDigits: 2 });
-  if (n >= 1) return n.toLocaleString('en-US', { maximumFractionDigits: 4 });
-  return n.toLocaleString('en-US', { maximumFractionDigits: 6 });
-}
-
-// ── Load Across routes dynamically ──
-async function loadRoutes() {
-  try {
-    const res = await fetch('/api/routes');
-    if (!res.ok) return;
-    const { chains, tokens, routes } = await res.json();
-
-    // Enrich TOKENS with any new tokens from Across that we don't have
-    if (Array.isArray(tokens)) {
-      for (const t of tokens) {
-        const existing = TOKENS.find(x => x.symbol === t.symbol);
-        if (existing) {
-          // Add any new chain addresses
-          if (t.chainId && t.address) {
-            existing.addresses[t.chainId] = t.address;
-          }
-        } else if (t.symbol && t.address && t.chainId) {
-          // New token we didn't have
-          const newToken = {
-            symbol: t.symbol,
-            name: t.name || t.symbol,
-            decimals: t.decimals || 18,
-            native: false,
-            addresses: { [t.chainId]: t.address },
-          };
-          TOKENS.push(newToken);
-        }
-      }
-    }
-
-    // Enrich CHAINS
-    if (Array.isArray(chains)) {
-      for (const c of chains) {
-        if (!CHAINS.find(x => x.id === c.chainId)) {
-          CHAINS.push({
-            id: c.chainId,
-            name: c.name || `Chain ${c.chainId}`,
-            slug: (c.name || '').toLowerCase().replace(/\s+/g, ''),
-          });
-        }
-      }
-    }
-    console.log(`Loaded ${TOKENS.length} tokens across ${CHAINS.length} chains from Across`);
-  } catch (e) {
-    console.warn('Could not load Across routes, using defaults:', e);
-  }
-}
-
-// ── Init ──
-(async function init() {
-  // Ensure different chains for bridge
-  if (fromChainIdx === toChainIdx) {
-    toChainIdx = (fromChainIdx + 1) % CHAINS.length;
-    if (CHAINS[toChainIdx]?.virtual) toChainIdx = (toChainIdx + 1) % CHAINS.length;
-  }
-  updateTokenDisplay();
-  updateRecipientVisibility();
-  updateRoute();
-  updateActionBtn();
-  await Promise.all([fetchPrices(), loadRoutes()]);
-  onAmountChange();
-
-  await setupWallet({
-    onConnected(addr) {
-      walletAddress = addr;
-      document.getElementById('connect-label').textContent = formatAddr(addr);
-      resolveWalletENS();
-      updateBalance();
-      updateActionBtn();
-    },
-    onDisconnected() {
-      walletAddress = null;
-      document.getElementById('connect-label').textContent = 'Connect';
-      updateBalance();
-      updateActionBtn();
-    },
-    onChainChanged() { if (walletAddress) { updateBalance(); updateActionBtn(); } }
-  });
-  updateActionBtn();
-})();
-</script>
 
 <!-- Mobile Bottom Nav -->
 <nav class="fixed bottom-5 left-4 right-4 z-50 md:hidden flex items-center justify-around py-3 px-2 bg-surface-container/95 backdrop-blur-xl rounded-full shadow-[0_8px_40px_rgba(0,0,0,0.12)] border border-outline-variant/15">
@@ -1549,14 +411,14 @@ async function loadRoutes() {
     <span class="material-symbols-outlined">send</span>
     <span class="font-headline text-[10px] font-bold uppercase mt-1">Pay</span>
   </a>
-  <button onclick="toggleMobileMenu()" class="flex flex-col items-center justify-center text-on-surface-variant p-3 transition-transform active:scale-90">
+  <button data-action="toggle-mobile-menu" class="flex flex-col items-center justify-center text-on-surface-variant p-3 transition-transform active:scale-90">
     <span class="material-symbols-outlined">menu</span>
     <span class="font-headline text-[10px] font-bold uppercase mt-1">More</span>
   </button>
 </nav>
 
 <!-- Mobile More Menu -->
-<div id="mobile-menu" class="hidden fixed inset-0 z-40 md:hidden" onclick="closeMobileMenu(event)">
+<div id="mobile-menu" class="hidden fixed inset-0 z-40 md:hidden" data-action="close-mobile-menu">
   <div class="absolute bottom-24 left-4 right-4 bg-surface-container rounded-2xl shadow-xl border border-outline-variant/10 overflow-hidden">
     <div class="p-2">
       <a href="transactions.html" class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-surface-container-high transition-colors">
@@ -1586,11 +448,8 @@ async function loadRoutes() {
     </div>
   </div>
 </div>
-<script>
-function toggleMobileMenu() { document.getElementById('mobile-menu').classList.toggle('hidden'); }
-function closeMobileMenu(e) { if (e.target === document.getElementById('mobile-menu')) document.getElementById('mobile-menu').classList.add('hidden'); }
-</script>
 
+<script defer src="swap.js"></script>
 <script src="disclaimer.js"></script>
 </div>
 <svg id="logo-svg" width="2230" height="4216" viewBox="0 0 2230 4216" fill="none" xmlns="http://www.w3.org/2000/svg" style="display: none;">

@@ -1,0 +1,414 @@
+const ACROSS_API = 'https://app.across.to/api';
+
+
+const SOURCE_CHAINS = [
+  { chainId:8453, name:'Base', slug:'base' },
+  { chainId:42161, name:'Arbitrum', slug:'arbitrum' },
+  { chainId:10, name:'Optimism', slug:'optimism' },
+  { chainId:1, name:'Ethereum', slug:'ethereum' },
+  { chainId:137, name:'Polygon', slug:'polygon' },
+];
+
+const SOURCE_TOKENS = [
+  { symbol:'ETH', name:'Ethereum', decimals:18, native:true,
+    chains:[1,42161,8453,10],
+    wrapAddresses:{1:'0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2',42161:'0x82aF49447D8a07e3bd95BD0d56f35241523fBab1',8453:'0x4200000000000000000000000000000000000006',10:'0x4200000000000000000000000000000000000006'}},
+  { symbol:'USDC', name:'USD Coin', decimals:6, native:false,
+    chains:[1,42161,8453,10,137],
+    addresses:{1:'0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48',42161:'0xaf88d065e77c8cC2239327C5EDb3A432268e5831',8453:'0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913',10:'0x0b2C639c533813f4Aa9D7837CAf62653d097Ff85',137:'0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359'}},
+  { symbol:'USDT', name:'Tether', decimals:6, native:false,
+    chains:[1,42161,10],
+    addresses:{1:'0xdAC17F958D2ee523a2206206994597C13D831ec7',42161:'0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9',10:'0x94b008aA00579c1307B0EF2c499aD98a8ce58e58'}},
+  { symbol:'DAI', name:'Dai', decimals:18, native:false,
+    chains:[1,42161],
+    addresses:{1:'0x6B175474E89094C44Da98b954EedeAC495271d0F',42161:'0xDA10009cBd5D07dd0CeCc66161FC93D7c9000da1'}},
+];
+
+// All Across-supported destination chains
+const DEST_CHAINS = [
+  // Major — default on
+  { chainId:1,        name:'Ethereum',   slug:'ethereum',    gas:'ETH', gasWrap:'0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2', selected:true },
+  { chainId:42161,    name:'Arbitrum',    slug:'arbitrum',    gas:'ETH', gasWrap:'0x82aF49447D8a07e3bd95BD0d56f35241523fBab1', selected:true },
+  { chainId:8453,     name:'Base',        slug:'base',        gas:'ETH', gasWrap:'0x4200000000000000000000000000000000000006', selected:true },
+  { chainId:10,       name:'Optimism',    slug:'optimism',    gas:'ETH', gasWrap:'0x4200000000000000000000000000000000000006', selected:true },
+  // ETH-gas chains
+  { chainId:324,      name:'zkSync Era',  slug:'zksync%20era',  gas:'ETH', gasWrap:'0x5AEa5775959fBC2557Cc8789bC1bf90A239D9a91', selected:false },
+  { chainId:59144,    name:'Linea',       slug:'linea',       gas:'ETH', gasWrap:'0xe5D7C2a44FfDDf6b295A15c148167daaAf5Cf34f', selected:false },
+  { chainId:34443,    name:'Mode',        slug:'mode',        gas:'ETH', gasWrap:'0x4200000000000000000000000000000000000006', selected:false },
+  { chainId:534352,   name:'Scroll',      slug:'scroll',      gas:'ETH', gasWrap:'0x5300000000000000000000000000000000000004', selected:false },
+  { chainId:81457,    name:'Blast',       slug:'blast',       gas:'ETH', gasWrap:'0x4300000000000000000000000000000000000004', selected:false },
+  { chainId:7777777,  name:'Zora',        slug:'zora',        gas:'ETH', gasWrap:'0x4200000000000000000000000000000000000006', selected:false },
+  { chainId:480,      name:'World Chain', slug:'world%20chain',  gas:'ETH', gasWrap:'0x4200000000000000000000000000000000000006', selected:false },
+  { chainId:1135,     name:'Lisk',        slug:'lisk',        gas:'ETH', gasWrap:'0x4200000000000000000000000000000000000006', selected:false },
+  { chainId:57073,    name:'Ink',         slug:'ink',         gas:'ETH', gasWrap:'0x4200000000000000000000000000000000000006', selected:false },
+  { chainId:1868,     name:'Soneium',     slug:'soneium',     gas:'ETH', gasWrap:'0x4200000000000000000000000000000000000006', selected:false },
+  { chainId:130,      name:'Unichain',    slug:'unichain',    gas:'ETH', gasWrap:'0x4200000000000000000000000000000000000006', selected:false },
+  { chainId:999,      name:'HyperEVM',    slug:'hyperliquid%20evm', gas:'ETH', gasWrap:'0x4200000000000000000000000000000000000006', selected:false },
+  { chainId:232,      name:'Lens',        slug:'lens%20network',        gas:'ETH', gasWrap:'0x4200000000000000000000000000000000000006', selected:false },
+  // Non-ETH gas
+  { chainId:137,      name:'Polygon',     slug:'polygon',     gas:'POL', gasWrap:'0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270', selected:false },
+
+];
+
+let sourceTokenIdx = 1; // USDC default
+let sourceChainIdx = 0; // Base default
+let walletAddress = null;
+let sourceBalance = null;
+let prices = {};
+let cachedBalances = null;
+
+function sourceToken() { return SOURCE_TOKENS[sourceTokenIdx]; }
+function sourceChain() { return SOURCE_CHAINS[sourceChainIdx]; }
+
+function tokenIconUrl(token, chainId) {
+  if (token.native) return `${TW}/ethereum/assets/0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2/logo.png`;
+  const addr = token.addresses?.[chainId];
+  const slug = SOURCE_CHAINS.find(c=>c.chainId===chainId)?.slug || DEST_CHAINS.find(c=>c.chainId===chainId)?.slug;
+  if (addr && slug) return `${TW}/${slug}/assets/${addr}/logo.png`;
+  if (token.addresses?.[1]) return `${TW}/ethereum/assets/${token.addresses[1]}/logo.png`;
+  return '';
+}
+const chainLogoUrl = chainIcon;
+
+async function connectWallet() {
+  if (!window.ethereum) { alert('Install MetaMask'); return; }
+  try {
+    const accs = await window.ethereum.request({ method:'eth_requestAccounts' });
+    walletAddress = accs[0];
+    document.getElementById('connect-label').textContent = formatAddr(walletAddress);
+    resolveWalletENS(walletAddress);
+    fetchBalance();
+    updateBtn();
+  } catch {}
+}
+
+async function fetchBalance() {
+  if (!walletAddress) return;
+  try {
+    const res = await fetch(`/api/balances?address=${walletAddress}`);
+    cachedBalances = await res.json();
+    const bal = cachedBalances[sourceChain().chainId]?.[sourceToken().symbol] || 0;
+    sourceBalance = bal;
+    document.getElementById('source-balance').textContent = `Balance: ${fmt(bal)} ${sourceToken().symbol}`;
+  } catch { sourceBalance = null; }
+}
+
+async function fetchPrices() {
+  try {
+    const res = await fetch('/api/prices');
+    const raw = await res.json();
+    prices = {
+      ETH:raw.ethereum?.usd||0, WETH:raw.ethereum?.usd||0,
+      USDC:1, USDT:1, DAI:1,
+      WBTC:raw['wrapped-bitcoin']?.usd||0,
+      POL:raw['polygon-ecosystem-token']?.usd||raw['matic-network']?.usd||0, MATIC:raw['polygon-ecosystem-token']?.usd||raw['matic-network']?.usd||0,
+    };
+  } catch { prices = { ETH:2500, WETH:2500, USDC:1, USDT:1, DAI:1, POL:0.4 }; }
+}
+
+function updateSourceDisplay() {
+  const t = sourceToken(), c = sourceChain();
+  document.getElementById('source-token-icon').src = tokenIconUrl(t, c.chainId);
+  document.getElementById('source-chain-icon').src = chainLogoUrl(c.chainId);
+  document.getElementById('source-label').textContent = `${t.symbol} on ${c.name}`;
+}
+
+// ── Source picker ──
+function openSourcePicker() {
+  document.getElementById('source-search').value = '';
+  buildSourceList();
+  document.getElementById('source-modal').classList.remove('hidden');
+  document.getElementById('source-search').focus();
+}
+function closeSourcePicker() { document.getElementById('source-modal').classList.add('hidden'); }
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && !document.getElementById('source-modal').classList.contains('hidden')) closeSourcePicker();
+});
+
+function buildSourceList() { filterSourceList(); }
+function filterSourceList() {
+  const q = (document.getElementById('source-search').value||'').toLowerCase();
+  const list = document.getElementById('source-list');
+  let rows = [];
+  SOURCE_TOKENS.forEach((t, ti) => {
+    SOURCE_CHAINS.forEach((c, ci) => {
+      if (!t.chains.includes(c.chainId)) return;
+      if (q && !t.symbol.toLowerCase().includes(q) && !t.name.toLowerCase().includes(q) && !c.name.toLowerCase().includes(q)) return;
+      const bal = cachedBalances?.[c.chainId]?.[t.symbol] || 0;
+      rows.push({ t, ti, c, ci, bal });
+    });
+  });
+  rows.sort((a,b) => b.bal - a.bal);
+  const items = rows.map(({t,ti,c,ci,bal}) => {
+    const p = prices[t.symbol]||0;
+    const usdEl = bal>0 ? Safe.html`<span class="text-xs text-on-surface-variant">$${fmt(bal*p)}</span>` : Safe.html``;
+    return Safe.html`<button data-ti="${ti}" data-ci="${ci}" class="src-pick w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-surface-container-low transition-colors text-left">
+      <div class="relative flex-shrink-0">
+        <img src="${Safe.url(tokenIconUrl(t,c.chainId))}" class="w-10 h-10 rounded-full bg-surface-container"/>
+        <img src="${Safe.url(chainLogoUrl(c.chainId))}" class="w-5 h-5 rounded-full absolute -bottom-0.5 -right-0.5 border-2 border-surface-container-lowest bg-surface-container-lowest"/>
+      </div>
+      <div class="flex-1"><p class="font-bold text-[15px] ${bal>0?'text-on-background':'text-on-surface-variant'}">${bal>0?fmt(bal)+' ':'0 '}${t.symbol}</p><p class="text-xs text-on-surface-variant">${t.name} · ${c.name}</p></div>
+      ${usdEl}
+      <span class="material-symbols-outlined text-on-surface-variant text-base">chevron_right</span>
+    </button>`;
+  });
+  Safe.setHTML(list, items.length ? items : Safe.html`<p class="text-sm text-on-surface-variant text-center py-4">No tokens found</p>`);
+  list.querySelectorAll('button.src-pick').forEach(btn => {
+    btn.addEventListener('click', () => selectSource(Number(btn.dataset.ti), Number(btn.dataset.ci)));
+  });
+}
+
+function selectSource(ti, ci) {
+  sourceTokenIdx = ti; sourceChainIdx = ci;
+  closeSourcePicker();
+  updateSourceDisplay();
+  fetchBalance();
+  onAmountChange();
+}
+
+function getSelected() {
+  return DEST_CHAINS.filter(c => c.selected && c.chainId !== sourceChain().chainId);
+}
+
+function selectAll() { DEST_CHAINS.forEach(c => c.selected = true); renderChains(); onAmountChange(); }
+function selectNone() { DEST_CHAINS.forEach(c => c.selected = false); renderChains(); onAmountChange(); }
+
+function toggleChain(chainId) {
+  const c = DEST_CHAINS.find(c => c.chainId === chainId);
+  if (c) c.selected = !c.selected;
+  renderChains();
+  onAmountChange();
+}
+
+function renderChains() {
+  const list = document.getElementById('chain-list');
+  const total = parseFloat(document.getElementById('total-amount').value) || 0;
+  const selected = getSelected();
+  const perChain = selected.length > 0 ? total / selected.length : 0;
+  const sourceChainId = sourceChain().chainId;
+
+  const chainBtns = DEST_CHAINS.map(c => {
+    const isSelf = c.chainId === sourceChainId;
+    const active = c.selected && !isSelf;
+    const sp = prices[sourceToken().symbol] || 0;
+    const perUsd = active ? perChain * sp : 0;
+    const srcImg = `https://icons.llamao.fi/icons/chains/rsz_${c.slug}.jpg`;
+    const fallbackImg = `${TW}/${c.slug}/info/logo.png`;
+    const sourceLabel = isSelf ? Safe.html`<p class="text-xs text-on-surface-variant">Source chain</p>` : Safe.html``;
+    const usdLabel = active ? Safe.html`<p class="text-sm font-bold text-on-background">≈ $${fmt(perUsd)} of ${c.gas}</p>` : Safe.html``;
+    const checkIcon = active ? Safe.html`<span class="material-symbols-outlined text-on-primary text-sm">check</span>` : Safe.html``;
+    return Safe.html`<button data-chain-id="${c.chainId}" class="dest-chain-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-colors ${isSelf ? 'opacity-30 pointer-events-none' : active ? 'bg-surface-container-lowest border border-primary/20' : 'bg-surface-container-low border border-transparent hover:border-outline-variant/20'}">
+      <img src="${Safe.url(srcImg)}" data-fallback="${fallbackImg}" class="w-8 h-8 rounded-full dest-chain-img"/>
+      <div class="flex-1 text-left">
+        <p class="text-sm font-bold ${active ? 'text-on-background' : 'text-on-surface-variant'}">${c.name}</p>
+        ${sourceLabel}
+      </div>
+      <div class="text-right">
+        ${usdLabel}
+      </div>
+      <div class="w-6 h-6 rounded-md border-2 flex items-center justify-center flex-shrink-0 ${active ? 'border-primary bg-primary' : 'border-outline-variant/30'}">
+        ${checkIcon}
+      </div>
+    </button>`;
+  });
+  Safe.setHTML(list, chainBtns);
+  list.querySelectorAll('button.dest-chain-btn').forEach(btn => {
+    btn.addEventListener('click', () => toggleChain(Number(btn.dataset.chainId)));
+  });
+  list.querySelectorAll('img.dest-chain-img').forEach(img => {
+    img.addEventListener('error', () => {
+      const fb = img.dataset.fallback;
+      if (fb && img.src !== fb) img.src = fb;
+    }, { once: true });
+  });
+}
+
+function onAmountChange() {
+  const total = parseFloat(document.getElementById('total-amount').value) || 0;
+  const selected = getSelected();
+  const perChain = selected.length > 0 ? total / selected.length : 0;
+
+  const sp = prices[sourceToken().symbol] || 0;
+  document.getElementById('summary-total').textContent = `${fmt(total)} ${sourceToken().symbol} ≈ $${fmt(total * sp)}`;
+  const perUsd = perChain * sp;
+  document.getElementById('summary-per').textContent = selected.length > 0
+    ? `≈ $${fmt(perUsd)} gas × ${selected.length} chains`
+    : 'Select chains';
+
+  renderChains();
+  updateBtn();
+}
+
+function updateBtn() {
+  const btn = document.getElementById('action-btn');
+  const total = parseFloat(document.getElementById('total-amount').value) || 0;
+  const selected = getSelected();
+  if (!walletAddress) btn.textContent = 'Connect Wallet';
+  else if (total <= 0) btn.textContent = 'Enter amount';
+  else if (sourceBalance != null && total > sourceBalance) btn.textContent = 'Insufficient balance';
+  else if (selected.length === 0) btn.textContent = 'Select chains';
+  else btn.textContent = `Bridge to ${selected.length} chain${selected.length > 1 ? 's' : ''}`;
+}
+
+async function executeGas() {
+  if (!walletAddress) { connectWallet(); return; }
+  const total = parseFloat(document.getElementById('total-amount').value) || 0;
+  const selected = getSelected();
+  if (total <= 0 || selected.length === 0) return;
+  if (sourceBalance != null && total > sourceBalance) return;
+
+  const t = sourceToken(), sc = sourceChain();
+  const perChain = total / selected.length;
+  const decimals = t.decimals;
+  const btn = document.getElementById('action-btn');
+  btn.disabled = true;
+  btn.textContent = `Fetching ${selected.length} quotes...`;
+
+  try {
+    // Get input token address
+    const inputAddr = t.native ? t.wrapAddresses?.[sc.chainId] : t.addresses?.[sc.chainId];
+    if (!inputAddr) throw new Error('No input token address');
+
+    // Fetch all quotes in parallel
+    const amountPerWei = BigInt(Math.floor(perChain * 10 ** decimals)).toString();
+    const quotePromises = selected.map(async (dest) => {
+      const outputAddr = dest.gasWrap;
+      if (!outputAddr) return null;
+      const params = new URLSearchParams({
+        tradeType:'exactInput', amount:amountPerWei,
+        inputToken:inputAddr, outputToken:outputAddr,
+        originChainId:sc.chainId, destinationChainId:dest.chainId,
+        depositor:walletAddress, slippage:'auto',
+      });
+      const res = await fetch(`${ACROSS_API}/swap/approval?${params}`);
+      if (!res.ok) return null;
+      return res.json();
+    });
+
+    const quotes = (await Promise.all(quotePromises)).filter(Boolean);
+    if (quotes.length === 0) throw new Error('No quotes available');
+
+    // Handle approvals first (all go to same spender, so one approval is enough)
+    const allApprovals = quotes.flatMap(q => q.approvalTxns || []);
+    if (allApprovals.length > 0) {
+      btn.textContent = 'Approving...';
+      // Dedupe approvals by spender (usually same contract)
+      const seen = new Set();
+      for (const tx of allApprovals) {
+        const key = tx.to + tx.data;
+        if (seen.has(key)) continue;
+        seen.add(key);
+        await sendTx(tx);
+      }
+    }
+
+    // Bundle all swapTx into one Multicall3 call
+    const swapTxs = quotes.map(q => q.swapTx).filter(Boolean);
+    if (swapTxs.length === 0) throw new Error('No swap transactions');
+
+    btn.textContent = `Sending ${swapTxs.length} bridges...`;
+
+    let sent = 0;
+    for (const tx of swapTxs) {
+      sent++;
+      btn.textContent = `Bridge ${sent}/${swapTxs.length} — confirm in wallet`;
+      await sendTx(tx);
+    }
+
+    btn.textContent = `Sent to ${selected.length} chains!`;
+    btn.disabled = false;
+    setTimeout(updateBtn, 3000);
+
+    // Save to history
+    try {
+      const historyKey = 'sage_tx_' + (walletAddress || 'unknown').toLowerCase();
+      const history = JSON.parse(localStorage.getItem(historyKey) || '[]');
+      history.unshift({
+        type:'bridge', summary:`Gas top-up: ${total} ${t.symbol} → ${selected.length} chains`,
+        time:0, fromToken:t.symbol, toToken:'gas',
+        fromChain:sc.name, toChain:`${selected.length} chains`,
+        fromChainId:sc.chainId, amount:total.toFixed(6), timestamp:Date.now(), txHash:null,
+      });
+      if (history.length > 20) history.length = 20;
+      localStorage.setItem(historyKey, JSON.stringify(history));
+    } catch {}
+
+  } catch (e) {
+    console.error('Gas top-up failed:', e);
+    btn.textContent = e.code === 4001 ? 'Rejected' : 'Failed';
+    btn.disabled = false;
+    setTimeout(updateBtn, 2000);
+  }
+}
+
+
+async function sendTx(tx) {
+  const chainHex = '0x' + tx.chainId.toString(16);
+  const current = await window.ethereum.request({ method:'eth_chainId' });
+  if (current !== chainHex) {
+    try { await window.ethereum.request({ method:'wallet_switchEthereumChain', params:[{chainId:chainHex}] }); }
+    catch (e) { if (e.code === 4902) throw new Error('Add chain to wallet'); throw e; }
+  }
+  const txParams = { from:walletAddress, to:tx.to, data:tx.data,
+    value: tx.value && tx.value !== '0' ? '0x'+BigInt(tx.value).toString(16) : '0x0',
+    chainId: chainHex };
+  if (tx.gas) txParams.gas = '0x' + BigInt(tx.gas).toString(16);
+  return window.ethereum.request({
+    method:'eth_sendTransaction',
+    params:[txParams],
+  });
+}
+
+function fmt(n) {
+  if (n >= 1000) return n.toLocaleString('en-US',{maximumFractionDigits:2});
+  if (n >= 1) return n.toLocaleString('en-US',{maximumFractionDigits:4});
+  return n.toLocaleString('en-US',{maximumFractionDigits:6});
+}
+
+// Init
+(async function() {
+  updateSourceDisplay();
+  renderChains();
+  updateBtn();
+  await fetchPrices();
+  onAmountChange();
+  await setupWallet({
+    onConnected(addr) {
+      walletAddress=addr;
+      document.getElementById('connect-label').textContent=formatAddr(addr);
+      resolveWalletENS(addr);
+      fetchBalance(); updateBtn();
+    },
+    onDisconnected() {
+      walletAddress=null;
+      document.getElementById('connect-label').textContent='Connect';
+      fetchBalance(); updateBtn();
+    },
+    onChainChanged() { if(walletAddress){fetchBalance();updateBtn();} }
+  });
+})();
+
+function toggleMobileMenu() { document.getElementById('mobile-menu').classList.toggle('hidden'); }
+function closeMobileMenu(e) { if (e.target === document.getElementById('mobile-menu')) document.getElementById('mobile-menu').classList.add('hidden'); }
+
+// ── Event delegation & input listeners ──────────────────────────────────────
+document.addEventListener('click', function(e) {
+  var el = e.target.closest('[data-action]');
+  if (!el) return;
+  var action = el.dataset.action;
+  var arg = el.dataset.arg;
+  switch (action) {
+    case 'open-source-picker':  openSourcePicker(); break;
+    case 'close-source-picker': closeSourcePicker(); break;
+    case 'set-dest':    setDest(Number(arg)); break;
+    case 'set-gas-usd': setGasUsd(Number(arg)); break;
+    case 'execute-gas': executeGas(); break;
+    case 'set-max':     setMax(); break;
+  }
+});
+document.addEventListener('DOMContentLoaded', function() {
+  var amtEl = document.getElementById('total-amount');
+  if (amtEl) amtEl.addEventListener('input', onAmountChange);
+  var ss = document.getElementById('source-search');
+  if (ss) ss.addEventListener('input', filterSourceList);
+});

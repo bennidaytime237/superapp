@@ -9,14 +9,10 @@
 <title>Transactions - Sage</title>
 <link rel="icon" type="image/svg+xml" href="favicon.svg"/>
 <link rel="stylesheet" href="tailwind.output.css"/>
+<link rel="stylesheet" href="page-styles.css"/>
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&display=swap" rel="stylesheet"/>
 <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
 <link rel="stylesheet" href="theme.css"/>
-<style>
-  .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
-  body { font-family: 'Outfit', sans-serif; }
-  b, strong, .font-bold, .font-extrabold, .font-black, .font-semibold { letter-spacing: 0.01em; }
-</style>
 <script src="theme.js"></script>
 <script src="safe-dom.js"></script>
 <script src="wallet.js"></script>
@@ -159,10 +155,10 @@
       <a href="index.html" class="md:hidden text-sm font-medium text-on-surface-variant hover:text-primary flex items-center gap-1">
         <span class="material-symbols-outlined text-sm">arrow_back</span> Back
       </a>
-    <button onclick="toggleTheme()" title="Toggle dark mode" aria-label="Toggle dark mode" class="flex items-center gap-2 px-3 py-1.5 bg-surface-container rounded-full text-on-surface-variant hover:text-primary hover:bg-surface-container-high transition-all flex-shrink-0">
+    <button data-action="toggle-theme" title="Toggle dark mode" aria-label="Toggle dark mode" class="flex items-center gap-2 px-3 py-1.5 bg-surface-container rounded-full text-on-surface-variant hover:text-primary hover:bg-surface-container-high transition-all flex-shrink-0">
       <span class="material-symbols-outlined text-base theme-toggle-icon">dark_mode</span>
     </button>
-      <button id="connect-btn" onclick="connectWallet()" class="flex items-center gap-2 px-3 py-1.5 bg-primary text-on-primary rounded-full text-xs font-bold active:scale-95 transition-transform">
+      <button id="connect-btn" data-action="connect-wallet" class="flex items-center gap-2 px-3 py-1.5 bg-primary text-on-primary rounded-full text-xs font-bold active:scale-95 transition-transform">
         <span class="material-symbols-outlined text-sm">account_balance_wallet</span>
         <span id="connect-label">Connect</span>
       </button>
@@ -172,23 +168,23 @@
   <div class="px-6 lg:px-10 py-6">
     <!-- Search + Filters -->
     <div class="flex flex-wrap gap-2 mb-6 items-center">
-      <input id="search-input" type="text" placeholder="Search token, chain, address..." oninput="render()" class="flex-1 min-w-[180px] px-4 py-2 rounded-full text-sm border border-outline-variant/15 bg-surface-container-lowest focus:outline-none focus:ring-2 focus:ring-primary/30 placeholder:text-on-surface-variant/40"/>
+      <input id="search-input" type="text" placeholder="Search token, chain, address..." class="flex-1 min-w-[180px] px-4 py-2 rounded-full text-sm border border-outline-variant/15 bg-surface-container-lowest focus:outline-none focus:ring-2 focus:ring-primary/30 placeholder:text-on-surface-variant/40"/>
       <div class="relative" id="dd-chain">
-        <button onclick="toggleDrop('chain')" class="flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-bold bg-surface-container-low text-on-surface-variant hover:bg-surface-container-high transition-colors">
+        <button data-action="toggle-drop" data-arg="chain" class="flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-bold bg-surface-container-low text-on-surface-variant hover:bg-surface-container-high transition-colors">
           <span id="dd-chain-label">All chains</span>
           <span class="material-symbols-outlined text-sm">expand_more</span>
         </button>
         <div id="dd-chain-menu" class="hidden absolute left-0 top-full mt-1 bg-surface-container-lowest rounded-lg shadow-lg border border-outline-variant/10 z-50 min-w-[160px] max-h-[240px] overflow-y-auto py-1"></div>
       </div>
       <div class="relative" id="dd-token">
-        <button onclick="toggleDrop('token')" class="flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-bold bg-surface-container-low text-on-surface-variant hover:bg-surface-container-high transition-colors">
+        <button data-action="toggle-drop" data-arg="token" class="flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-bold bg-surface-container-low text-on-surface-variant hover:bg-surface-container-high transition-colors">
           <span id="dd-token-label">All tokens</span>
           <span class="material-symbols-outlined text-sm">expand_more</span>
         </button>
         <div id="dd-token-menu" class="hidden absolute left-0 top-full mt-1 bg-surface-container-lowest rounded-lg shadow-lg border border-outline-variant/10 z-50 min-w-[160px] max-h-[240px] overflow-y-auto py-1"></div>
       </div>
       <div class="relative" id="dd-status">
-        <button onclick="toggleDrop('status')" class="flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-bold bg-surface-container-low text-on-surface-variant hover:bg-surface-container-high transition-colors">
+        <button data-action="toggle-drop" data-arg="status" class="flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-bold bg-surface-container-low text-on-surface-variant hover:bg-surface-container-high transition-colors">
           <span id="dd-status-label">All status</span>
           <span class="material-symbols-outlined text-sm">expand_more</span>
         </button>
@@ -215,14 +211,14 @@
     <span class="material-symbols-outlined">send</span>
     <span class="font-headline text-[10px] font-bold uppercase mt-1">Pay</span>
   </a>
-  <button onclick="toggleMobileMenu()" class="flex flex-col items-center justify-center bg-primary-container text-primary rounded-full p-3 transition-transform active:scale-90">
+  <button data-action="toggle-mobile-menu" class="flex flex-col items-center justify-center bg-primary-container text-primary rounded-full p-3 transition-transform active:scale-90">
     <span class="material-symbols-outlined">menu</span>
     <span class="font-headline text-[10px] font-bold uppercase mt-1">More</span>
   </button>
 </nav>
 
 <!-- Mobile More Menu -->
-<div id="mobile-menu" class="hidden fixed inset-0 z-40 md:hidden" onclick="closeMobileMenu(event)">
+<div id="mobile-menu" class="hidden fixed inset-0 z-40 md:hidden" data-action="close-mobile-menu">
   <div class="absolute bottom-24 left-4 right-4 bg-surface-container rounded-2xl shadow-xl border border-outline-variant/10 overflow-hidden">
     <div class="p-2">
       <a href="transactions.html" class="flex items-center gap-3 px-4 py-3 rounded-xl bg-surface-container-high">
@@ -252,305 +248,9 @@
     </div>
   </div>
 </div>
-<script>
-function toggleMobileMenu() { document.getElementById('mobile-menu').classList.toggle('hidden'); }
-function closeMobileMenu(e) { if (e.target === document.getElementById('mobile-menu')) document.getElementById('mobile-menu').classList.add('hidden'); }
-</script>
 
-<script>
-let walletAddress = null;
-let txData = [];
-let visibleCount = 10;
-const PAGE_SIZE = 10;
 
-const selected = { chain: new Set(), token: new Set(), status: new Set() };
-let allChains = [], allTokens = [];
-
-function populateFilters() {
-  const chains = new Set();
-  const tokens = new Set();
-  txData.forEach(tx => {
-    if (tx.fromChain) chains.add(tx.fromChain);
-    if (tx.toChain) chains.add(tx.toChain);
-    if (tx.fromToken) tokens.add(tx.fromToken);
-    if (tx.toToken) tokens.add(tx.toToken);
-  });
-  allChains = [...chains].sort();
-  allTokens = [...tokens].sort();
-  renderDropdown('chain', allChains);
-  renderDropdown('token', allTokens);
-  renderDropdown('status', ['filled', 'pending']);
-}
-
-function renderDropdown(key, options) {
-  const menu = document.getElementById(`dd-${key}-menu`);
-  // Use addEventListener on labels so option values can't break out of attribute/JS contexts.
-  Safe.setHTML(menu, options.map((o, i) => {
-    const checked = selected[key].has(o);
-    return Safe.html`<label data-key="${key}" data-value="${o}" data-idx="${i}" class="flex items-center gap-2 px-3 py-2 hover:bg-surface-container-low cursor-pointer transition-colors text-sm">
-      <input type="checkbox" ${Safe.raw(checked ? 'checked' : '')} class="rounded border-outline-variant/30 text-primary focus:ring-primary/30"/>
-      <span class="text-on-surface">${o}</span>
-    </label>`;
-  }));
-  menu.querySelectorAll('label[data-key]').forEach(lbl => {
-    lbl.addEventListener('change', () => toggleFilter(lbl.dataset.key, lbl.dataset.value));
-  });
-  updateLabel(key);
-}
-
-function toggleFilter(key, value) {
-  if (selected[key].has(value)) selected[key].delete(value);
-  else selected[key].add(value);
-  updateLabel(key);
-  render();
-}
-
-function updateLabel(key) {
-  const label = document.getElementById(`dd-${key}-label`);
-  const btn = label.parentElement;
-  const count = selected[key].size;
-  const defaults = { chain: 'All chains', token: 'All tokens', status: 'All status' };
-  if (count === 0) {
-    label.textContent = defaults[key];
-    btn.className = 'flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-bold bg-surface-container-low text-on-surface-variant hover:bg-surface-container-high transition-colors';
-  } else if (count === 1) {
-    label.textContent = [...selected[key]][0];
-    btn.className = 'flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-bold bg-primary text-on-primary transition-colors';
-  } else {
-    label.textContent = `${count} selected`;
-    btn.className = 'flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-bold bg-primary text-on-primary transition-colors';
-  }
-}
-
-function toggleDrop(key) {
-  const menu = document.getElementById(`dd-${key}-menu`);
-  const wasHidden = menu.classList.contains('hidden');
-  // Close all
-  ['chain','token','status'].forEach(k => document.getElementById(`dd-${k}-menu`).classList.add('hidden'));
-  if (wasHidden) {
-    menu.classList.remove('hidden');
-    setTimeout(() => document.addEventListener('click', function close(e) {
-      if (!document.getElementById(`dd-${key}`).contains(e.target)) {
-        menu.classList.add('hidden');
-        document.removeEventListener('click', close);
-      }
-    }), 0);
-  }
-}
-
-function updateConnectBtn() {
-  const label = document.getElementById('connect-label');
-  const btn = document.getElementById('connect-btn');
-  if (walletAddress) {
-    label.textContent = formatAddr(walletAddress);
-    resolveWalletENS(walletAddress);
-    btn.className = 'flex items-center gap-2 px-3 py-1.5 bg-surface-container-high text-on-surface rounded-full text-xs font-bold active:scale-95 transition-transform';
-  } else {
-    label.textContent = 'Connect';
-    btn.className = 'flex items-center gap-2 px-3 py-1.5 bg-primary text-on-primary rounded-full text-xs font-bold active:scale-95 transition-transform';
-  }
-}
-
-async function connectWallet() {
-  if (!window.ethereum) { showNoWalletMessage(); return; }
-  const accs = await window.ethereum.request({ method:'eth_requestAccounts' });
-  walletAddress = accs[0];
-  updateConnectBtn();
-  await loadTransactions();
-}
-
-async function initWallet() {
-  if (window.ethereum) {
-    const accs = await window.ethereum.request({ method:'eth_accounts' });
-    if (accs.length > 0) {
-      walletAddress = accs[0];
-      updateConnectBtn();
-      await loadTransactions();
-    } else {
-      showEmpty('Connect wallet to view transactions');
-    }
-    window.ethereum.on('accountsChanged', async (accs) => {
-      walletAddress = accs[0] || null;
-      updateConnectBtn();
-      if (walletAddress) await loadTransactions();
-      else { txData = []; showEmpty('Connect wallet to view transactions'); }
-    });
-    window.ethereum.on('chainChanged', async () => { if (walletAddress) await loadTransactions(); });
-  } else {
-    showEmpty('Install MetaMask to view transactions');
-  }
-}
-
-function showEmpty(msg) {
-  document.getElementById('tx-list').innerHTML = `<div class="text-center py-16">
-    <span class="material-symbols-outlined text-5xl text-on-surface-variant/20 mb-3">receipt_long</span>
-    <p class="text-on-surface-variant">${msg}</p>
-    <a href="swap.html" class="inline-block mt-4 px-6 py-3 bg-primary text-on-primary rounded-full font-bold text-sm">Make your first bridge</a>
-  </div>`;
-}
-
-function cacheKey() { return 'sage_txcache_' + (walletAddress||'').toLowerCase(); }
-
-async function loadTransactions() {
-  visibleCount = PAGE_SIZE;
-  const list = document.getElementById('tx-list');
-
-  // Show cached data instantly
-  const cached = lsGet(cacheKey(), 5 * 60 * 1000);
-  if (cached && cached.length > 0) {
-    txData = cached;
-    populateFilters();
-    render();
-  } else {
-    list.innerHTML = '<div class="flex items-center justify-center gap-2 py-16 text-sm text-on-surface-variant"><div class="w-4 h-4 rounded-full border-2 border-primary border-t-transparent animate-spin"></div>Loading transactions...</div>';
-  }
-
-  // Fetch fresh in background
-  try {
-    const res = await fetch(`/api/transactions?address=${walletAddress}`);
-    const data = await res.json();
-    txData = data.deposits || [];
-    lsSet(cacheKey(), txData, 5 * 60 * 1000);
-    populateFilters();
-    render();
-  } catch (e) {
-    console.error('Failed to load transactions:', e);
-    if (!txData.length) {
-      list.innerHTML = '<div class="text-center py-16"><p class="text-on-surface-variant">Failed to load transactions</p><button onclick="loadTransactions()" class="mt-4 px-6 py-3 bg-primary text-on-primary rounded-full font-bold text-sm">Retry</button></div>';
-    }
-  }
-}
-
-function showMore() {
-  visibleCount += PAGE_SIZE;
-  render(false);
-}
-
-const EXP = {
-  1:'https://etherscan.io/tx/',42161:'https://arbiscan.io/tx/',8453:'https://basescan.org/tx/',
-  10:'https://optimistic.etherscan.io/tx/',137:'https://polygonscan.com/tx/',324:'https://explorer.zksync.io/tx/',
-  59144:'https://lineascan.build/tx/',34443:'https://explorer.mode.network/tx/',81457:'https://blastscan.io/tx/',
-  534352:'https://scrollscan.com/tx/',7777777:'https://explorer.zora.energy/tx/',
-};
-
-function shortAddr(a) { return a ? a.slice(0,6)+'…'+a.slice(-4) : '--'; }
-
-function render(resetPage) {
-  if (resetPage !== false) visibleCount = PAGE_SIZE;
-  const list = document.getElementById('tx-list');
-  const q = (document.getElementById('search-input').value || '').toLowerCase().trim();
-
-  let history = txData.filter(tx => {
-    if (selected.chain.size && !selected.chain.has(tx.fromChain) && !selected.chain.has(tx.toChain)) return false;
-    if (selected.token.size && !selected.token.has(tx.fromToken) && !selected.token.has(tx.toToken)) return false;
-    if (selected.status.size && !selected.status.has(tx.status)) return false;
-    if (q) {
-      const hay = `${tx.fromToken} ${tx.toToken} ${tx.fromChain} ${tx.toChain} ${tx.recipient||''} ${tx.depositor||''} ${tx.depositTxHash||''} ${tx.amount} ${tx.outputAmount||''}`.toLowerCase();
-      if (!hay.includes(q)) return false;
-    }
-    return true;
-  });
-
-  if (history.length === 0) {
-    showEmpty('No transactions yet');
-    return;
-  }
-
-  const cards = history.map(tx => {
-    const date = new Date(tx.timestamp);
-    const dateStr = date.toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' });
-    const timeStr = date.toLocaleTimeString('en-US', { hour:'2-digit', minute:'2-digit' });
-
-    const depositUrl = tx.depositTxHash && tx.fromChainId ? (EXP[tx.fromChainId] || 'https://etherscan.io/tx/') + tx.depositTxHash : null;
-    const fillUrl = tx.fillTxHash && tx.toChainId ? (EXP[tx.toChainId] || 'https://etherscan.io/tx/') + tx.fillTxHash : null;
-
-    let statusBadge = Safe.html``;
-    if (tx.status === 'filled') {
-      const dur = tx.fillDuration;
-      const durLabel = dur ? ' · ' + (dur < 60 ? dur + 's' : Math.floor(dur/60) + 'm ' + (dur%60) + 's') : '';
-      statusBadge = Safe.html`<span class="text-[10px] font-bold text-primary bg-primary-container px-2 py-0.5 rounded-full">Filled${durLabel}</span>`;
-    } else if (tx.status === 'pending') {
-      statusBadge = Safe.html`<span class="text-[10px] font-bold text-amber-600 bg-amber-100 px-2 py-0.5 rounded-full">Pending</span>`;
-    }
-
-    const sageBadge = tx.isSage
-      ? Safe.html`<span class="text-[10px] font-bold text-on-primary bg-primary px-2 py-0.5 rounded-full">Sage</span>`
-      : Safe.html``;
-
-    const recipientShort = shortAddr(tx.recipient);
-    const isHL = tx.toChain === 'Hyperliquid';
-    const recipientLabel = isHL ? 'Hyperliquid Bridge2' : recipientShort;
-
-    const feeStr = tx.totalFeeUsd ? '$' + parseFloat(tx.totalFeeUsd).toFixed(2) : '--';
-
-    const depositLink = depositUrl
-      ? Safe.html`<a href="${Safe.url(depositUrl)}" target="_blank" rel="noopener" class="text-xs text-primary font-bold hover:underline inline-flex items-center gap-0.5">Deposit <span class="material-symbols-outlined text-[10px]">open_in_new</span></a>`
-      : Safe.html`<span class="text-xs text-on-surface-variant">--</span>`;
-    const fillLink = fillUrl
-      ? Safe.html`<a href="${Safe.url(fillUrl)}" target="_blank" rel="noopener" class="text-xs text-primary font-bold hover:underline inline-flex items-center gap-0.5">Fill <span class="material-symbols-outlined text-[10px]">open_in_new</span></a>`
-      : Safe.html``;
-
-    return Safe.html`<div class="bg-surface-container-lowest rounded-xl border border-outline-variant/10 mb-3 overflow-hidden">
-      <div class="flex items-center justify-between px-5 pt-4 pb-2">
-        <div class="flex items-center gap-2">
-          <p class="text-xs text-on-surface-variant">${dateStr} · ${timeStr}</p>
-          ${sageBadge}
-        </div>
-        <div class="flex items-center gap-2">
-          ${statusBadge}
-        </div>
-      </div>
-
-      <div class="px-5 pb-4">
-        <div class="flex items-center gap-3 mb-3">
-          <div class="flex-1">
-            <p class="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider mb-0.5">Sent</p>
-            <p class="text-lg font-black text-on-background">${tx.amount} <span class="text-sm font-bold text-on-surface-variant">${tx.fromToken}</span></p>
-            <p class="text-xs text-on-surface-variant">${tx.fromChain}</p>
-          </div>
-          <span class="material-symbols-outlined text-on-surface-variant/40 text-xl flex-shrink-0">arrow_forward</span>
-          <div class="flex-1">
-            <p class="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider mb-0.5">Received</p>
-            <p class="text-lg font-black text-on-background">${tx.outputAmount || '--'} <span class="text-sm font-bold text-on-surface-variant">${tx.toToken}</span></p>
-            <p class="text-xs text-on-surface-variant">${tx.toChain}</p>
-          </div>
-        </div>
-
-        <div class="grid grid-cols-3 gap-3 pt-3 border-t border-outline-variant/10">
-          <div>
-            <p class="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider mb-0.5">Recipient</p>
-            <p class="text-xs font-mono text-on-surface truncate" title="${tx.recipient || ''}">${recipientLabel}</p>
-          </div>
-          <div>
-            <p class="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider mb-0.5">Transactions</p>
-            <div class="flex flex-col gap-0.5">
-              ${depositLink}
-              ${fillLink}
-            </div>
-          </div>
-          <div>
-            <p class="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider mb-0.5">Net Fee</p>
-            <p class="text-xs font-bold text-on-surface">${feeStr}</p>
-          </div>
-        </div>
-      </div>
-    </div>`;
-  });
-
-  const visible = cards.slice(0, visibleCount);
-  const remaining = cards.length - visibleCount;
-
-  const moreBtn = remaining > 0
-    ? Safe.html`<button id="show-more-btn" class="w-full py-3 mt-2 bg-surface-container-low text-on-surface-variant rounded-xl font-bold text-sm hover:bg-surface-container-high transition-colors">Show ${Math.min(remaining, PAGE_SIZE)} more of ${remaining} remaining</button>`
-    : Safe.html``;
-  Safe.setHTML(list, Safe.html`${visible}${moreBtn}`);
-  const smb = document.getElementById('show-more-btn');
-  if (smb) smb.addEventListener('click', showMore);
-}
-
-initWallet();
-</script>
-
+<script defer src="transactions.js"></script>
 <script src="disclaimer.js"></script>
 <svg id="logo-svg" width="2230" height="4216" viewBox="0 0 2230 4216" fill="none" xmlns="http://www.w3.org/2000/svg" style="display: none;">
 <path d="M2132.27 0C2140.5 7.70991 2173.99 119.798 2179.25 138.637C2192.19 185.112 2201.97 238.169 2209.61 285.832C2265.7 630.468 2205.29 983.962 2037.94 1290.42C1904.35 1530.16 1689.07 1713.94 1431.31 1808.27C1396.01 1821.43 1345.07 1834.35 1307.93 1844.9C1469.23 1866.57 1693.14 1930.22 1806.17 2053.21C1860.29 2112.05 1889.12 2189.81 1886.43 2269.69C1879.77 2423.83 1764.69 2556.39 1652.23 2651.53C1622.54 2676.66 1585.27 2699.02 1557.81 2724.31C1807.97 2614.02 2053.5 2371.41 1925.19 2078.27C2160.16 2328.31 2055.7 2679.04 1830 2891.19C1578.72 3127.36 1254.38 3128.1 942.886 3221.14C758.683 3276.13 588.681 3368.91 459.766 3512.75C422.869 3553.53 389.639 3586.14 363.155 3637.14C386.59 3614.33 410.484 3583.4 434.214 3560.08C457.1 3537.57 485.732 3511.68 510.918 3492.11C672.079 3366.91 859.276 3300.89 1058.35 3264.69C1148.76 3248.24 1243.04 3239.18 1333.75 3222.88C1500.36 3192.95 1650.68 3143.38 1792.2 3048.47C1947.63 2944.23 2056.26 2810.24 2114.25 2630.26C2124.25 2599.26 2128.65 2571.71 2135.04 2540.37C2143.57 2587.86 2149.87 2620.32 2154.99 2669.04C2171.5 2838.64 2135.29 3009.18 2051.27 3157.42C1998.73 3249.79 1931.54 3323.57 1851.18 3390.5C1599.86 3599.82 1287.32 3625.06 978.466 3672.41C751.849 3712.37 524.444 3784.1 344.032 3931.98C263.694 3997.85 196.205 4072.59 139.175 4158.58C127.033 4176.88 113.126 4199.49 99.7533 4216L95.8571 4215.81L92.7864 4210.02C44.8743 4107.56 6.92142 3909.48 1.68046 3795.49C-11.9992 3497.92 57.8297 3154.76 211.529 2897.46C366.579 2635.23 621.08 2446.83 917.171 2375.09C746.321 2348.54 515.312 2278.97 405.969 2140.71C260.249 1956.43 403.978 1719.04 552.81 1589.66C594.388 1553.52 636.325 1524.44 679.966 1491.97C485.886 1574.47 282.837 1744.68 270.043 1970.98C268.86 1991.92 270.028 2014.26 273.375 2034.98C276.079 2051.37 279.947 2067.55 284.952 2083.38C288.799 2095.29 303.295 2126.77 303.382 2135.9C294.016 2129.79 290.054 2120.54 282.962 2112.48C247.819 2072.52 221.887 2029.53 204.061 1978.78C156.569 1843.6 174.218 1686.97 233.468 1558.57C270.168 1479.03 318.927 1412.84 379.028 1351.19C643.719 1079.66 1019.59 1097.71 1352.43 979.924C1517.12 921.643 1678.72 819.552 1792.76 687.05C1825.48 649.032 1851.52 621.075 1873.2 574.431C1807.48 662.112 1718.23 737.051 1624.72 793.248C1514.32 859.148 1394.22 907.235 1268.84 935.743C1129.75 968.721 987.611 982.152 847.721 1011.09C705.979 1040.42 574.115 1085.72 451.289 1163.47C304.535 1254.5 191.937 1391.42 130.963 1552.98C114.313 1598.16 106.482 1631.75 96.1096 1678.22C86.4649 1632.5 79.1537 1595.22 75.1915 1548.34C59.884 1364.58 104.845 1180.83 203.274 1024.9C358.213 782.39 634.008 652.589 908.894 603.147C1062.11 575.59 1217.53 558.268 1369.2 524.588C1622.55 468.332 1863.31 350.42 2031.03 147.777C2074.69 95.5548 2096.89 55.2761 2132.27 0Z" fill="#9DBA96"/>
