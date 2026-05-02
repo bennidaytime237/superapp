@@ -42,6 +42,13 @@ html { height: 100%; }
 /* countdown bar initial state (replaces inline style="width:100%") */
 #tx-countdown-bar { width: 100%; }
 
+/* === brand.html === */
+.color-swatch { height: 3.5rem; border-radius: 0.75rem; }
+.swatch-sage-green  { background: #94B186; }
+.swatch-sage-light  { background: #9DBA96; }
+.swatch-dark-base   { background: #1a1f1a; }
+.swatch-light-base  { background: #FFFFFF; border: 1px solid rgba(0,0,0,0.1); }
+
 /* === radar.html === */
 @keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
 .skeleton {
