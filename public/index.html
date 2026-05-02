@@ -124,6 +124,22 @@
       <h2 class="hidden md:block font-headline font-bold text-xl tracking-tight text-on-background">Portfolio Overview</h2>
     </div>
     <div class="flex items-center gap-3 relative">
+      <div class="relative">
+        <button data-action="toggle-info-menu" title="Info" aria-label="Info and more" class="flex items-center gap-2 px-3 py-1.5 bg-surface-container rounded-full text-on-surface-variant hover:text-primary hover:bg-surface-container-high transition-all flex-shrink-0">
+          <span class="material-symbols-outlined text-base">info</span>
+        </button>
+        <div id="info-menu" class="hidden absolute right-0 top-full mt-2 bg-surface-container-lowest rounded-xl shadow-lg border border-outline-variant/10 overflow-hidden z-50 min-w-[190px]">
+          <a href="info.html" class="block w-full px-4 py-3 text-sm font-medium text-on-surface hover:bg-surface-container-low transition-colors text-left flex items-center gap-2">
+            <span class="material-symbols-outlined text-base">info</span>Info
+          </a>
+          <a href="brand.html" class="block w-full px-4 py-3 text-sm font-medium text-on-surface hover:bg-surface-container-low transition-colors text-left flex items-center gap-2">
+            <span class="material-symbols-outlined text-base">palette</span>Brand
+          </a>
+          <a href="https://x.com/SageOnchainXYZ" target="_blank" rel="noopener" class="block w-full px-4 py-3 text-sm font-medium text-on-surface hover:bg-surface-container-low transition-colors text-left flex items-center gap-2">
+            <span class="material-symbols-outlined text-base">link</span>Follow us on X
+          </a>
+        </div>
+      </div>
       <button data-action="toggle-theme" title="Toggle dark mode" aria-label="Toggle dark mode" class="flex items-center gap-2 px-3 py-1.5 bg-surface-container rounded-full text-on-surface-variant hover:text-primary hover:bg-surface-container-high transition-all flex-shrink-0">
         <span class="material-symbols-outlined text-base theme-toggle-icon">dark_mode</span>
       </button>

@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script>
+(function(){var t=localStorage.getItem('sage-theme')||(window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');document.documentElement.className=t;})();
+</script>
+<title>Brand - Sage</title>
+<link rel="icon" type="image/svg+xml" href="favicon.svg"/>
+<link rel="stylesheet" href="tailwind.output.css"/>
+<link rel="stylesheet" href="page-styles.css"/>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="theme.css"/>
+<script src="theme.js"></script>
+<script src="safe-dom.js"></script>
+<script src="config.js"></script>
+<script src="wallet.js"></script>
+</head>
+<body class="bg-surface text-on-surface selection:bg-primary-fixed selection:text-on-primary-fixed min-h-screen">
+
+<!-- Sidebar Navigation (Desktop) -->
+<aside class="hidden md:flex flex-col fixed left-0 top-0 h-full w-64 px-4 pt-4 pb-4 bg-surface-container-low z-40">
+  <a href="index.html" class="mb-8 px-4 py-2 flex items-center gap-2">
+    <img src="sage-wordmark.svg" alt="Sage" class="h-7"/>
+  </a>
+  <nav class="flex-1 space-y-1.5">
+    <a class="flex items-center gap-3 px-4 py-2.5 text-on-surface-variant hover:text-primary hover:bg-white/50 rounded-full transition-all" href="index.html">
+      <span class="material-symbols-outlined">grid_view</span>
+      <span class="font-medium text-sm">Dashboard</span>
+    </a>
+    <a class="flex items-center gap-3 px-4 py-2.5 text-on-surface-variant hover:text-primary hover:bg-white/50 rounded-full transition-all" href="send.html">
+      <span class="material-symbols-outlined">send</span>
+      <span class="font-medium text-sm">Send</span>
+    </a>
+    <a class="flex items-center gap-3 px-4 py-2.5 text-on-surface-variant hover:text-primary hover:bg-white/50 rounded-full transition-all" href="request.html">
+      <span class="material-symbols-outlined">request_page</span>
+      <span class="font-medium text-sm">Request</span>
+    </a>
+    <a class="flex items-center gap-3 px-4 py-2.5 text-on-surface-variant hover:text-primary hover:bg-white/50 rounded-full transition-all" href="swap.html">
+      <span class="material-symbols-outlined">swap_horiz</span>
+      <span class="font-medium text-sm">Bridge</span>
+    </a>
+    <a class="flex items-center gap-3 px-4 py-2.5 text-on-surface-variant hover:text-primary hover:bg-white/50 rounded-full transition-all" href="transactions.html">
+      <span class="material-symbols-outlined">receipt_long</span>
+      <span class="font-medium text-sm">Transactions</span>
+    </a>
+    <a class="flex items-center gap-3 px-4 py-2.5 text-on-surface-variant hover:text-primary hover:bg-white/50 rounded-full transition-all" href="gas.html">
+      <span class="material-symbols-outlined">local_gas_station</span>
+      <span class="font-medium text-sm">Gas</span>
+    </a>
+    <a class="flex items-center gap-3 px-4 py-2.5 text-on-surface-variant hover:text-primary hover:bg-white/50 rounded-full transition-all" href="sweep.html">
+      <span class="material-symbols-outlined">move_to_inbox</span>
+      <span class="font-medium text-sm">Sweep</span>
+    </a>
+    <a class="flex items-center gap-3 px-4 py-2.5 text-on-surface-variant hover:text-primary hover:bg-white/50 rounded-full transition-all" href="radar.html">
+      <span class="material-symbols-outlined">radar</span>
+      <span class="font-medium text-sm">Radar</span>
+    </a>
+  </nav>
+
+  <!-- Hyperliquid Promo -->
+  <a href="hyperliquid.html" class="block mb-3 p-3.5 bg-[#090909] border border-[#68f5a5]/20 rounded-2xl hover:border-[#68f5a5]/40 transition-all">
+    <div class="flex items-center gap-3">
+      <img src="hyperliquid-logo.svg" alt="Hyperliquid" class="w-8 h-8 rounded-lg flex-shrink-0"/>
+      <div class="leading-relaxed">
+        <p class="text-xs font-medium text-white">Hyperliquid Deposit</p>
+        <p class="text-[10px] text-white/30">Bridge any token to Hyperliquid</p>
+      </div>
+    </div>
+  </a>
+
+  <!-- Polymarket Promo -->
+  <a href="polymarket.html" class="block mb-3 p-3.5 bg-[#0d2149] rounded-2xl hover:brightness-110 transition-all">
+    <div class="flex items-center gap-3">
+      <img src="polymarket-logo.svg" alt="Polymarket" class="w-8 h-8 rounded-lg flex-shrink-0"/>
+      <div class="leading-relaxed">
+        <p class="text-xs font-medium text-white">Polymarket Deposit</p>
+        <p class="text-[10px] text-white/50">Bridge any token to your account</p>
+      </div>
+    </div>
+  </a>
+
+  <!-- Wallet Summary -->
+  <div id="sidebar-wallet" class="mt-auto p-4 bg-surface-container rounded-3xl">
+    <div id="sidebar-disconnected">
+      <p class="text-xs text-on-surface-variant mb-3 text-center tracking-wide">Connect your wallet to get started</p>
+      <button data-action="connect-wallet" class="w-full py-3 px-4 bg-primary text-on-primary rounded-full text-sm font-bold tracking-wide shadow-sm active:scale-[0.98] transition-transform">
+        Connect Wallet
+      </button>
+    </div>
+    <div id="sidebar-connected" class="hidden">
+      <div class="flex items-center gap-3 mb-3">
+        <div class="w-10 h-10 rounded-full bg-primary flex items-center justify-center">
+          <span class="material-symbols-outlined text-on-primary text-sm">account_balance_wallet</span>
+        </div>
+        <div>
+          <p class="text-xs font-bold text-on-surface">Connected</p>
+          <p id="sidebar-addr" class="text-xs text-on-surface-variant font-mono">0x...</p>
+        </div>
+      </div>
+      <button data-action="navigate" data-arg="swap.html" class="w-full py-3 px-4 bg-primary text-on-primary rounded-full text-sm font-bold shadow-sm active:scale-[0.98] transition-transform">
+        Bridge
+      </button>
+    </div>
+  </div>
+  <a href="https://across.to" target="_blank" rel="noopener" class="flex justify-center mt-3 opacity-30 hover:opacity-60 transition-opacity">
+    <img src="powered-by-across.svg" alt="Powered by Across" class="h-3 dark:hidden"/>
+    <img src="powered-by-across-light.svg" alt="Powered by Across" class="h-3 hidden dark:block"/>
+  </a>
+</aside>
+
+<!-- Main -->
+<main class="md:ml-64 min-h-screen pb-24 md:pb-8">
+  <header class="flex justify-between items-center w-full px-6 py-4 bg-surface sticky top-0 z-30">
+    <div class="flex items-center gap-2">
+      <a href="index.html"><img src="sage-wordmark.svg" alt="Sage" class="h-6 md:hidden"/></a>
+      <h2 class="hidden md:block font-headline font-bold text-xl tracking-tight text-on-background">Brand</h2>
+    </div>
+    <div class="flex items-center gap-3">
+      <a href="index.html" class="md:hidden text-sm font-medium text-on-surface-variant hover:text-primary flex items-center gap-1">
+        <span class="material-symbols-outlined text-sm">arrow_back</span> Dashboard
+      </a>
+      <div class="relative">
+        <button data-action="toggle-info-menu" title="Info" aria-label="Info and more" class="flex items-center gap-2 px-3 py-1.5 bg-surface-container rounded-full text-on-surface-variant hover:text-primary hover:bg-surface-container-high transition-all flex-shrink-0">
+          <span class="material-symbols-outlined text-base">info</span>
+        </button>
+        <div id="info-menu" class="hidden absolute right-0 top-full mt-2 bg-surface-container-lowest rounded-xl shadow-lg border border-outline-variant/10 overflow-hidden z-50 min-w-[190px]">
+          <a href="info.html" class="block w-full px-4 py-3 text-sm font-medium text-on-surface hover:bg-surface-container-low transition-colors text-left flex items-center gap-2">
+            <span class="material-symbols-outlined text-base">info</span>Info
+          </a>
+          <a href="brand.html" class="block w-full px-4 py-3 text-sm font-medium text-on-surface hover:bg-surface-container-low transition-colors text-left flex items-center gap-2">
+            <span class="material-symbols-outlined text-base">palette</span>Brand
+          </a>
+          <a href="https://x.com/SageOnchainXYZ" target="_blank" rel="noopener" class="block w-full px-4 py-3 text-sm font-medium text-on-surface hover:bg-surface-container-low transition-colors text-left flex items-center gap-2">
+            <span class="material-symbols-outlined text-base">link</span>Follow us on X
+          </a>
+        </div>
+      </div>
+      <button data-action="toggle-theme" title="Toggle dark mode" aria-label="Toggle dark mode" class="flex items-center gap-2 px-3 py-1.5 bg-surface-container rounded-full text-on-surface-variant hover:text-primary hover:bg-surface-container-high transition-all flex-shrink-0">
+        <span class="material-symbols-outlined text-base theme-toggle-icon">dark_mode</span>
+      </button>
+      <button id="connect-btn" data-action="connect-wallet" class="flex items-center gap-2 px-3 py-1.5 bg-primary text-on-primary rounded-full text-xs font-bold active:scale-95 transition-transform">
+        <span class="material-symbols-outlined text-sm">account_balance_wallet</span>
+        <span id="connect-label">Connect</span>
+      </button>
+    </div>
+  </header>
+
+  <div class="w-full max-w-2xl mx-auto px-6 py-8 space-y-6">
+
+    <!-- Logo Mark -->
+    <section class="bg-surface-container-lowest rounded-2xl overflow-hidden shadow-sm">
+      <div class="px-5 pt-5 pb-2">
+        <h2 class="text-sm font-bold text-on-background mb-1">Logo Mark</h2>
+        <p class="text-xs text-on-surface-variant mb-4">The Sage icon — for favicons, app icons, and square contexts.</p>
+      </div>
+      <div class="grid grid-cols-2 divide-x divide-outline-variant/10 border-t border-outline-variant/10">
+        <div class="flex items-center justify-center p-8 bg-surface-container-low">
+          <img src="sage-logo.svg" alt="Sage logo on light" class="w-16 h-16"/>
+        </div>
+        <div class="flex items-center justify-center p-8 bg-[#1a1f1a]">
+          <img src="sage-logo.svg" alt="Sage logo on dark" class="w-16 h-16"/>
+        </div>
+      </div>
+      <div class="flex divide-x divide-outline-variant/10 border-t border-outline-variant/10">
+        <button onclick="downloadSVG('sage-logo.svg', 'sage-logo.svg')" class="flex-1 flex items-center justify-center gap-2 px-4 py-3 text-sm font-medium text-on-surface hover:bg-surface-container-low transition-colors">
+          <span class="material-symbols-outlined text-base">download</span>SVG
+        </button>
+        <button onclick="downloadAsPNG('sage-logo.svg', 'sage-logo.png', 512, 512)" class="flex-1 flex items-center justify-center gap-2 px-4 py-3 text-sm font-medium text-on-surface hover:bg-surface-container-low transition-colors">
+          <span class="material-symbols-outlined text-base">download</span>PNG
+        </button>
+      </div>
+    </section>
+
+    <!-- Wordmark -->
+    <section class="bg-surface-container-lowest rounded-2xl overflow-hidden shadow-sm">
+      <div class="px-5 pt-5 pb-2">
+        <h2 class="text-sm font-bold text-on-background mb-1">Wordmark</h2>
+        <p class="text-xs text-on-surface-variant mb-4">The full Sage wordmark — for headers, banners, and horizontal layouts.</p>
+      </div>
+      <div class="grid grid-cols-1 divide-y divide-outline-variant/10 border-t border-outline-variant/10">
+        <div class="flex items-center justify-center px-10 py-8 bg-surface-container-low">
+          <img src="sage-wordmark.svg" alt="Sage wordmark on light" class="h-10"/>
+        </div>
+        <div class="flex items-center justify-center px-10 py-8 bg-[#1a1f1a]">
+          <img src="sage-wordmark.svg" alt="Sage wordmark on dark" class="h-10"/>
+        </div>
+      </div>
+      <div class="flex divide-x divide-outline-variant/10 border-t border-outline-variant/10">
+        <button onclick="downloadSVG('sage-wordmark.svg', 'sage-wordmark.svg')" class="flex-1 flex items-center justify-center gap-2 px-4 py-3 text-sm font-medium text-on-surface hover:bg-surface-container-low transition-colors">
+          <span class="material-symbols-outlined text-base">download</span>SVG
+        </button>
+        <button onclick="downloadAsPNG('sage-wordmark.svg', 'sage-wordmark.png', 1638, 645)" class="flex-1 flex items-center justify-center gap-2 px-4 py-3 text-sm font-medium text-on-surface hover:bg-surface-container-low transition-colors">
+          <span class="material-symbols-outlined text-base">download</span>PNG
+        </button>
+      </div>
+    </section>
+
+    <!-- Colors -->
+    <section class="bg-surface-container-lowest rounded-2xl p-5 shadow-sm">
+      <h2 class="text-sm font-bold text-on-background mb-1">Brand Colors</h2>
+      <p class="text-xs text-on-surface-variant mb-4">Core palette used across all Sage touchpoints.</p>
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div class="space-y-2">
+          <div class="h-14 rounded-xl" style="background:#94B186;"></div>
+          <p class="text-xs font-bold text-on-surface">Sage Green</p>
+          <p class="text-xs text-on-surface-variant font-mono">#94B186</p>
+        </div>
+        <div class="space-y-2">
+          <div class="h-14 rounded-xl" style="background:#9DBA96;"></div>
+          <p class="text-xs font-bold text-on-surface">Sage Light</p>
+          <p class="text-xs text-on-surface-variant font-mono">#9DBA96</p>
+        </div>
+        <div class="space-y-2">
+          <div class="h-14 rounded-xl bg-[#1a1f1a]"></div>
+          <p class="text-xs font-bold text-on-surface">Dark Base</p>
+          <p class="text-xs text-on-surface-variant font-mono">#1a1f1a</p>
+        </div>
+        <div class="space-y-2">
+          <div class="h-14 rounded-xl bg-white border border-outline-variant/20"></div>
+          <p class="text-xs font-bold text-on-surface">Light Base</p>
+          <p class="text-xs text-on-surface-variant font-mono">#FFFFFF</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Brand Kit Download -->
+    <section class="bg-surface-container-lowest rounded-2xl overflow-hidden shadow-sm">
+      <div class="flex items-center gap-4 px-5 py-5">
+        <div class="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center flex-shrink-0">
+          <span class="material-symbols-outlined text-primary text-2xl">folder_zip</span>
+        </div>
+        <div class="flex-1 min-w-0">
+          <p class="text-sm font-bold text-on-background">Brand Kit</p>
+          <p class="text-xs text-on-surface-variant">Full asset pack — logos, fonts, and usage guidelines</p>
+        </div>
+        <button id="brand-kit-btn" onclick="downloadBrandKit()" class="flex-shrink-0 flex items-center gap-2 px-4 py-2.5 bg-primary text-on-primary rounded-full text-sm font-bold active:scale-95 transition-transform">
+          <span class="material-symbols-outlined text-base">download</span>
+          <span>Download</span>
+        </button>
+      </div>
+      <p id="brand-kit-soon" class="hidden text-xs text-on-surface-variant text-center pb-4">Brand kit coming soon — check back shortly.</p>
+    </section>
+
+  </div>
+</main>
+
+<!-- Mobile Bottom Nav -->
+<nav class="md:hidden fixed bottom-0 left-0 right-0 bg-surface-container-low border-t border-outline-variant/20 flex z-30">
+  <a href="index.html" class="flex-1 flex flex-col items-center gap-0.5 py-3 text-on-surface-variant hover:text-primary transition-colors">
+    <span class="material-symbols-outlined text-xl">grid_view</span>
+    <span class="text-[10px] font-medium">Home</span>
+  </a>
+  <a href="swap.html" class="flex-1 flex flex-col items-center gap-0.5 py-3 text-on-surface-variant hover:text-primary transition-colors">
+    <span class="material-symbols-outlined text-xl">swap_horiz</span>
+    <span class="text-[10px] font-medium">Bridge</span>
+  </a>
+  <a href="send.html" class="flex-1 flex flex-col items-center gap-0.5 py-3 text-on-surface-variant hover:text-primary transition-colors">
+    <span class="material-symbols-outlined text-xl">send</span>
+    <span class="text-[10px] font-medium">Send</span>
+  </a>
+  <a href="radar.html" class="flex-1 flex flex-col items-center gap-0.5 py-3 text-on-surface-variant hover:text-primary transition-colors">
+    <span class="material-symbols-outlined text-xl">radar</span>
+    <span class="text-[10px] font-medium">Radar</span>
+  </a>
+</nav>
+
+<script>
+function downloadSVG(src, filename) {
+  var a = document.createElement('a');
+  a.href = src;
+  a.download = filename;
+  a.click();
+}
+
+function downloadAsPNG(svgSrc, filename, svgW, svgH) {
+  var scale = 2;
+  var canvas = document.createElement('canvas');
+  canvas.width = svgW * scale;
+  canvas.height = svgH * scale;
+  var ctx = canvas.getContext('2d');
+  var img = new Image();
+  img.onload = function() {
+    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+    var a = document.createElement('a');
+    a.href = canvas.toDataURL('image/png');
+    a.download = filename;
+    a.click();
+  };
+  img.src = svgSrc;
+}
+
+function downloadBrandKit() {
+  var file = 'sage-brand-kit.zip';
+  fetch(file, { method: 'HEAD' })
+    .then(function(r) {
+      if (r.ok) {
+        var a = document.createElement('a');
+        a.href = file;
+        a.download = file;
+        a.click();
+      } else {
+        showBrandKitSoon();
+      }
+    })
+    .catch(function() { showBrandKitSoon(); });
+}
+
+function showBrandKitSoon() {
+  var btn = document.getElementById('brand-kit-btn');
+  var msg = document.getElementById('brand-kit-soon');
+  if (btn) btn.classList.add('hidden');
+  if (msg) msg.classList.remove('hidden');
+}
+</script>
+
+</body>
+</html>
