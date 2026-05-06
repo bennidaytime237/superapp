@@ -128,7 +128,7 @@ function showEmpty(msg) {
   document.getElementById('tx-list').innerHTML = `<div class="text-center py-16">
     <span class="material-symbols-outlined text-5xl text-on-surface-variant/20 mb-3">receipt_long</span>
     <p class="text-on-surface-variant">${msg}</p>
-    <a href="swap.html" class="inline-block mt-4 px-6 py-3 bg-primary text-on-primary rounded-full font-bold text-sm">Make your first bridge</a>
+    <a href="bridge.html" class="inline-block mt-4 px-6 py-3 bg-primary text-on-primary rounded-full font-bold text-sm">Make your first bridge</a>
   </div>`;
 }
 
