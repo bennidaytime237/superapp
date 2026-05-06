@@ -3,6 +3,13 @@
   "outputDirectory": "public",
   "installCommand": "npm install",
   "framework": null,
+  "redirects": [
+    { "source": "/swap.html", "destination": "/bridge", "permanent": true },
+    { "source": "/swap", "destination": "/bridge", "permanent": true }
+  ],
+  "rewrites": [
+    { "source": "/bridge", "destination": "/bridge.html" }
+  ],
   "headers": [
     {
       "source": "/(.*)",

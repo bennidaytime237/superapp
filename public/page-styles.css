@@ -28,7 +28,7 @@ input[type=number] { -moz-appearance: textfield; }
   #portfolio-sidebar { width: 384px; }
 }
 
-/* === swap.html === */
+/* === bridge.html === */
 html { height: 100%; }
 .bridge-spacer-lg { margin-bottom: 1.25rem; }
 .bridge-spacer-sm { margin-bottom: 0.75rem; }
