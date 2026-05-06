@@ -156,16 +156,9 @@
 <main class="w-full max-w-xl mx-auto px-6 py-8 flex-1 pb-28">
 
   <!-- Page Header -->
-  <div class="bg-primary rounded-3xl p-6 mb-6 text-on-primary">
-    <div class="flex items-center gap-3 mb-2">
-      <div class="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center">
-        <span class="material-symbols-outlined text-2xl">send</span>
-      </div>
-      <div>
-        <h1 class="text-xl font-black">Send Tokens</h1>
-        <p class="text-sm text-white/60">Transfer tokens to any address on the same chain</p>
-      </div>
-    </div>
+  <div class="mb-6">
+    <h1 class="text-2xl font-black text-on-background">Send Tokens</h1>
+    <p class="text-sm text-on-surface-variant mt-1">Transfer tokens to any address on the same chain</p>
   </div>
 
   <!-- Recipient -->
@@ -179,29 +172,42 @@
     </div>
   </div>
 
-  <!-- Token & Amount -->
-  <div class="bg-surface-container-lowest rounded-2xl p-5 border border-primary/10 mb-5">
-    <p class="text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-3">You send</p>
-    <div class="flex items-end justify-between gap-4">
-      <button data-action="open-picker" class="inline-flex items-center gap-2 bg-surface-container-low pl-1.5 pr-4 py-1.5 rounded-full border border-outline-variant/10 hover:bg-surface-container-high transition-colors">
+  <!-- Token & Chain -->
+  <div class="mb-5">
+    <label class="text-sm font-bold text-on-surface mb-2 block">Token & Chain</label>
+    <button data-action="open-picker" class="w-full flex items-center justify-between px-4 py-3 bg-surface-container-lowest rounded-xl border border-outline-variant/10 hover:border-primary/30 transition-colors">
+      <div class="flex items-center gap-3">
         <div class="relative">
           <img id="from-token-icon" src="" class="w-8 h-8 rounded-full"/>
           <img id="from-chain-icon" src="" class="w-5 h-5 rounded-full absolute -right-1 -bottom-0.5 border-2 border-surface-container-lowest bg-surface-container-lowest"/>
         </div>
-        <span id="from-label" class="font-bold text-sm ml-1">ETH</span>
-        <span class="material-symbols-outlined text-base text-on-surface-variant">expand_more</span>
-      </button>
-      <div class="flex items-end gap-1 flex-1 justify-end">
-        <span id="amount-mode-prefix" class="text-2xl font-black text-on-surface pb-1 hidden">$</span>
-        <input id="input-amount" type="number" placeholder="0" class="flex-1 text-right text-4xl font-black border-none focus:ring-0 p-0 bg-transparent placeholder:text-on-surface-variant/15 min-w-0"/>
+        <span id="from-label" class="font-bold text-sm">ETH on Ethereum</span>
+      </div>
+      <span class="material-symbols-outlined text-on-surface-variant">expand_more</span>
+    </button>
+  </div>
+
+  <!-- Amount -->
+  <div class="mb-5">
+    <div class="flex items-center justify-between mb-2">
+      <label class="text-sm font-bold text-on-surface">Amount</label>
+      <div role="tablist" aria-label="Amount currency" class="inline-flex p-0.5 bg-surface-container-low rounded-full border border-outline-variant/10">
+        <button id="mode-usd-btn" role="tab" aria-selected="false" data-action="set-mode" data-arg="usd" class="px-3 py-1 rounded-full text-xs font-bold transition-colors text-on-surface-variant hover:text-on-surface">USD</button>
+        <button id="mode-token-btn" role="tab" aria-selected="true" data-action="set-mode" data-arg="token" class="px-3 py-1 rounded-full text-xs font-bold transition-colors bg-primary text-on-primary">
+          <span id="mode-token-label">Token</span>
+        </button>
       </div>
     </div>
-    <div class="flex justify-between mt-2 items-center">
-      <button data-action="toggle-mode" class="flex items-center gap-1 text-sm text-on-surface-variant hover:text-primary transition-colors group">
-        <span id="usd-value">~$0.00</span>
-        <span class="material-symbols-outlined text-sm opacity-40 group-hover:opacity-100 transition-opacity">swap_vert</span>
-      </button>
-      <span class="text-sm text-on-surface-variant">Balance: <button data-action="set-max" class="font-bold text-primary hover:underline" id="from-balance">--</button></span>
+    <div class="bg-surface-container-lowest rounded-xl border border-outline-variant/10 p-5">
+      <div class="relative flex items-center">
+        <span id="amount-prefix" class="hidden absolute left-0 text-5xl font-black text-on-surface-variant/40 pointer-events-none select-none">$</span>
+        <input id="input-amount" type="number" inputmode="decimal" placeholder="0" class="w-full text-center text-5xl font-black text-on-background border-none focus:ring-0 p-0 bg-transparent placeholder:text-on-surface-variant/15"/>
+        <span id="amount-suffix" class="absolute right-0 text-2xl font-black text-on-surface-variant/60 pointer-events-none select-none"></span>
+      </div>
+      <p id="usd-value" class="text-center text-sm font-medium text-on-surface-variant mt-2 min-h-[1.25rem]">~$0.00</p>
+      <div class="flex justify-center mt-3">
+        <span class="text-sm text-on-surface-variant">Balance: <button data-action="set-max" class="font-bold text-primary hover:underline" id="from-balance">--</button></span>
+      </div>
     </div>
   </div>
 
