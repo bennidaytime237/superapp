@@ -191,12 +191,27 @@
         <span id="from-label" class="font-bold text-sm ml-1">ETH</span>
         <span class="material-symbols-outlined text-base text-on-surface-variant">expand_more</span>
       </button>
-      <input id="input-amount" type="number" placeholder="0" class="flex-1 text-right text-4xl font-black border-none focus:ring-0 p-0 bg-transparent placeholder:text-on-surface-variant/15 min-w-0"/>
+      <div class="flex items-end gap-1 flex-1 justify-end">
+        <span id="amount-mode-prefix" class="text-2xl font-black text-on-surface pb-1 hidden">$</span>
+        <input id="input-amount" type="number" placeholder="0" class="flex-1 text-right text-4xl font-black border-none focus:ring-0 p-0 bg-transparent placeholder:text-on-surface-variant/15 min-w-0"/>
+      </div>
     </div>
-    <div class="flex justify-between mt-2">
-      <span id="usd-value" class="text-sm text-on-surface-variant">~$0.00</span>
+    <div class="flex justify-between mt-2 items-center">
+      <button data-action="toggle-mode" class="flex items-center gap-1 text-sm text-on-surface-variant hover:text-primary transition-colors group">
+        <span id="usd-value">~$0.00</span>
+        <span class="material-symbols-outlined text-sm opacity-40 group-hover:opacity-100 transition-opacity">swap_vert</span>
+      </button>
       <span class="text-sm text-on-surface-variant">Balance: <button data-action="set-max" class="font-bold text-primary hover:underline" id="from-balance">--</button></span>
     </div>
+  </div>
+
+  <!-- Bridge nudge -->
+  <div class="flex items-center justify-center gap-1.5 mb-4">
+    <span class="text-xs text-on-surface-variant">Don't have the right asset?</span>
+    <a href="swap.html" class="text-xs font-bold text-primary hover:underline flex items-center gap-0.5">
+      Bridge here
+      <span class="material-symbols-outlined text-xs leading-none" style="font-size:13px">arrow_forward</span>
+    </a>
   </div>
 
   <!-- Action -->

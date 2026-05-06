@@ -24,7 +24,7 @@ const TOKENS = [
 ];
 
 
-let walletAddress=null, selTokenIdx=0, selChainIdx=0, fromBal=null, cachedBalances=null, prices={};
+let walletAddress=null, selTokenIdx=0, selChainIdx=0, fromBal=null, cachedBalances=null, prices={}, inputMode='token';
 
 async function connectWallet() {
   if(!window.ethereum){alert('Install MetaMask');return;}
@@ -107,9 +107,25 @@ function getRecipientAddr() {
   return EthUtils.isValidAddress(v) ? v : null;
 }
 
+function getTokenAmount() {
+  const val=parseFloat(document.getElementById('input-amount').value)||0;
+  if(inputMode==='usd'){const p=prices[TOKENS[selTokenIdx].symbol]||0;return p>0?val/p:0;}
+  return val;
+}
+
+function toggleMode() {
+  inputMode=inputMode==='token'?'usd':'token';
+  const prefix=document.getElementById('amount-mode-prefix');
+  const input=document.getElementById('input-amount');
+  if(inputMode==='usd'){prefix.classList.remove('hidden');input.placeholder='0.00';}
+  else{prefix.classList.add('hidden');input.placeholder='0';}
+  input.value='';
+  onAmountChange();
+}
+
 function updateBtn() {
   const btn=document.getElementById('action-btn');
-  const amt=parseFloat(document.getElementById('input-amount').value)||0;
+  const amt=getTokenAmount();
   const addr=getRecipientAddr();
   const t=TOKENS[selTokenIdx];
   const dim='w-full py-4 bg-surface-container-high text-on-surface-variant rounded-full font-black text-lg';
@@ -126,7 +142,13 @@ function onAmountChange() {
   updateBtn();
   const val=parseFloat(document.getElementById('input-amount').value)||0;
   const p=prices[TOKENS[selTokenIdx].symbol]||0;
-  document.getElementById('usd-value').textContent=val>0&&p?`~$${fmt(val*p)}`:'~$0.00';
+  const t=TOKENS[selTokenIdx];
+  if(inputMode==='usd'){
+    const tokenAmt=p>0?val/p:0;
+    document.getElementById('usd-value').textContent=tokenAmt>0?`≈ ${fmt(tokenAmt)} ${t.symbol}`:`≈ 0 ${t.symbol}`;
+  } else {
+    document.getElementById('usd-value').textContent=val>0&&p?`~$${fmt(val*p)}`:'~$0.00';
+  }
 }
 
 function toHex(n) { return '0x'+BigInt(n).toString(16); }
@@ -153,7 +175,7 @@ async function sendTx(chainId, txParams) {
 
 async function execute() {
   if(!walletAddress){connectWallet();return;}
-  const amount=parseFloat(document.getElementById('input-amount').value)||0;
+  const amount=getTokenAmount();
   if(amount<=0)return;
   const recipient=getRecipientAddr();
   if(!recipient)return;
@@ -199,7 +221,7 @@ async function execute() {
   }
 }
 
-function setMax(){if(fromBal!=null){const t=TOKENS[selTokenIdx];const cid=CHAINS[selChainIdx].id;const GAS_RESERVE={1:0.005,56:0.001,137:0.05};const reserve=t.native?(GAS_RESERVE[cid]??0.0005):0;document.getElementById('input-amount').value=Math.max(0,fromBal-reserve);onAmountChange();}}
+function setMax(){if(fromBal!=null){const t=TOKENS[selTokenIdx];const cid=CHAINS[selChainIdx].id;const GAS_RESERVE={1:0.005,56:0.001,137:0.05};const reserve=t.native?(GAS_RESERVE[cid]??0.0005):0;const maxToken=Math.max(0,fromBal-reserve);if(inputMode==='usd'){const p=prices[t.symbol]||0;document.getElementById('input-amount').value=p>0?fmt(maxToken*p):maxToken;}else{document.getElementById('input-amount').value=maxToken;}onAmountChange();}}
 
 // Picker
 let allRows=[];
@@ -324,6 +346,7 @@ document.addEventListener('click', function(e) {
     case 'close-picker': closePicker(); break;
     case 'execute':      execute(); break;
     case 'set-max':      setMax(); break;
+    case 'toggle-mode':  toggleMode(); break;
   }
 });
 document.addEventListener('DOMContentLoaded', function() {
