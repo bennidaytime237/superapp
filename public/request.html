@@ -198,10 +198,10 @@
         </div>
       </div>
       <div class="bg-surface-container-lowest rounded-xl border border-outline-variant/10 p-5">
-        <div class="flex items-center justify-center gap-2">
-          <span id="amount-prefix" class="text-5xl font-black text-on-surface-variant/40">$</span>
-          <input id="amount-input" type="number" inputmode="decimal" placeholder="0.00" class="flex-1 min-w-0 text-center text-5xl font-black text-on-background border-none focus:ring-0 p-0 bg-transparent placeholder:text-on-surface-variant/15"/>
-          <span id="amount-suffix" class="hidden text-2xl font-black text-on-surface-variant/60"></span>
+        <div class="relative flex items-center">
+          <span id="amount-prefix" class="absolute left-0 text-5xl font-black text-on-surface-variant/40 pointer-events-none select-none">$</span>
+          <input id="amount-input" type="number" inputmode="decimal" placeholder="0.00" class="w-full text-center text-5xl font-black text-on-background border-none focus:ring-0 p-0 bg-transparent placeholder:text-on-surface-variant/15"/>
+          <span id="amount-suffix" class="hidden absolute right-0 text-2xl font-black text-on-surface-variant/60 pointer-events-none select-none"></span>
         </div>
         <p id="amount-conversion" class="text-center text-sm font-medium text-on-surface-variant mt-2 min-h-[1.25rem]"></p>
         <div id="amount-presets" class="flex justify-center gap-2 mt-4"></div>
