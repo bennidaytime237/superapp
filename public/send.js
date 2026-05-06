@@ -244,20 +244,39 @@ function fmt(n){if(n>=1000)return n.toLocaleString('en-US',{maximumFractionDigit
     if(ti>=0&&ci>=0){selTokenIdx=ti;selChainIdx=ci;updateDisplay();}
   }
   if(params.get('amount')){document.getElementById('input-amount').value=params.get('amount');onAmountChange();}
-  if(params.get('note')){
-    const noteEl=document.getElementById('request-note');
-    if(!noteEl){
-      const div=document.createElement('div');
-      div.className='mb-4 px-4 py-3 bg-primary-container rounded-xl';
-      const label=document.createElement('p');
-      label.className='text-xs font-bold text-on-primary-container mb-1';
+  const reqUsd=params.get('usd');
+  const reqCurrency=params.get('currency');
+  const reqNote=params.get('note');
+  if(reqUsd||reqNote||reqCurrency){
+    const div=document.createElement('div');
+    div.id='request-note';
+    div.className='mb-4 px-4 py-3 bg-primary-container rounded-xl';
+    const label=document.createElement('p');
+    label.className='text-xs font-bold text-on-primary-container mb-1';
+    if(reqCurrency==='usd'&&reqUsd){
+      const usdNum=Number(reqUsd);
       label.textContent='Payment request';
-      const body=document.createElement('p');
-      body.className='text-sm text-on-primary-container';
-      body.textContent=params.get('note');
-      div.append(label,body);
-      document.getElementById('recipient').closest('.mb-5').after(div);
+      const amt=document.createElement('p');
+      amt.className='text-base font-black text-on-primary-container mb-0.5';
+      amt.textContent=`$${usdNum.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})} requested`;
+      const sub=document.createElement('p');
+      sub.className='text-xs text-on-primary-container/80';
+      sub.textContent=`≈ ${params.get('amount')} ${params.get('token')||''}`.trim();
+      div.append(label,amt,sub);
+    } else {
+      label.textContent='Payment request';
+      const amt=document.createElement('p');
+      amt.className='text-base font-black text-on-primary-container mb-0.5';
+      amt.textContent=`${params.get('amount')||''} ${params.get('token')||''} requested`.trim();
+      div.append(label,amt);
     }
+    if(reqNote){
+      const body=document.createElement('p');
+      body.className='text-sm text-on-primary-container italic mt-1';
+      body.textContent=`"${reqNote}"`;
+      div.append(body);
+    }
+    document.getElementById('recipient').closest('.mb-5').after(div);
   }
 
   await setupWallet({

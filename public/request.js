@@ -23,6 +23,23 @@ const TOKENS = [
 ];
 
 let walletAddress=null, selTokenIdx=0, selChainIdx=0, generatedUrl='';
+let amountMode='usd'; // 'usd' or 'token'
+let prices={};
+
+const PRESETS_USD=[10,50,100,500];
+const PRESETS_TOKEN={USDC:[10,50,100,500],USDT:[10,50,100,500],DAI:[10,50,100,500],ETH:[0.01,0.05,0.1,0.5],WBTC:[0.001,0.005,0.01,0.05],POL:[10,50,100,500]};
+
+function fmt(n){if(!isFinite(n))return '0';if(n>=1000)return n.toLocaleString('en-US',{maximumFractionDigits:2});if(n>=1)return n.toLocaleString('en-US',{maximumFractionDigits:4});return n.toLocaleString('en-US',{maximumFractionDigits:6});}
+function fmtUsd(n){if(!isFinite(n))return '$0.00';return '$'+n.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});}
+
+async function fetchPrices(){
+  try {
+    const res=await fetch('/api/prices'); const raw=await res.json();
+    prices={ETH:raw.ethereum?.usd||0,USDC:1,USDT:1,DAI:1,WBTC:raw['wrapped-bitcoin']?.usd||0,POL:raw['polygon-ecosystem-token']?.usd||raw['matic-network']?.usd||0};
+  } catch{prices={ETH:2500,USDC:1,USDT:1,DAI:1,WBTC:90000,POL:0.5};}
+}
+
+function tokenPrice(){return prices[TOKENS[selTokenIdx].symbol]||0;}
 
 async function connectWallet() {
   if(!window.ethereum){alert('Install MetaMask');return;}
@@ -44,30 +61,118 @@ function resolveWalletENS(){
   }).catch(()=>{});
 }
 
-function setAmt(n){document.getElementById('amount-input').value=n;updateBtn();}
+function setAmt(n){document.getElementById('amount-input').value=n;onAmountChange();}
+
+function setMode(mode){
+  if(mode!=='usd'&&mode!=='token')return;
+  amountMode=mode;
+  const usdBtn=document.getElementById('mode-usd-btn');
+  const tokBtn=document.getElementById('mode-token-btn');
+  const active='px-3 py-1 rounded-full text-xs font-bold transition-colors bg-primary text-on-primary';
+  const inactive='px-3 py-1 rounded-full text-xs font-bold transition-colors text-on-surface-variant hover:text-on-surface';
+  usdBtn.className=mode==='usd'?active:inactive;
+  tokBtn.className=mode==='token'?active:inactive;
+  usdBtn.setAttribute('aria-selected',String(mode==='usd'));
+  tokBtn.setAttribute('aria-selected',String(mode==='token'));
+  updateAmountUI();
+  onAmountChange();
+}
+
+function updateAmountUI(){
+  const t=TOKENS[selTokenIdx];
+  const prefix=document.getElementById('amount-prefix');
+  const suffix=document.getElementById('amount-suffix');
+  const tokLabel=document.getElementById('mode-token-label');
+  const input=document.getElementById('amount-input');
+  tokLabel.textContent=t.symbol;
+  if(amountMode==='usd'){
+    prefix.textContent='$';
+    prefix.classList.remove('hidden');
+    suffix.classList.add('hidden');
+    input.placeholder='0.00';
+    input.step='0.01';
+  }else{
+    prefix.classList.add('hidden');
+    suffix.textContent=t.symbol;
+    suffix.classList.remove('hidden');
+    input.placeholder='0';
+    input.step=t.decimals>=18?'0.0001':(t.decimals>=8?'0.0001':'0.01');
+  }
+  // Presets
+  const presetEl=document.getElementById('amount-presets');
+  const presets=amountMode==='usd'?PRESETS_USD:(PRESETS_TOKEN[t.symbol]||PRESETS_USD);
+  presetEl.innerHTML='';
+  presets.forEach(v=>{
+    const b=document.createElement('button');
+    b.dataset.action='set-amt';
+    b.dataset.arg=String(v);
+    b.className='px-4 py-1.5 rounded-full text-sm font-bold border border-outline-variant/15 text-on-surface-variant hover:bg-surface-container-low transition-colors';
+    b.textContent=amountMode==='usd'?`$${v}`:`${v} ${t.symbol}`;
+    presetEl.appendChild(b);
+  });
+}
+
+function onAmountChange(){
+  updateBtn();
+  const conv=document.getElementById('amount-conversion');
+  const t=TOKENS[selTokenIdx];
+  const val=parseFloat(document.getElementById('amount-input').value)||0;
+  const p=tokenPrice();
+  if(val<=0){conv.textContent='';return;}
+  if(amountMode==='usd'){
+    if(p>0){conv.textContent=`≈ ${fmt(val/p)} ${t.symbol}`;}
+    else{conv.textContent=`Price unavailable for ${t.symbol}`;}
+  }else{
+    if(p>0){conv.textContent=`≈ ${fmtUsd(val*p)}`;}
+    else{conv.textContent='';}
+  }
+}
 
 function updateDisplay(){
   const t=TOKENS[selTokenIdx], c=CHAINS[selChainIdx];
   document.getElementById('sel-token-icon').src=TOKEN_ICONS[t.symbol]||'';
   document.getElementById('sel-chain-icon').src=chainIcon(c.id);
   document.getElementById('sel-label').textContent=`${t.symbol} on ${c.name}`;
+  updateAmountUI();
+  onAmountChange();
 }
 
 function updateBtn(){
   const btn=document.getElementById('action-btn');
-  const amt=parseFloat(document.getElementById('amount-input').value)||0;
-  if(!walletAddress){btn.textContent='Connect Wallet';btn.className='w-full py-4 bg-primary text-on-primary rounded-full font-black text-lg active:scale-[0.98] transition-transform';}
-  else if(amt<=0){btn.textContent='Enter amount';btn.className='w-full py-4 bg-surface-container-high text-on-surface-variant rounded-full font-black text-lg';}
-  else{btn.textContent='Create Payment Link';btn.className='w-full py-4 bg-primary text-on-primary rounded-full font-black text-lg active:scale-[0.98] transition-transform';}
+  const t=TOKENS[selTokenIdx];
+  const val=parseFloat(document.getElementById('amount-input').value)||0;
+  const p=tokenPrice();
+  const dim='w-full py-4 bg-surface-container-high text-on-surface-variant rounded-full font-black text-lg';
+  const active='w-full py-4 bg-primary text-on-primary rounded-full font-black text-lg active:scale-[0.98] transition-transform';
+  if(!walletAddress){btn.textContent='Connect Wallet';btn.className=active;}
+  else if(val<=0){btn.textContent='Enter amount';btn.className=dim;}
+  else if(amountMode==='usd'&&!p){btn.textContent=`Price unavailable for ${t.symbol}`;btn.className=dim;}
+  else{btn.textContent='Create Payment Link';btn.className=active;}
 }
 
 function generateLink(){
   if(!walletAddress){connectWallet();return;}
-  const amt=parseFloat(document.getElementById('amount-input').value)||0;
-  if(amt<=0)return;
   const t=TOKENS[selTokenIdx], c=CHAINS[selChainIdx];
+  const val=parseFloat(document.getElementById('amount-input').value)||0;
+  if(val<=0)return;
+  const p=tokenPrice();
+  let tokenAmt, usdAmt;
+  if(amountMode==='usd'){
+    if(!p)return;
+    usdAmt=val;
+    tokenAmt=val/p;
+  }else{
+    tokenAmt=val;
+    usdAmt=p?val*p:null;
+  }
+  // Round token amount to a reasonable precision based on token decimals
+  const maxFrac=Math.min(t.decimals,8);
+  const tokenAmtStr=Number(tokenAmt.toFixed(maxFrac)).toString();
+
   const note=document.getElementById('note-input').value.trim();
-  const params=new URLSearchParams({to:walletAddress,token:t.symbol,chain:c.id,amount:amt});
+  const params=new URLSearchParams({to:walletAddress,token:t.symbol,chain:c.id,amount:tokenAmtStr});
+  params.set('currency',amountMode);
+  if(amountMode==='usd')params.set('usd',String(usdAmt));
   if(note)params.set('note',note);
   generatedUrl=`${window.location.origin}/send.html?${params}`;
 
@@ -75,7 +180,10 @@ function generateLink(){
   document.getElementById('form-view').classList.add('hidden');
   document.getElementById('share-view').classList.remove('hidden');
   document.getElementById('share-url').textContent=generatedUrl;
-  document.getElementById('share-summary').textContent=`${amt} ${t.symbol} on ${c.name}`;
+  const summary=amountMode==='usd'
+    ? `${fmtUsd(usdAmt)} · ${fmt(tokenAmt)} ${t.symbol} on ${c.name}`
+    : (usdAmt!=null?`${fmt(tokenAmt)} ${t.symbol} on ${c.name} · ${fmtUsd(usdAmt)}`:`${fmt(tokenAmt)} ${t.symbol} on ${c.name}`);
+  document.getElementById('share-summary').textContent=summary;
   const noteEl=document.getElementById('share-note');
   if(note){noteEl.textContent=`"${note}"`;noteEl.classList.remove('hidden');}
   else{noteEl.classList.add('hidden');}
@@ -99,7 +207,7 @@ function resetForm(){
   document.getElementById('share-view').classList.add('hidden');
   document.getElementById('amount-input').value='';
   document.getElementById('note-input').value='';
-  updateBtn();
+  onAmountChange();
 }
 
 // Picker
@@ -143,7 +251,9 @@ function renderPicker(rows){
 function selectToken(ti,ci){selTokenIdx=ti;selChainIdx=ci;closePicker();updateDisplay();}
 
 (async function(){
-  updateDisplay();updateBtn();
+  setMode(amountMode);
+  updateDisplay();
+  fetchPrices().then(onAmountChange);
   await setupWallet({
     onConnected(addr){
       walletAddress=addr;
@@ -178,11 +288,12 @@ document.addEventListener('click', function(e) {
     case 'share-link':   shareLink(); break;
     case 'reset-form':   resetForm(); break;
     case 'set-amt':      setAmt(Number(arg)); break;
+    case 'set-mode':     setMode(arg); break;
   }
 });
 document.addEventListener('DOMContentLoaded', function() {
   var amtEl = document.getElementById('amount-input');
-  if (amtEl) amtEl.addEventListener('input', updateReqBtn);
+  if (amtEl) amtEl.addEventListener('input', onAmountChange);
   var ps = document.getElementById('picker-search');
   if (ps) ps.addEventListener('input', filterPicker);
 });
