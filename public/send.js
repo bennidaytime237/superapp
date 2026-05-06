@@ -63,22 +63,38 @@ function updateDisplay() {
 
 let resolvedAddr = null;
 let ensTimer = null;
+function setEnsState(state, text) {
+  const ensEl = document.getElementById('ens-resolved');
+  const ensIcon = document.getElementById('ens-resolved-icon');
+  const ensText = document.getElementById('ens-resolved-text');
+  const states = {
+    loading: { cls: 'flex items-center gap-1 mt-1.5 text-on-surface-variant', icon: 'autorenew', iconCls: 'material-symbols-outlined text-sm leading-none animate-spin' },
+    success: { cls: 'flex items-center gap-1 mt-1.5 text-primary', icon: 'check_circle', iconCls: 'material-symbols-outlined text-sm leading-none' },
+    error:   { cls: 'flex items-center gap-1 mt-1.5 text-error',   icon: 'error',        iconCls: 'material-symbols-outlined text-sm leading-none' },
+  };
+  const s = states[state];
+  ensEl.className = s.cls;
+  ensIcon.className = s.iconCls;
+  ensIcon.textContent = s.icon;
+  ensText.textContent = text;
+  ensEl.classList.remove('hidden');
+}
 function validateAddr() {
   const v=document.getElementById('recipient').value.trim();
   const ensEl=document.getElementById('ens-resolved');
   resolvedAddr=null; ensEl.classList.add('hidden');
   if(v.endsWith('.eth') && v.length > 4) {
     document.getElementById('addr-error').classList.add('hidden');
-    ensEl.textContent='Resolving...'; ensEl.classList.remove('hidden');
+    setEnsState('loading', 'Resolving...');
     clearTimeout(ensTimer);
     ensTimer=setTimeout(()=>{
       fetch(`/api/ens?name=${encodeURIComponent(v)}`).then(r=>r.json()).then(d=>{
         if(d.address && d.address !== '0x0000000000000000000000000000000000000000') {
           resolvedAddr=d.address;
-          ensEl.textContent=`→ ${d.address.slice(0,6)}...${d.address.slice(-4)}`;
-        } else { ensEl.textContent='ENS name not found'; }
+          setEnsState('success', d.address);
+        } else { setEnsState('error', 'ENS name not found'); }
         updateBtn();
-      }).catch(()=>{ ensEl.textContent='Could not resolve'; });
+      }).catch(()=>{ setEnsState('error', 'Could not resolve'); });
     },500);
   } else {
     document.getElementById('addr-error').classList.toggle('hidden', !v||EthUtils.isValidAddress(v));
@@ -311,8 +327,6 @@ document.addEventListener('click', function(e) {
   }
 });
 document.addEventListener('DOMContentLoaded', function() {
-  var el = document.getElementById('recipient-address');
-  if (el) el.addEventListener('input', validateRecipient);
-  var src = document.getElementById('source-search');
-  if (src) src.addEventListener('input', filterSourceList);
+  var el = document.getElementById('recipient');
+  if (el) el.addEventListener('input', validateAddr);
 });
