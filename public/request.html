@@ -188,15 +188,23 @@
 
     <!-- Amount -->
     <div class="mb-5">
-      <label class="text-sm font-bold text-on-surface mb-2 block">Amount</label>
-      <div class="bg-surface-container-lowest rounded-xl border border-outline-variant/10 p-5">
-        <input id="amount-input" type="number" placeholder="0.00" class="w-full text-center text-5xl font-black text-on-background border-none focus:ring-0 p-0 bg-transparent placeholder:text-on-surface-variant/15"/>
-        <div class="flex justify-center gap-2 mt-4">
-          <button data-action="set-amt" data-arg="10" class="px-4 py-1.5 rounded-full text-sm font-bold border border-outline-variant/15 text-on-surface-variant hover:bg-surface-container-low transition-colors">$10</button>
-          <button data-action="set-amt" data-arg="50" class="px-4 py-1.5 rounded-full text-sm font-bold border border-outline-variant/15 text-on-surface-variant hover:bg-surface-container-low transition-colors">$50</button>
-          <button data-action="set-amt" data-arg="100" class="px-4 py-1.5 rounded-full text-sm font-bold border border-outline-variant/15 text-on-surface-variant hover:bg-surface-container-low transition-colors">$100</button>
-          <button data-action="set-amt" data-arg="500" class="px-4 py-1.5 rounded-full text-sm font-bold border border-outline-variant/15 text-on-surface-variant hover:bg-surface-container-low transition-colors">$500</button>
+      <div class="flex items-center justify-between mb-2">
+        <label class="text-sm font-bold text-on-surface">Amount</label>
+        <div role="tablist" aria-label="Amount currency" class="inline-flex p-0.5 bg-surface-container-low rounded-full border border-outline-variant/10">
+          <button id="mode-usd-btn" role="tab" aria-selected="true" data-action="set-mode" data-arg="usd" class="px-3 py-1 rounded-full text-xs font-bold transition-colors bg-primary text-on-primary">USD</button>
+          <button id="mode-token-btn" role="tab" aria-selected="false" data-action="set-mode" data-arg="token" class="px-3 py-1 rounded-full text-xs font-bold transition-colors text-on-surface-variant hover:text-on-surface">
+            <span id="mode-token-label">Token</span>
+          </button>
         </div>
+      </div>
+      <div class="bg-surface-container-lowest rounded-xl border border-outline-variant/10 p-5">
+        <div class="flex items-center justify-center gap-2">
+          <span id="amount-prefix" class="text-5xl font-black text-on-surface-variant/40">$</span>
+          <input id="amount-input" type="number" inputmode="decimal" placeholder="0.00" class="flex-1 min-w-0 text-center text-5xl font-black text-on-background border-none focus:ring-0 p-0 bg-transparent placeholder:text-on-surface-variant/15"/>
+          <span id="amount-suffix" class="hidden text-2xl font-black text-on-surface-variant/60"></span>
+        </div>
+        <p id="amount-conversion" class="text-center text-sm font-medium text-on-surface-variant mt-2 min-h-[1.25rem]"></p>
+        <div id="amount-presets" class="flex justify-center gap-2 mt-4"></div>
       </div>
     </div>
 
