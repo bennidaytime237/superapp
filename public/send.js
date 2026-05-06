@@ -59,6 +59,7 @@ function updateDisplay() {
   document.getElementById('from-token-icon').src=TOKEN_ICONS[t.symbol]||'';
   document.getElementById('from-chain-icon').src=chainIcon(c.id);
   document.getElementById('from-label').textContent=`${t.symbol} on ${c.name}`;
+  updateAmountUI();
 }
 
 let resolvedAddr = null;
@@ -113,14 +114,41 @@ function getTokenAmount() {
   return val;
 }
 
-function toggleMode() {
-  inputMode=inputMode==='token'?'usd':'token';
-  const prefix=document.getElementById('amount-mode-prefix');
-  const input=document.getElementById('input-amount');
-  if(inputMode==='usd'){prefix.classList.remove('hidden');input.placeholder='0.00';}
-  else{prefix.classList.add('hidden');input.placeholder='0';}
-  input.value='';
+function setMode(mode) {
+  if(mode!=='usd'&&mode!=='token')return;
+  inputMode=mode;
+  const usdBtn=document.getElementById('mode-usd-btn');
+  const tokBtn=document.getElementById('mode-token-btn');
+  const active='px-3 py-1 rounded-full text-xs font-bold transition-colors bg-primary text-on-primary';
+  const inactive='px-3 py-1 rounded-full text-xs font-bold transition-colors text-on-surface-variant hover:text-on-surface';
+  usdBtn.className=mode==='usd'?active:inactive;
+  tokBtn.className=mode==='token'?active:inactive;
+  usdBtn.setAttribute('aria-selected',String(mode==='usd'));
+  tokBtn.setAttribute('aria-selected',String(mode==='token'));
+  updateAmountUI();
   onAmountChange();
+}
+
+function updateAmountUI() {
+  const t=TOKENS[selTokenIdx];
+  const prefix=document.getElementById('amount-prefix');
+  const suffix=document.getElementById('amount-suffix');
+  const tokLabel=document.getElementById('mode-token-label');
+  const input=document.getElementById('input-amount');
+  if(tokLabel)tokLabel.textContent=t.symbol;
+  if(inputMode==='usd'){
+    prefix.textContent='$';
+    prefix.classList.remove('hidden');
+    suffix.classList.add('hidden');
+    input.placeholder='0.00';
+    input.step='0.01';
+  }else{
+    prefix.classList.add('hidden');
+    suffix.textContent=t.symbol;
+    suffix.classList.remove('hidden');
+    input.placeholder='0';
+    input.step=t.decimals>=8?'0.0001':'0.01';
+  }
 }
 
 function updateBtn() {
@@ -143,11 +171,13 @@ function onAmountChange() {
   const val=parseFloat(document.getElementById('input-amount').value)||0;
   const p=prices[TOKENS[selTokenIdx].symbol]||0;
   const t=TOKENS[selTokenIdx];
+  const conv=document.getElementById('usd-value');
   if(inputMode==='usd'){
-    const tokenAmt=p>0?val/p:0;
-    document.getElementById('usd-value').textContent=tokenAmt>0?`≈ ${fmt(tokenAmt)} ${t.symbol}`:`≈ 0 ${t.symbol}`;
+    if(val<=0){conv.textContent=`≈ 0 ${t.symbol}`;return;}
+    if(p>0){conv.textContent=`≈ ${fmt(val/p)} ${t.symbol}`;}
+    else{conv.textContent=`Price unavailable for ${t.symbol}`;}
   } else {
-    document.getElementById('usd-value').textContent=val>0&&p?`~$${fmt(val*p)}`:'~$0.00';
+    conv.textContent=val>0&&p?`~$${fmt(val*p)}`:'~$0.00';
   }
 }
 
@@ -269,6 +299,7 @@ function selectToken(ti,ci){selTokenIdx=ti;selChainIdx=ci;closePicker();updateDi
 function fmt(n){if(n>=1000)return n.toLocaleString('en-US',{maximumFractionDigits:2});if(n>=1)return n.toLocaleString('en-US',{maximumFractionDigits:4});return n.toLocaleString('en-US',{maximumFractionDigits:6});}
 
 (async function(){
+  setMode(inputMode);
   updateDisplay();updateBtn();
   await fetchPrices();
 
@@ -281,7 +312,14 @@ function fmt(n){if(n>=1000)return n.toLocaleString('en-US',{maximumFractionDigit
     const ci=CHAINS.findIndex(c=>c.id===cid);
     if(ti>=0&&ci>=0){selTokenIdx=ti;selChainIdx=ci;updateDisplay();}
   }
-  if(params.get('amount')){document.getElementById('input-amount').value=params.get('amount');onAmountChange();}
+  if(params.get('currency')==='usd'&&params.get('usd')){
+    setMode('usd');
+    document.getElementById('input-amount').value=params.get('usd');
+    onAmountChange();
+  } else if(params.get('amount')){
+    document.getElementById('input-amount').value=params.get('amount');
+    onAmountChange();
+  }
   const reqUsd=params.get('usd');
   const reqCurrency=params.get('currency');
   const reqNote=params.get('note');
@@ -346,7 +384,7 @@ document.addEventListener('click', function(e) {
     case 'close-picker': closePicker(); break;
     case 'execute':      execute(); break;
     case 'set-max':      setMax(); break;
-    case 'toggle-mode':  toggleMode(); break;
+    case 'set-mode':     setMode(el.dataset.arg); break;
   }
 });
 document.addEventListener('DOMContentLoaded', function() {
