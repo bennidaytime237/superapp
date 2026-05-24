@@ -771,6 +771,8 @@ function showTxSuccess(summary, elapsedSec, txHash, chainId) {
   document.getElementById('tx-loading').classList.add('hidden');
   document.getElementById('tx-success').classList.remove('hidden');
 
+  if (typeof window.fireConfetti === 'function') window.fireConfetti();
+
   // Save to localStorage for dashboard activity feed
   try {
     const historyKey = 'sage_tx_' + (walletAddress || 'unknown').toLowerCase();
