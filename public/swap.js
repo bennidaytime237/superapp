@@ -901,11 +901,9 @@ async function executeSwap() {
       showTxScreen('Bridging...', `${fromChainName} → ${toChainName} via Across`);
 
       // Fire gas top-up bridge in parallel (don't wait for main fill first)
-      if (gasTopupEnabled) {
-        try {
-          await executeGasTopup();
-        } catch (e) { console.warn('Gas top-up failed (non-fatal):', e); }
-      }
+      const gasTopupPromise = gasTopupEnabled
+        ? executeGasTopup().catch(e => console.warn('Gas top-up failed (non-fatal):', e))
+        : null;
 
       await pollFill(CHAINS[fromChainIdx].id, hash);
       const elapsed = (Date.now() - txStartTime) / 1000;
