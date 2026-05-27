@@ -29,8 +29,8 @@
         rot: Math.random() * Math.PI * 2,
         vr: (Math.random() - 0.5) * 0.06,
         swayPhase: Math.random() * Math.PI * 2,
-        swaySpeed: 0.02 + Math.random() * 0.025,
-        swayAmp: (0.4 + Math.random() * 1.0) * dpr,
+        swaySpeed: 0.03 + Math.random() * 0.03,
+        swayAmp: (0.15 + Math.random() * 0.35) * dpr,
         life: 1,
       });
     }
@@ -87,10 +87,10 @@
       spawnBloom(particles, originX, originY, Math.floor(particleCount * 0.5), dpr);
     }, 120);
 
-    // Strong air drag on the initial burst, near-zero gravity → leaves fly out fast then drift down slowly.
-    const gravity = 0.035 * dpr;
+    // Strong air drag on the initial burst, then a gentle, steady fall to the bottom of the page.
+    const gravity = 0.18 * dpr;
     const burstDrag = 0.92; // bleed off launch speed quickly
-    const maxFallSpeed = 1.8 * dpr;
+    const maxFallSpeed = 3.5 * dpr;
 
     function frame() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
