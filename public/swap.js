@@ -794,6 +794,24 @@ function showTxSuccess(summary, elapsedSec, txHash, chainId) {
   document.getElementById('tx-summary').textContent = summary;
   document.getElementById('tx-time-final').textContent = elapsedSec.toFixed(1) + 's';
 
+  // Congrats line — prefer ENS name (sans .eth), fall back to short address
+  const congratsEl = document.getElementById('tx-congrats');
+  if (congratsEl) {
+    const shortAddr = walletAddress ? walletAddress.slice(0, 6) + '...' + walletAddress.slice(-4) : '';
+    const setCongrats = (name) => {
+      congratsEl.textContent = `Congrats, ${name}, you just bridged in`;
+    };
+    setCongrats(shortAddr || 'friend');
+    if (walletAddress) {
+      fetch(`/api/ens?address=${walletAddress}`)
+        .then(r => r.json())
+        .then(d => {
+          if (d && d.name) setCongrats(d.name.replace(/\.eth$/i, ''));
+        })
+        .catch(() => {});
+    }
+  }
+
   // Show share button if under 5 seconds
   const shareBtn = document.getElementById('tx-share-btn');
   if (elapsedSec < 5) {
