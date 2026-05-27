@@ -771,7 +771,18 @@ function showTxSuccess(summary, elapsedSec, txHash, chainId) {
   document.getElementById('tx-loading').classList.add('hidden');
   document.getElementById('tx-success').classList.remove('hidden');
 
-  if (typeof window.fireConfetti === 'function') window.fireConfetti();
+  if (typeof window.fireConfetti === 'function' && elapsedSec <= 30) {
+    // Fire from the top of the checkmark circle and bloom outward.
+    requestAnimationFrame(() => {
+      const el = document.getElementById('tx-success-check');
+      let origin;
+      if (el) {
+        const r = el.getBoundingClientRect();
+        origin = { x: r.left + r.width / 2, y: r.top };
+      }
+      window.fireConfetti({ origin });
+    });
+  }
 
   // Save to localStorage for dashboard activity feed
   try {
