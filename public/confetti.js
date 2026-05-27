@@ -1,5 +1,5 @@
 // Lightweight self-contained canvas confetti for bridge success.
-// Exposes window.fireConfetti(opts?) — opts: { particleCount }
+// Exposes window.fireConfetti(opts?) — opts: { particleCount, origin: {x, y} (CSS px) }
 (function () {
   // Sage-leaf palette — varying shades of green.
   const COLORS = [
@@ -13,20 +13,24 @@
     '#c2d1a3', // dusty mint
   ];
 
-  function spawnLeaves(particles, count, canvasWidth, dpr) {
+  // Bloom outward from a point — biased upward, like a fountain bursting from the top.
+  function spawnBloom(particles, originX, originY, count, dpr) {
     for (let i = 0; i < count; i++) {
+      // Angles from -170° to -10° → upper hemisphere, full left-to-right spread.
+      const angle = (-170 + Math.random() * 160) * Math.PI / 180;
+      const speed = (10 + Math.random() * 12) * dpr; // fires out quickly
       particles.push({
-        x: Math.random() * canvasWidth,
-        y: -Math.random() * canvasWidth * 0.4 - 20 * dpr,
-        vx: (Math.random() - 0.5) * 0.6 * dpr,
-        vy: (0.6 + Math.random() * 0.9) * dpr, // slow descent
+        x: originX,
+        y: originY,
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed,
         size: (14 + Math.random() * 14) * dpr,
         color: COLORS[Math.floor(Math.random() * COLORS.length)],
         rot: Math.random() * Math.PI * 2,
-        vr: (Math.random() - 0.5) * 0.04, // gentle spin
+        vr: (Math.random() - 0.5) * 0.06,
         swayPhase: Math.random() * Math.PI * 2,
-        swaySpeed: 0.015 + Math.random() * 0.02,
-        swayAmp: (0.6 + Math.random() * 1.2) * dpr,
+        swaySpeed: 0.02 + Math.random() * 0.025,
+        swayAmp: (0.4 + Math.random() * 1.0) * dpr,
         life: 1,
       });
     }
@@ -44,7 +48,6 @@
     ctx.closePath();
     ctx.fill();
 
-    // Central vein for a sage-leaf feel.
     ctx.strokeStyle = 'rgba(0,0,0,0.18)';
     ctx.lineWidth = Math.max(1, size * 0.04);
     ctx.beginPath();
@@ -73,27 +76,40 @@
     const ctx = canvas.getContext('2d');
     const particles = [];
 
-    // Leaves fall from above across the full width.
-    spawnLeaves(particles, particleCount, canvas.width, dpr);
-    // A gentle second flurry for fullness.
-    setTimeout(() => {
-      spawnLeaves(particles, Math.floor(particleCount * 0.6), canvas.width, dpr);
-    }, 400);
+    // Origin in canvas (device) pixels — defaults to center if not provided.
+    const originCss = (opts && opts.origin) || { x: window.innerWidth / 2, y: window.innerHeight / 2 };
+    const originX = originCss.x * dpr;
+    const originY = originCss.y * dpr;
 
-    const gravity = 0.015 * dpr; // very light — leaves drift, not drop
-    const maxFallSpeed = 2.2 * dpr;
+    spawnBloom(particles, originX, originY, particleCount, dpr);
+    // A small follow-up pop for fullness.
+    setTimeout(() => {
+      spawnBloom(particles, originX, originY, Math.floor(particleCount * 0.5), dpr);
+    }, 120);
+
+    // Strong air drag on the initial burst, near-zero gravity → leaves fly out fast then drift down slowly.
+    const gravity = 0.035 * dpr;
+    const burstDrag = 0.92; // bleed off launch speed quickly
+    const maxFallSpeed = 1.8 * dpr;
 
     function frame() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       let alive = 0;
       for (const p of particles) {
         if (p.life <= 0) continue;
-        p.vy = Math.min(p.vy + gravity, maxFallSpeed);
+        // Drag bleeds horizontal momentum and slows the upward burst.
+        p.vx *= burstDrag;
+        if (p.vy < 0) {
+          p.vy *= burstDrag;
+        } else {
+          // Once falling, leaves drift down very slowly with sway.
+          p.vy = Math.min(p.vy + gravity, maxFallSpeed);
+        }
         p.swayPhase += p.swaySpeed;
         const sway = Math.cos(p.swayPhase) * p.swayAmp;
         p.x += p.vx + sway;
         p.y += p.vy;
-        p.rot += p.vr + Math.cos(p.swayPhase) * 0.01;
+        p.rot += p.vr + Math.cos(p.swayPhase) * 0.012;
         if (p.y > canvas.height + 40) { p.life = 0; continue; }
         alive++;
         ctx.save();
@@ -112,7 +128,7 @@
     }
     requestAnimationFrame(frame);
 
-    // Hard timeout safety net in case something keeps the canvas alive.
+    // Hard timeout safety net.
     setTimeout(() => {
       window.removeEventListener('resize', resize);
       if (canvas.isConnected) canvas.remove();
