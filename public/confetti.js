@@ -97,14 +97,10 @@
       let alive = 0;
       for (const p of particles) {
         if (p.life <= 0) continue;
-        // Drag bleeds horizontal momentum and slows the upward burst.
+        // Drag bleeds horizontal momentum; gravity always pulls down so the
+        // upward burst eventually reverses into a slow fall.
         p.vx *= burstDrag;
-        if (p.vy < 0) {
-          p.vy *= burstDrag;
-        } else {
-          // Once falling, leaves drift down very slowly with sway.
-          p.vy = Math.min(p.vy + gravity, maxFallSpeed);
-        }
+        p.vy = Math.min(p.vy + gravity, maxFallSpeed);
         p.swayPhase += p.swaySpeed;
         const sway = Math.cos(p.swayPhase) * p.swayAmp;
         p.x += p.vx + sway;
