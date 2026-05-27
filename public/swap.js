@@ -756,6 +756,19 @@ function startTxTimer() {
   }, 100);
 }
 
+// Stops the ticking interval immediately and freezes the visible number at the
+// true fill moment — without this, the timer keeps ticking through the rest of
+// showTxSuccess (localStorage write, ENS fetch hookup, etc.) and lands higher
+// than the elapsed value we record.
+function stopTxTimer() {
+  clearInterval(txTimerInterval);
+  txTimerInterval = null;
+  const elapsed = (Date.now() - txStartTime) / 1000;
+  const el = document.getElementById('tx-timer');
+  if (el) el.textContent = elapsed.toFixed(1) + 's';
+  return elapsed;
+}
+
 let txRedirectTimer = null;
 let txCountdownInterval = null;
 
@@ -767,7 +780,7 @@ const EXPLORERS = {
 };
 
 function showTxSuccess(summary, elapsedSec, txHash, chainId) {
-  clearInterval(txTimerInterval);
+  if (txTimerInterval) { clearInterval(txTimerInterval); txTimerInterval = null; }
   document.getElementById('tx-loading').classList.add('hidden');
   document.getElementById('tx-success').classList.remove('hidden');
 
@@ -917,7 +930,7 @@ async function executeSwap() {
         : null;
 
       await pollFill(CHAINS[fromChainIdx].id, hash);
-      const elapsed = (Date.now() - txStartTime) / 1000;
+      const elapsed = stopTxTimer();
       showTxSuccess(`${amount} ${fromSym} on ${fromChainName} → ${toSym} on ${toChainName}`, elapsed, hash, CHAINS[fromChainIdx].id);
 
     } else if (routeType === 'hyperliquid') {
@@ -933,7 +946,7 @@ async function executeSwap() {
       startTxTimer();
       showTxScreen('Depositing...', `→ Hyperliquid ${destLabel}`);
       await pollFill(CHAINS[fromChainIdx].id, hash);
-      const elapsed = (Date.now() - txStartTime) / 1000;
+      const elapsed = stopTxTimer();
       showTxSuccess(`${amount} ${fromSym} → USDC on Hyperliquid ${destLabel}`, elapsed, hash, CHAINS[fromChainIdx].id);
     }
   } catch (e) {
@@ -1022,13 +1035,17 @@ async function waitForTx(hash, chainId) {
 }
 
 async function pollFill(originChainId, txHash) {
-  for (let i = 0; i < 120; i++) {
+  // Poll fast so the on-screen timer stops within ~300ms of the actual fill,
+  // not up to 2s late. Across fills are often sub-second once the deposit is seen.
+  const intervalMs = 300;
+  const maxIters = Math.ceil(240000 / intervalMs); // ~4 minute ceiling, same as before
+  for (let i = 0; i < maxIters; i++) {
     try {
       const res = await fetch(`${ACROSS_API}/deposit/status?originChainId=${originChainId}&depositTxHash=${txHash}`);
       const data = await res.json();
       if (data.status === 'filled') return;
     } catch {}
-    await new Promise(r => setTimeout(r, 2000));
+    await new Promise(r => setTimeout(r, intervalMs));
   }
 }
 
