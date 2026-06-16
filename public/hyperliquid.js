@@ -32,18 +32,7 @@ const TOKENS = [
 
 
 
-let walletAddress=null, fromTokenIdx=1, fromChainIdx=0, fromBal=null, cachedBalances=null, prices={}, lastQuote=null, quoteTimer=null, activeTab='perp';
-
-function selectTab(tab){
-  activeTab=tab;
-  const perp=document.getElementById('tab-perp'), spot=document.getElementById('tab-spot');
-  const active='flex-1 py-2.5 rounded-xl text-sm font-bold transition-colors bg-hl-green/10 text-hl-green border border-hl-green/20';
-  const inactive='flex-1 py-2.5 rounded-xl text-sm font-bold transition-colors text-on-surface-variant hover:text-on-surface';
-  if(tab==='perp'){perp.className=active;spot.className=inactive;}
-  else{spot.className=active;perp.className=inactive;}
-  document.getElementById('output-label').textContent=`USDC on Hyperliquid ${tab==='perp'?'Perp':'Spot'}`;
-  updateBtn();
-}
+let walletAddress=null, fromTokenIdx=1, fromChainIdx=0, fromBal=null, cachedBalances=null, prices={}, lastQuote=null, quoteTimer=null;
 
 async function connectWallet(){
   if(!window.ethereum){alert('Install MetaMask');return;}
@@ -92,7 +81,7 @@ function updateBtn(){
   else if(amt<=0){btn.textContent='Enter amount';btn.className=dimBtn;minErr.classList.add('hidden');}
   else if(fromBal!=null&&amt>fromBal){minErr.classList.add('hidden');btn.textContent='Insufficient balance';btn.className=dimBtn;}
   else if(usdVal<5&&usdVal>0){minErr.classList.remove('hidden');btn.textContent='Amount too low';btn.className=dimBtn;}
-  else{minErr.classList.add('hidden');btn.textContent=`Deposit to Hyperliquid ${activeTab==='perp'?'Perp':'Spot'}`;btn.className=activeBtn;}
+  else{minErr.classList.add('hidden');btn.textContent='Deposit to Hyperliquid';btn.className=activeBtn;}
 }
 
 function onAmountChange(){
@@ -165,7 +154,7 @@ async function execute(){
     try{
       const k='sage_tx_'+(walletAddress||'').toLowerCase();
       const h=JSON.parse(localStorage.getItem(k)||'[]');
-      h.unshift({type:'bridge',summary:`Hyperliquid ${activeTab} deposit: ${amount} ${TOKENS[fromTokenIdx].symbol} \u2192 USDC`,fromToken:TOKENS[fromTokenIdx].symbol,toToken:'USDC',fromChain:CHAINS[fromChainIdx].name,toChain:'Hyperliquid',fromChainId:CHAINS[fromChainIdx].id,amount:String(amount),hlMode:activeTab,timestamp:Date.now(),txHash:hash});
+      h.unshift({type:'bridge',summary:`Hyperliquid deposit: ${amount} ${TOKENS[fromTokenIdx].symbol} \u2192 USDC on HyperCore`,fromToken:TOKENS[fromTokenIdx].symbol,toToken:'USDC',fromChain:CHAINS[fromChainIdx].name,toChain:'Hyperliquid',fromChainId:CHAINS[fromChainIdx].id,amount:String(amount),timestamp:Date.now(),txHash:hash});
       if(h.length>20)h.length=20;
       localStorage.setItem(k,JSON.stringify(h));
     }catch{}
@@ -268,7 +257,6 @@ document.addEventListener('click', function(e) {
   switch (action) {
     case 'open-picker':  openPicker(); break;
     case 'close-picker': closePicker(); break;
-    case 'select-tab':   selectTab(arg); break;
     case 'execute':      execute(); break;
     case 'set-max':      setMax(); break;
   }
