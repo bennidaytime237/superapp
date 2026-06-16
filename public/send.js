@@ -390,4 +390,6 @@ document.addEventListener('click', function(e) {
 document.addEventListener('DOMContentLoaded', function() {
   var el = document.getElementById('recipient');
   if (el) el.addEventListener('input', validateAddr);
+  var amt = document.getElementById('input-amount');
+  if (amt) amt.addEventListener('input', onAmountChange);
 });
