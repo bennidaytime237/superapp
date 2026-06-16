@@ -87,9 +87,9 @@ function updateBtn(){
 function onAmountChange(){
   clearTimeout(quoteTimer);lastQuote=null;updateBtn();
   const val=parseFloat(document.getElementById('input-amount').value)||0;
-  if(val<=0){document.getElementById('output-amount').textContent='--';document.getElementById('fee-display').textContent='--';return;}
+  if(val<=0){document.getElementById('output-amount').textContent='--';document.getElementById('output-amount-usd').textContent='';document.getElementById('fee-display').textContent='--';return;}
   const p=prices[TOKENS[fromTokenIdx].symbol]||0;
-  if(p)document.getElementById('output-amount').textContent='$'+fmt(val*p);
+  if(p){document.getElementById('output-amount').textContent=fmt(val*p);document.getElementById('output-amount-usd').textContent='$'+fmt(val*p);}
   document.getElementById('fee-display').textContent='Fetching...';
   quoteTimer=setTimeout(()=>fetchQuote(val),300);
 }
@@ -117,7 +117,8 @@ async function fetchQuote(amount){
     let out=0;try{out=Number(BigInt(rawOut))/1e6;}catch{out=parseFloat(rawOut)/1e6||0;}
     const inputUsd=amount*(prices[t.symbol]||0);
     const feeUsd=inputUsd>0?Math.max(0,inputUsd-out):0;
-    document.getElementById('output-amount').textContent='$'+fmt(out);
+    document.getElementById('output-amount').textContent=fmt(out);
+    document.getElementById('output-amount-usd').textContent='$'+fmt(out);
     document.getElementById('fee-display').textContent=feeUsd>0.001?`~$${fmt(feeUsd)} fee`:'Calculating...';
     updateBtn();
   }catch(e){console.warn('Quote failed:',e);document.getElementById('fee-display').textContent='Quote failed';}
