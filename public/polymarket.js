@@ -1,6 +1,7 @@
 const ACROSS_API = 'https://app.across.to/api';
 const USDC_POLYGON = '0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359';
 const DEST_CHAIN = 137;
+const PM_MIN_DEPOSIT = 3; // minimum deposit in USD
 
 const CHAINS = [
   { id:1, name:'Ethereum', slug:'ethereum' },
@@ -118,11 +119,15 @@ function getPmAddr(){
 function updateBtn() {
   const btn=document.getElementById('action-btn');
   const amt=parseFloat(document.getElementById('input-amount').value)||0;
+  const usdVal=amt*(prices[TOKENS[fromTokenIdx].symbol]||0);
   const addr=getPmAddr();
+  const minErr=document.getElementById('min-error');
+  if(minErr)minErr.classList.add('hidden');
   if(!walletAddress){btn.textContent='Connect Wallet';btn.className='w-full py-4 bg-pm-blue text-white rounded-full font-black text-lg active:scale-[0.98] transition-transform';}
   else if(!addr){btn.textContent='Enter Polymarket address';btn.className='w-full py-4 bg-surface-container-high text-on-surface-variant rounded-full font-black text-lg';}
   else if(amt<=0){btn.textContent='Enter amount';btn.className='w-full py-4 bg-surface-container-high text-on-surface-variant rounded-full font-black text-lg';}
   else if(fromBal!=null&&amt>fromBal){btn.textContent='Insufficient balance';btn.className='w-full py-4 bg-surface-container-high text-on-surface-variant rounded-full font-black text-lg';}
+  else if(usdVal<PM_MIN_DEPOSIT&&usdVal>0){if(minErr)minErr.classList.remove('hidden');btn.textContent='Amount too low';btn.className='w-full py-4 bg-surface-container-high text-on-surface-variant rounded-full font-black text-lg';}
   else{btn.textContent='Deposit to Polymarket';btn.className='w-full py-4 bg-pm-blue text-white rounded-full font-black text-lg active:scale-[0.98] transition-transform';}
 }
 
@@ -171,6 +176,8 @@ async function execute() {
   const amount=parseFloat(document.getElementById('input-amount').value)||0;
   if(amount<=0)return;
   if(fromBal!=null&&amount>fromBal)return;
+  const usdVal=amount*(prices[TOKENS[fromTokenIdx].symbol]||0);
+  if(usdVal<PM_MIN_DEPOSIT&&usdVal>0)return;
   const addr=getPmAddr();
   if(!addr)return;
   try {

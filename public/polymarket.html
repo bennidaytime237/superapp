@@ -191,8 +191,9 @@
       </button>
       <input id="input-amount" type="number" placeholder="0" class="flex-1 text-right text-4xl font-black border-none focus:ring-0 p-0 bg-transparent placeholder:text-on-surface-variant/15 min-w-0"/>
     </div>
-    <div class="flex justify-end mt-2">
-      <span class="text-sm text-on-surface-variant">Balance: <button data-action="set-max" class="font-bold text-pm-accent hover:underline" id="from-balance">--</button></span>
+    <div class="flex justify-between items-center mt-2">
+      <p id="min-error" class="hidden text-xs text-error">Minimum deposit is $3</p>
+      <span class="text-sm text-on-surface-variant ml-auto">Balance: <button data-action="set-max" class="font-bold text-pm-accent hover:underline" id="from-balance">--</button></span>
     </div>
   </div>
 
