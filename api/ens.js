@@ -31,7 +31,8 @@ async function resolveHL(name) {
     });
     if (!r.ok) return null;
     const d = await r.json();
-    const addr = d?.address ?? d?.user ?? null;
+    // Hyperliquid returns the address as a plain string; also handle object shapes defensively
+    const addr = typeof d === 'string' ? d : (d?.address ?? d?.user ?? null);
     return addr && ADDRESS_RE.test(addr) ? addr : null;
   } catch {
     return null;
