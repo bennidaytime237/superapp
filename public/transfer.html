@@ -113,8 +113,11 @@
   </div>
 </header>
 
+<!-- Main + Sidebar flex wrapper -->
+<div class="flex-1 flex items-start">
+
 <!-- Main -->
-<main class="w-full max-w-[640px] mx-auto px-8 py-6 flex-1 pb-28">
+<main class="flex-1 min-w-0 max-w-[640px] mx-auto lg:mx-0 px-8 py-6 pb-28">
 
   <!-- Pill Tabs -->
   <div class="flex gap-1 p-1.5 bg-surface-container-low rounded-full mb-6">
@@ -352,6 +355,78 @@
     </a>
   </div>
 </main>
+
+<!-- Right Sidebar (desktop only) -->
+<aside class="hidden lg:block w-80 xl:w-96 flex-shrink-0 px-5 py-6 space-y-4 border-l border-outline-variant/10 sticky top-[73px] self-start max-h-[calc(100vh-73px)] overflow-y-auto scrollbar-hide">
+
+  <!-- Bridge Times -->
+  <section class="bg-surface-container-lowest rounded-xl px-5 py-4">
+    <div class="flex items-center justify-between mb-3">
+      <h4 class="text-base font-bold text-on-background">Bridge Times</h4>
+      <a href="radar.html" class="text-[10px] font-bold text-primary hover:underline">Radar →</a>
+    </div>
+    <div id="tr-bridge-times" class="flex gap-2">
+      <div class="flex-1 bg-surface-container rounded-lg py-2 px-2 text-center"><span class="text-xs text-on-surface-variant">--</span></div>
+      <div class="flex-1 bg-surface-container rounded-lg py-2 px-2 text-center"><span class="text-xs text-on-surface-variant">--</span></div>
+      <div class="flex-1 bg-surface-container rounded-lg py-2 px-2 text-center"><span class="text-xs text-on-surface-variant">--</span></div>
+    </div>
+  </section>
+
+  <!-- Get Started -->
+  <section class="bg-surface-container-low rounded-xl p-4">
+    <h4 class="text-base font-bold text-on-background mb-3">Get Started</h4>
+    <div class="space-y-2">
+      <a href="bridge.html" class="p-4 bg-surface-container-lowest rounded-xl flex items-center justify-between cursor-pointer hover:bg-primary-container transition-colors">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-full bg-surface-container flex items-center justify-center flex-shrink-0">
+            <span class="material-symbols-outlined text-primary">swap_horiz</span>
+          </div>
+          <div>
+            <p class="text-sm font-bold text-on-background">Go crosschain</p>
+            <p class="text-xs text-on-surface-variant">Bridge any token, any chain</p>
+          </div>
+        </div>
+        <span class="material-symbols-outlined text-on-surface-variant">chevron_right</span>
+      </a>
+      <a href="gas.html" class="p-4 bg-surface-container-lowest rounded-xl flex items-center justify-between cursor-pointer hover:bg-primary-container transition-colors">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-full bg-surface-container flex items-center justify-center flex-shrink-0">
+            <span class="material-symbols-outlined text-primary">local_gas_station</span>
+          </div>
+          <div>
+            <p class="text-sm font-bold text-on-background">Gas top-up</p>
+            <p class="text-xs text-on-surface-variant">Distribute gas across chains</p>
+          </div>
+        </div>
+        <span class="material-symbols-outlined text-on-surface-variant">chevron_right</span>
+      </a>
+      <a href="sweep.html" class="p-4 bg-surface-container-lowest rounded-xl flex items-center justify-between cursor-pointer hover:bg-primary-container transition-colors">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-full bg-surface-container flex items-center justify-center flex-shrink-0">
+            <span class="material-symbols-outlined text-primary">move_to_inbox</span>
+          </div>
+          <div>
+            <p class="text-sm font-bold text-on-background">Sweep assets</p>
+            <p class="text-xs text-on-surface-variant">Consolidate to one chain</p>
+          </div>
+        </div>
+        <span class="material-symbols-outlined text-on-surface-variant">chevron_right</span>
+      </a>
+    </div>
+  </section>
+
+  <!-- Activity -->
+  <section>
+    <div class="flex justify-between items-center mb-3 px-2">
+      <h4 class="text-base font-bold text-on-background">Activity</h4>
+      <a href="transactions.html" class="text-sm font-bold text-primary hover:underline">Show more</a>
+    </div>
+    <div id="tr-activity-feed"></div>
+  </section>
+
+</aside>
+
+</div><!-- end flex wrapper -->
 
 <!-- Token Picker Modal -->
 <div id="picker-modal" role="dialog" aria-modal="true" class="fixed inset-0 z-50 hidden">
