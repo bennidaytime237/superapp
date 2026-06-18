@@ -84,14 +84,14 @@
       const v = el.value.trim();
       const ens = $(ensId), err = $(errId);
       resolved = null; if (ens) ens.classList.add('hidden');
-      if (v.endsWith('.eth') && v.length > 4) {
+      if ((v.endsWith('.eth') || v.endsWith('.hl')) && v.length > 3) {
         if (err) err.classList.add('hidden');
         if (ens) { ens.textContent = 'Resolving…'; ens.classList.remove('hidden'); }
         clearTimeout(timer);
         timer = setTimeout(() => {
           fetch(`/api/ens?name=${encodeURIComponent(v)}`).then(r => r.json()).then(d => {
             if (d.address && d.address !== ZERO) { resolved = d.address; if (ens) ens.textContent = `→ ${d.address.slice(0, 6)}…${d.address.slice(-4)}`; }
-            else if (ens) ens.textContent = 'ENS name not found';
+            else if (ens) ens.textContent = v.endsWith('.hl') ? 'HL name not found' : 'ENS name not found';
             onChange && onChange();
           }).catch(() => { if (ens) ens.textContent = 'Could not resolve'; });
         }, 500);

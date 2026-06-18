@@ -94,7 +94,7 @@ function validateAddr() {
   const v=document.getElementById('recipient').value.trim();
   const ensEl=document.getElementById('ens-resolved');
   resolvedAddr=null; ensEl.classList.add('hidden');
-  if(v.endsWith('.eth') && v.length > 4) {
+  if((v.endsWith('.eth') || v.endsWith('.hl')) && v.length > 3) {
     document.getElementById('addr-error').classList.add('hidden');
     setEnsState('loading', 'Resolving...');
     clearTimeout(ensTimer);
@@ -103,7 +103,7 @@ function validateAddr() {
         if(d.address && d.address !== '0x0000000000000000000000000000000000000000') {
           resolvedAddr=d.address;
           setEnsState('success', d.address);
-        } else { setEnsState('error', 'ENS name not found'); }
+        } else { setEnsState('error', v.endsWith('.hl') ? 'HL name not found' : 'ENS name not found'); }
         updateBtn();
       }).catch(()=>{ setEnsState('error', 'Could not resolve'); });
     },500);
