@@ -215,13 +215,45 @@
     </div>
   </div>
 
-  <!-- Bridge nudge -->
-  <div class="flex items-center justify-center gap-1.5 mb-4">
-    <span class="text-xs text-on-surface-variant">Don't have the right asset?</span>
-    <a href="bridge.html" class="text-xs font-bold text-primary hover:underline flex items-center gap-0.5">
-      Bridge here
-      <span class="material-symbols-outlined text-xs leading-none" style="font-size:13px">arrow_forward</span>
-    </a>
+  <!-- Bridge-first dropdown -->
+  <div class="mb-4">
+    <button data-action="toggle-bridge" id="bridge-toggle" aria-expanded="false" aria-controls="bridge-panel" class="w-full flex items-center justify-between px-4 py-3 bg-surface-container-low rounded-xl border border-outline-variant/10 hover:border-primary/30 transition-colors">
+      <span class="flex items-center gap-2">
+        <span class="material-symbols-outlined text-primary text-base">swap_horiz</span>
+        <span class="text-sm font-bold text-on-surface">Don't have the right asset? Bridge first</span>
+      </span>
+      <span id="bridge-chevron" class="material-symbols-outlined text-on-surface-variant transition-transform">expand_more</span>
+    </button>
+
+    <div id="bridge-panel" class="hidden mt-2 p-4 bg-surface-container-lowest rounded-xl border border-outline-variant/10 space-y-3">
+      <p class="text-xs text-on-surface-variant leading-relaxed">
+        Bridge an asset you already hold into
+        <span id="bridge-dest-label" class="font-bold text-on-surface">the token above</span>
+        first, then send. Funds bridge to your own wallet, then the send runs automatically.
+      </p>
+
+      <span class="text-xs font-bold text-on-surface-variant uppercase tracking-wide block">Bridge from</span>
+      <button data-action="open-bridge-picker" class="w-full flex items-center justify-between px-3 py-2.5 bg-surface-container-low rounded-xl border border-outline-variant/10 hover:border-primary/30 transition-colors">
+        <span class="flex items-center gap-3">
+          <span class="relative">
+            <img id="bridge-token-icon" src="" class="w-7 h-7 rounded-full" hidden/>
+            <img id="bridge-chain-icon" src="" class="w-4 h-4 rounded-full absolute -right-1 -bottom-0.5 border-2 border-surface-container-lowest bg-surface-container-lowest" hidden/>
+            <span id="bridge-token-placeholder" class="w-7 h-7 rounded-full bg-surface-container flex items-center justify-center"><span class="material-symbols-outlined text-on-surface-variant text-base">add</span></span>
+          </span>
+          <span class="text-left">
+            <span id="bridge-label" class="font-bold text-sm block">Select asset</span>
+            <span id="bridge-balance" class="text-xs text-on-surface-variant"></span>
+          </span>
+        </span>
+        <span class="material-symbols-outlined text-on-surface-variant">expand_more</span>
+      </button>
+
+      <p id="bridge-quote" class="hidden text-xs text-on-surface-variant px-1 leading-relaxed"></p>
+
+      <button id="bridge-clear" data-action="clear-bridge" class="hidden text-xs font-bold text-error hover:underline">
+        Remove bridge step
+      </button>
+    </div>
   </div>
 
   <!-- Action -->

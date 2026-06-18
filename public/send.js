@@ -10,7 +10,8 @@ const CHAINS = [
 
 const TOKENS = [
   { symbol:'ETH', name:'Ethereum', decimals:18, native:true,
-    addresses:{1:null,42161:null,8453:null,10:null} },
+    addresses:{1:null,42161:null,8453:null,10:null},
+    wrapAddresses:{1:'0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2',42161:'0x82aF49447D8a07e3bd95BD0d56f35241523fBab1',8453:'0x4200000000000000000000000000000000000006',10:'0x4200000000000000000000000000000000000006'} },
   { symbol:'USDC', name:'USD Coin', decimals:6, native:false,
     addresses:{1:'0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48',42161:'0xaf88d065e77c8cC2239327C5EDb3A432268e5831',8453:'0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913',10:'0x0b2C639c533813f4Aa9D7837CAf62653d097Ff85',137:'0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359'} },
   { symbol:'USDT', name:'Tether', decimals:6, native:false,
@@ -20,11 +21,18 @@ const TOKENS = [
   { symbol:'WBTC', name:'Wrapped BTC', decimals:8, native:false,
     addresses:{1:'0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599',42161:'0x2f2a2543B76A4166549F7aaB2e75Bef0aefC5B0f'} },
   { symbol:'POL', name:'Polygon', decimals:18, native:true,
-    addresses:{137:null} },
+    addresses:{137:null},
+    wrapAddresses:{137:'0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270'} },
 ];
 
+const ACROSS_API = 'https://app.across.to/api';
+const ZERO_ADDR = '0x0000000000000000000000000000000000000000';
 
 let walletAddress=null, selTokenIdx=0, selChainIdx=0, fromBal=null, cachedBalances=null, prices={}, inputMode='token';
+
+// ── Bridge-first state ──
+let bridgeEnabled=false, bridgeTokenIdx=null, bridgeChainIdx=null, bridgeBal=null;
+let lastBridgeQuote=null, bridgeInputNeeded=null, bridgeRouteAvailable=false, bridgeQuoteLoading=false, bridgeQuoteTimer=null;
 
 async function connectWallet() {
   if(!window.ethereum){alert('Install MetaMask');return;}
@@ -33,6 +41,7 @@ async function connectWallet() {
   document.getElementById('connect-label').textContent=formatAddr(walletAddress);
   resolveWalletENS(walletAddress);
   fetchBalance(); updateBtn();
+  if(bridgeEnabled)scheduleBridgeQuote();
 }
 
 async function fetchBalance() {
@@ -44,6 +53,7 @@ async function fetchBalance() {
     const bal=cachedBalances?.[cid]?.[t.symbol]||0;
     fromBal=bal;
     document.getElementById('from-balance').textContent=`${fmt(bal)} ${t.symbol}`;
+    if(bridgeEnabled&&bridgeTokenIdx!=null)fetchBridgeBalance();
   } catch{fromBal=null;}
 }
 
@@ -161,13 +171,21 @@ function updateBtn() {
   if(!walletAddress){btn.textContent='Connect Wallet';btn.className=active;}
   else if(!addr){btn.textContent='Enter address';btn.className=dim;}
   else if(amt<=0){btn.textContent='Enter amount';btn.className=dim;}
-  else if(fromBal!=null&&amt>fromBal){btn.textContent='Insufficient balance';btn.className=dim;}
   else if(amt*10**t.decimals<1){btn.textContent='Amount too small';btn.className=dim;}
+  else if(bridgeEnabled){
+    const srcT=bridgeTokenIdx!=null?TOKENS[bridgeTokenIdx]:null;
+    if(bridgeQuoteLoading){btn.textContent='Finding route...';btn.className=dim;}
+    else if(!bridgeRouteAvailable){btn.textContent='Route unavailable';btn.className=dim;}
+    else if(bridgeBal!=null&&bridgeInputNeeded!=null&&bridgeInputNeeded>bridgeBal){btn.textContent=`Insufficient ${srcT?srcT.symbol:'balance'}`;btn.className=dim;}
+    else{btn.textContent='Bridge & Send';btn.className=active;}
+  }
+  else if(fromBal!=null&&amt>fromBal){btn.textContent='Insufficient balance';btn.className=dim;}
   else{btn.textContent='Send';btn.className=active;}
 }
 
 function onAmountChange() {
   updateBtn();
+  if(bridgeEnabled)scheduleBridgeQuote();
   const val=parseFloat(document.getElementById('input-amount').value)||0;
   const p=prices[TOKENS[selTokenIdx].symbol]||0;
   const t=TOKENS[selTokenIdx];
@@ -209,39 +227,17 @@ async function execute() {
   if(amount<=0)return;
   const recipient=getRecipientAddr();
   if(!recipient)return;
-  const t=TOKENS[selTokenIdx], c=CHAINS[selChainIdx];
-  if(fromBal!=null&&amount>fromBal)return;
+  const t=TOKENS[selTokenIdx];
   if(amount*10**t.decimals<1)return;
+  if(bridgeEnabled){
+    if(!bridgeRouteAvailable)return;
+    if(bridgeBal!=null&&bridgeInputNeeded!=null&&bridgeInputNeeded>bridgeBal)return;
+    await executeBridgeThenSend(amount,recipient);
+    return;
+  }
+  if(fromBal!=null&&amount>fromBal)return;
   try {
-    const btn=document.getElementById('action-btn');
-    btn.textContent='Confirm in wallet...';
-    document.getElementById('tx-status').classList.remove('hidden');
-    document.getElementById('tx-done').classList.add('hidden');
-    document.getElementById('tx-text').textContent='Confirming...';
-    let txParams, hash;
-    if(t.native) {
-      const amtWei=BigInt(Math.floor(amount*10**t.decimals));
-      txParams={from:walletAddress,to:recipient,value:toHex(amtWei),chainId:'0x'+c.id.toString(16)};
-      hash=await sendTx(c.id,txParams);
-    } else {
-      const contractAddr=t.addresses[c.id];
-      const data=encodeTransfer(recipient,amount,t.decimals);
-      txParams={from:walletAddress,to:contractAddr,data,value:'0x0',chainId:'0x'+c.id.toString(16)};
-      hash=await sendTx(c.id,txParams);
-    }
-    document.getElementById('tx-text').textContent='Waiting for confirmation...';
-    // Poll for receipt
-    for(let i=0;i<60;i++){
-      try{const r=await window.ethereum.request({method:'eth_getTransactionReceipt',params:[hash]});if(r&&r.blockNumber)break;}catch{}
-      await new Promise(r=>setTimeout(r,2000));
-    }
-    document.getElementById('tx-status').classList.add('hidden');
-    document.getElementById('tx-done').classList.remove('hidden');
-    btn.textContent='Transfer complete!';
-    // Save to history
-    try{const k='sage_tx_'+(walletAddress||'').toLowerCase();const h=JSON.parse(localStorage.getItem(k)||'[]');h.unshift({type:'send',summary:`Sent ${amount} ${t.symbol} on ${c.name}`,token:t.symbol,chain:c.name,chainId:c.id,amount:String(amount),to:recipient,timestamp:Date.now(),txHash:hash});if(h.length>20)h.length=20;localStorage.setItem(k,JSON.stringify(h));}catch{}
-    fetchBalance();
-    setTimeout(updateBtn,3000);
+    await doSendTransfer(amount,recipient);
   } catch(e){
     console.error(e);
     document.getElementById('tx-status').classList.add('hidden');
@@ -251,16 +247,59 @@ async function execute() {
   }
 }
 
+// Performs the actual token transfer. Throws on failure so callers (direct send
+// or bridge-then-send) can surface the error themselves.
+async function doSendTransfer(amount,recipient){
+  const t=TOKENS[selTokenIdx], c=CHAINS[selChainIdx];
+  const btn=document.getElementById('action-btn');
+  btn.textContent='Confirm in wallet...';
+  document.getElementById('tx-status').classList.remove('hidden');
+  document.getElementById('tx-done').classList.add('hidden');
+  document.getElementById('tx-text').textContent='Confirming...';
+  let txParams, hash;
+  if(t.native) {
+    const amtWei=BigInt(Math.floor(amount*10**t.decimals));
+    txParams={from:walletAddress,to:recipient,value:toHex(amtWei),chainId:'0x'+c.id.toString(16)};
+    hash=await sendTx(c.id,txParams);
+  } else {
+    const contractAddr=t.addresses[c.id];
+    const data=encodeTransfer(recipient,amount,t.decimals);
+    txParams={from:walletAddress,to:contractAddr,data,value:'0x0',chainId:'0x'+c.id.toString(16)};
+    hash=await sendTx(c.id,txParams);
+  }
+  document.getElementById('tx-text').textContent='Waiting for confirmation...';
+  // Poll for receipt
+  for(let i=0;i<60;i++){
+    try{const r=await window.ethereum.request({method:'eth_getTransactionReceipt',params:[hash]});if(r&&r.blockNumber)break;}catch{}
+    await new Promise(r=>setTimeout(r,2000));
+  }
+  document.getElementById('tx-status').classList.add('hidden');
+  document.getElementById('tx-done').classList.remove('hidden');
+  btn.textContent='Transfer complete!';
+  // Save to history
+  try{const k='sage_tx_'+(walletAddress||'').toLowerCase();const h=JSON.parse(localStorage.getItem(k)||'[]');h.unshift({type:'send',summary:`Sent ${amount} ${t.symbol} on ${c.name}`,token:t.symbol,chain:c.name,chainId:c.id,amount:String(amount),to:recipient,timestamp:Date.now(),txHash:hash});if(h.length>20)h.length=20;localStorage.setItem(k,JSON.stringify(h));}catch{}
+  fetchBalance();
+  setTimeout(updateBtn,3000);
+  return hash;
+}
+
 function setMax(){if(fromBal!=null){const t=TOKENS[selTokenIdx];const cid=CHAINS[selChainIdx].id;const GAS_RESERVE={1:0.005,56:0.001,137:0.05};const reserve=t.native?(GAS_RESERVE[cid]??0.0005):0;const maxToken=Math.max(0,fromBal-reserve);if(inputMode==='usd'){const p=prices[t.symbol]||0;document.getElementById('input-amount').value=p>0?fmt(maxToken*p):maxToken;}else{document.getElementById('input-amount').value=maxToken;}onAmountChange();}}
 
 // Picker
 let allRows=[];
-function openPicker(){
+let pickerTarget='send';
+function openPicker(){ pickerTarget='send'; _openPicker('Choose token'); }
+function openBridgePicker(){ pickerTarget='bridge'; _openPicker('Bridge from'); }
+function _openPicker(title){
   document.getElementById('picker-search').value='';
+  const titleEl=document.getElementById('picker-modal-title');
+  if(titleEl)titleEl.textContent=title;
   allRows=[];
   CHAINS.forEach((c,ci)=>{TOKENS.forEach((t,ti)=>{
     const has=t.native?t.addresses.hasOwnProperty(c.id):t.addresses[c.id];
     if(!has)return;
+    // For the bridge source, skip the asset we're sending — bridging to itself is a no-op
+    if(pickerTarget==='bridge'&&ti===selTokenIdx&&ci===selChainIdx)return;
     const bal=cachedBalances?.[c.id]?.[t.symbol]||0;
     allRows.push({c,ci,t,ti,bal});
   });});
@@ -294,9 +333,179 @@ function renderPicker(rows){
     btn.addEventListener('click', () => selectToken(Number(btn.dataset.ti), Number(btn.dataset.ci)));
   });
 }
-function selectToken(ti,ci){selTokenIdx=ti;selChainIdx=ci;closePicker();updateDisplay();fetchBalance();onAmountChange();}
+function selectToken(ti,ci){
+  if(pickerTarget==='bridge'){ selectBridgeToken(ti,ci); return; }
+  selTokenIdx=ti;selChainIdx=ci;closePicker();updateDisplay();fetchBalance();onAmountChange();
+  // If the new send asset now matches the bridge source, the bridge step is moot — drop it
+  if(bridgeEnabled&&bridgeTokenIdx===ti&&bridgeChainIdx===ci)clearBridge();
+  else if(bridgeEnabled){updateBridgeDestLabel();scheduleBridgeQuote();}
+}
 
 function fmt(n){if(n>=1000)return n.toLocaleString('en-US',{maximumFractionDigits:2});if(n>=1)return n.toLocaleString('en-US',{maximumFractionDigits:4});return n.toLocaleString('en-US',{maximumFractionDigits:6});}
+
+// ── Bridge-first flow ───────────────────────────────────────────────────────
+function toggleBridgePanel(){
+  const panel=document.getElementById('bridge-panel');
+  const toggle=document.getElementById('bridge-toggle');
+  const chevron=document.getElementById('bridge-chevron');
+  const open=panel.classList.toggle('hidden')===false;
+  toggle.setAttribute('aria-expanded',String(open));
+  if(chevron)chevron.style.transform=open?'rotate(180deg)':'';
+  if(open)updateBridgeDestLabel();
+}
+
+function updateBridgeDestLabel(){
+  const el=document.getElementById('bridge-dest-label');
+  if(el){const t=TOKENS[selTokenIdx],c=CHAINS[selChainIdx];el.textContent=`${t.symbol} on ${c.name}`;}
+}
+
+function selectBridgeToken(ti,ci){
+  bridgeTokenIdx=ti;bridgeChainIdx=ci;bridgeEnabled=true;
+  closePicker();
+  updateBridgeDisplay();
+  fetchBridgeBalance();
+  scheduleBridgeQuote();
+  document.getElementById('bridge-clear').classList.remove('hidden');
+  updateBtn();
+}
+
+function clearBridge(){
+  bridgeEnabled=false;bridgeTokenIdx=null;bridgeChainIdx=null;bridgeBal=null;
+  lastBridgeQuote=null;bridgeInputNeeded=null;bridgeRouteAvailable=false;
+  const icon=document.getElementById('bridge-token-icon');
+  const cicon=document.getElementById('bridge-chain-icon');
+  icon.hidden=true;cicon.hidden=true;
+  document.getElementById('bridge-token-placeholder').hidden=false;
+  document.getElementById('bridge-label').textContent='Select asset';
+  document.getElementById('bridge-balance').textContent='';
+  document.getElementById('bridge-quote').classList.add('hidden');
+  document.getElementById('bridge-clear').classList.add('hidden');
+  updateBtn();
+}
+
+function updateBridgeDisplay(){
+  if(bridgeTokenIdx==null)return;
+  const t=TOKENS[bridgeTokenIdx],c=CHAINS[bridgeChainIdx];
+  const icon=document.getElementById('bridge-token-icon');
+  const cicon=document.getElementById('bridge-chain-icon');
+  icon.src=TOKEN_ICONS[t.symbol]||'';icon.hidden=false;
+  cicon.src=chainIcon(c.id);cicon.hidden=false;
+  document.getElementById('bridge-token-placeholder').hidden=true;
+  document.getElementById('bridge-label').textContent=`${t.symbol} on ${c.name}`;
+}
+
+async function fetchBridgeBalance(){
+  if(!walletAddress||bridgeTokenIdx==null)return;
+  const t=TOKENS[bridgeTokenIdx],cid=CHAINS[bridgeChainIdx].id;
+  const bal=cachedBalances?.[cid]?.[t.symbol]||0;
+  bridgeBal=bal;
+  document.getElementById('bridge-balance').textContent=`Balance: ${fmt(bal)} ${t.symbol}`;
+  updateBtn();
+}
+
+function setBridgeQuoteText(txt){
+  const el=document.getElementById('bridge-quote');
+  el.textContent=txt;el.classList.toggle('hidden',!txt);
+}
+
+function scheduleBridgeQuote(){
+  clearTimeout(bridgeQuoteTimer);
+  bridgeQuoteTimer=setTimeout(fetchBridgeQuote,400);
+}
+
+async function fetchBridgeQuote(){
+  if(!bridgeEnabled||bridgeTokenIdx==null){return;}
+  const amt=getTokenAmount();
+  const destT=TOKENS[selTokenIdx],destC=CHAINS[selChainIdx];
+  const srcT=TOKENS[bridgeTokenIdx],srcC=CHAINS[bridgeChainIdx];
+  lastBridgeQuote=null;bridgeInputNeeded=null;bridgeRouteAvailable=false;
+  if(amt<=0){setBridgeQuoteText('');updateBtn();return;}
+  const inputAddr=srcT.native?srcT.wrapAddresses?.[srcC.id]:srcT.addresses[srcC.id];
+  const outputAddr=destT.native?destT.wrapAddresses?.[destC.id]:destT.addresses[destC.id];
+  if(!inputAddr||!outputAddr){setBridgeQuoteText('No route available for this pair');updateBtn();return;}
+  const outWei=BigInt(Math.floor(amt*10**destT.decimals)).toString();
+  bridgeQuoteLoading=true;setBridgeQuoteText('Finding best route…');updateBtn();
+  try{
+    const params=new URLSearchParams({
+      tradeType:'minOutput',amount:outWei,inputToken:inputAddr,outputToken:outputAddr,
+      originChainId:srcC.id,destinationChainId:destC.id,
+      depositor:walletAddress||ZERO_ADDR,recipient:walletAddress||ZERO_ADDR,slippage:'auto',
+    });
+    const ctrl=new AbortController();const t=setTimeout(()=>ctrl.abort(),9000);
+    const res=await fetch(`${ACROSS_API}/swap/approval?${params}`,{signal:ctrl.signal});
+    clearTimeout(t);
+    if(!res.ok)throw new Error('no route');
+    const data=await res.json();
+    const rawIn=data.inputAmount||data.maxInputAmount;
+    if(!rawIn)throw new Error('no input');
+    lastBridgeQuote=data;
+    bridgeInputNeeded=Number(BigInt(rawIn))/10**srcT.decimals;
+    bridgeRouteAvailable=true;
+    const feeUsd=parseFloat(data.fees?.total?.amountUsd||'0');
+    const feeTxt=feeUsd>0.01?`$${fmt(feeUsd)}`:'<$0.01';
+    const secs=data.expectedFillTime||2;
+    setBridgeQuoteText(`Bridge ≈ ${fmt(bridgeInputNeeded)} ${srcT.symbol} → ${fmt(amt)} ${destT.symbol} · fee ${feeTxt} · ~${secs}s`);
+  }catch{
+    lastBridgeQuote=null;bridgeRouteAvailable=false;
+    setBridgeQuoteText('No route available for this pair');
+  }
+  bridgeQuoteLoading=false;updateBtn();
+}
+
+// ── Bridge transaction helpers (mirror swap.js) ──
+async function sendBridgeTx(tx){
+  const targetHex='0x'+tx.chainId.toString(16);
+  const cur=await window.ethereum.request({method:'eth_chainId'});
+  if(cur!==targetHex){
+    try{await window.ethereum.request({method:'wallet_switchEthereumChain',params:[{chainId:targetHex}]});}
+    catch(e){if(e.code===4902)throw new Error('Add chain to wallet');throw e;}
+  }
+  const p={from:walletAddress,to:tx.to,data:tx.data,
+    value:tx.value&&tx.value!=='0'?'0x'+BigInt(tx.value).toString(16):'0x0',chainId:targetHex};
+  if(tx.gas&&tx.gas!=='0')p.gas='0x'+BigInt(tx.gas).toString(16);
+  return window.ethereum.request({method:'eth_sendTransaction',params:[p]});
+}
+
+async function pollFill(originChainId,txHash){
+  const intervalMs=1500,max=Math.ceil(240000/intervalMs);
+  for(let i=0;i<max;i++){
+    try{const r=await fetch(`${ACROSS_API}/deposit/status?originChainId=${originChainId}&depositTxHash=${txHash}`);const d=await r.json();if(d.status==='filled')return;}catch{}
+    await new Promise(r=>setTimeout(r,intervalMs));
+  }
+}
+
+async function executeBridgeThenSend(amount,recipient){
+  const srcT=TOKENS[bridgeTokenIdx],srcC=CHAINS[bridgeChainIdx];
+  const destT=TOKENS[selTokenIdx],destC=CHAINS[selChainIdx];
+  const btn=document.getElementById('action-btn');
+  try{
+    // Refresh the quote so calldata uses the real wallet as depositor/recipient
+    await fetchBridgeQuote();
+    if(!lastBridgeQuote)throw new Error('No bridge route');
+    const q=lastBridgeQuote;
+    document.getElementById('tx-status').classList.remove('hidden');
+    document.getElementById('tx-done').classList.add('hidden');
+    if(q.approvalTxns&&q.approvalTxns.length){
+      btn.textContent='Approve in wallet...';
+      document.getElementById('tx-text').textContent=`Approving ${srcT.symbol}...`;
+      for(const tx of q.approvalTxns){await sendBridgeTx(tx);}
+    }
+    btn.textContent='Confirm bridge...';
+    document.getElementById('tx-text').textContent=`Confirm bridge of ${srcT.symbol}...`;
+    const hash=await sendBridgeTx(q.swapTx);
+    document.getElementById('tx-text').textContent=`Bridging ${srcC.name} → ${destC.name}...`;
+    await pollFill(srcC.id,hash);
+    document.getElementById('tx-text').textContent='Bridge complete — preparing send...';
+    await fetchBalance();
+    // Now run the standard send with the freshly bridged funds
+    await doSendTransfer(amount,recipient);
+  }catch(e){
+    console.error(e);
+    document.getElementById('tx-status').classList.add('hidden');
+    btn.textContent=e.code===4001?'Rejected':'Bridge failed';
+    setTimeout(updateBtn,2500);
+  }
+}
 
 (async function(){
   setMode(inputMode);
@@ -361,6 +570,7 @@ function fmt(n){if(n>=1000)return n.toLocaleString('en-US',{maximumFractionDigit
       document.getElementById('connect-label').textContent=formatAddr(addr);
       resolveWalletENS(addr);
       fetchBalance(); updateBtn();
+      if(bridgeEnabled)scheduleBridgeQuote();
     },
     onDisconnected() {
       walletAddress=null;
@@ -385,6 +595,9 @@ document.addEventListener('click', function(e) {
     case 'execute':      execute(); break;
     case 'set-max':      setMax(); break;
     case 'set-mode':     setMode(el.dataset.arg); break;
+    case 'toggle-bridge':     toggleBridgePanel(); break;
+    case 'open-bridge-picker':openBridgePicker(); break;
+    case 'clear-bridge':      clearBridge(); break;
   }
 });
 document.addEventListener('DOMContentLoaded', function() {
