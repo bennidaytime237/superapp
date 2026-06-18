@@ -18,6 +18,7 @@
 <script src="eth-utils.js"></script>
 <script src="config.js"></script>
 <script src="wallet.js"></script>
+<script defer src="transfer.js"></script>
 </head>
 <body class="bg-background text-on-surface antialiased">
 
@@ -64,29 +65,6 @@
       <span class="font-medium text-sm">Radar</span>
     </a>
   </nav>
-
-  <!-- Hyperliquid Promo -->
-  <a href="hyperliquid.html" class="block mb-3 p-3.5 bg-[#090909] border border-[#68f5a5]/20 rounded-2xl hover:border-[#68f5a5]/40 transition-all">
-    <div class="flex items-center gap-3">
-      <img src="hyperliquid-logo.svg" alt="Hyperliquid" class="w-8 h-8 rounded-lg flex-shrink-0"/>
-      <div class="leading-relaxed">
-        <p class="text-xs font-medium text-white">Hyperliquid Deposit</p>
-        <p class="text-[10px] text-white/30">Bridge any token to Hyperliquid</p>
-      </div>
-    </div>
-  </a>
-
-  <!-- Polymarket Promo -->
-  <a href="polymarket.html" class="block mb-3 p-3.5 bg-[#0d2149] rounded-2xl hover:brightness-110 transition-all">
-    <div class="flex items-center gap-3">
-      <img src="polymarket-logo.svg" alt="Polymarket" class="w-8 h-8 rounded-lg flex-shrink-0"/>
-      <div class="leading-relaxed">
-        <p class="text-xs font-medium text-white">Polymarket Deposit</p>
-        <p class="text-[10px] text-white/50">Bridge any token to your account</p>
-      </div>
-    </div>
-  </a>
-
   <a href="https://across.to" target="_blank" rel="noopener" class="flex justify-center mt-3 opacity-30 hover:opacity-60 transition-opacity">
     <img src="powered-by-across.svg" alt="Powered by Across" class="h-3 dark:hidden"/>
     <img src="powered-by-across-light.svg" alt="Powered by Across" class="h-3 hidden dark:block"/>
@@ -94,10 +72,10 @@
 </aside>
 
 <!-- Content -->
-<div class="md:ml-64 h-screen flex flex-col overflow-hidden">
+<div class="md:ml-64 min-h-screen flex flex-col">
 
 <!-- Header -->
-<header class="flex justify-between items-center w-full px-6 py-4 bg-surface sticky top-0 z-30 flex-shrink-0">
+<header class="flex justify-between items-center w-full px-6 py-4 bg-surface sticky top-0 z-30">
   <div class="flex items-center gap-2">
     <div class="flex items-center gap-1">
       <a href="index.html"><img src="sage-wordmark.svg" alt="Sage" class="h-6 md:hidden"/></a>
@@ -135,49 +113,263 @@
 </header>
 
 <!-- Main -->
-<main class="w-full flex-1 flex flex-col min-h-0 px-4 md:px-6 pt-4">
+<main class="w-full max-w-md mx-auto px-6 py-6 flex-1 pb-28">
 
   <!-- Pill Tabs -->
-  <div class="w-full max-w-md mx-auto flex gap-1 p-1.5 bg-surface-container-low rounded-full mb-3 flex-shrink-0">
-    <button id="tab-bridge" data-tab="bridge" class="flex-1 flex items-center justify-center gap-1.5 py-2.5 px-2 rounded-full text-sm font-bold transition-all">
-      <span class="material-symbols-outlined text-base">swap_horiz</span>
-      Bridge
+  <div class="flex gap-1 p-1.5 bg-surface-container-low rounded-full mb-6">
+    <button id="tab-bridge" data-action="switch-tab" data-arg="bridge" class="flex-1 flex items-center justify-center gap-1.5 py-2.5 px-2 rounded-full text-sm font-bold transition-all">
+      <span class="material-symbols-outlined text-base">swap_horiz</span>Bridge
     </button>
-    <button id="tab-send" data-tab="send" class="flex-1 flex items-center justify-center gap-1.5 py-2.5 px-2 rounded-full text-sm font-bold transition-all">
-      <span class="material-symbols-outlined text-base">send</span>
-      Send
+    <button id="tab-send" data-action="switch-tab" data-arg="send" class="flex-1 flex items-center justify-center gap-1.5 py-2.5 px-2 rounded-full text-sm font-bold transition-all">
+      <span class="material-symbols-outlined text-base">send</span>Send
     </button>
-    <button id="tab-receive" data-tab="receive" class="flex-1 flex items-center justify-center gap-1.5 py-2.5 px-2 rounded-full text-sm font-bold transition-all">
-      <span class="material-symbols-outlined text-base">request_page</span>
-      Receive
+    <button id="tab-receive" data-action="switch-tab" data-arg="receive" class="flex-1 flex items-center justify-center gap-1.5 py-2.5 px-2 rounded-full text-sm font-bold transition-all">
+      <span class="material-symbols-outlined text-base">request_page</span>Receive
     </button>
-    <button id="tab-deposit" data-tab="deposit" class="flex-1 flex items-center justify-center gap-1.5 py-2.5 px-2 rounded-full text-sm font-bold transition-all">
-      <span class="material-symbols-outlined text-base">account_balance</span>
-      Deposit
+    <button id="tab-deposit" data-action="switch-tab" data-arg="deposit" class="flex-1 flex items-center justify-center gap-1.5 py-2.5 px-2 rounded-full text-sm font-bold transition-all">
+      <span class="material-symbols-outlined text-base">account_balance</span>Deposit
     </button>
   </div>
 
-  <!-- Deposit app selector (only visible on Deposit tab) -->
-  <div id="deposit-selector" class="hidden w-full max-w-md mx-auto mb-3 flex-shrink-0">
-    <label for="deposit-app" class="text-xs font-bold text-on-surface-variant uppercase tracking-wider block mb-1.5">Deposit to</label>
-    <div class="relative">
-      <select id="deposit-app" class="w-full appearance-none px-4 py-3 pr-10 rounded-2xl border border-outline-variant/15 bg-surface-container-lowest text-on-surface text-sm font-bold focus:outline-none focus:ring-2 focus:ring-primary/30 cursor-pointer">
-        <option value="hyperliquid">Hyperliquid</option>
-        <option value="polymarket">Polymarket</option>
-      </select>
-      <span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant pointer-events-none">expand_more</span>
+  <!-- ══════════ BRIDGE PANE ══════════ -->
+  <section id="pane-bridge" class="hidden">
+    <div class="bg-surface-container-lowest rounded-3xl p-5 shadow-sm">
+      <p class="text-sm text-on-surface-variant mb-2">From</p>
+      <div class="flex items-end justify-between gap-4">
+        <button data-action="open-picker" data-ctx="bridge-from" class="inline-flex items-center gap-2 bg-surface-container-low pl-1.5 pr-3 py-1.5 rounded-full border border-outline-variant/10 hover:bg-surface-container-high transition-colors flex-shrink-0">
+          <span class="relative"><img id="br-from-icon" class="w-8 h-8 rounded-full" alt=""/><img id="br-from-chain-icon" class="w-4 h-4 rounded-full absolute -right-1 -bottom-0.5 border border-surface-container-lowest" alt=""/></span>
+          <span id="br-from-label" class="font-bold text-sm">--</span>
+          <span class="material-symbols-outlined text-base text-on-surface-variant">expand_more</span>
+        </button>
+        <input id="br-amount" type="number" placeholder="0" class="flex-1 text-right text-4xl font-black text-on-background bg-transparent border-none focus:ring-0 p-0 min-w-0 placeholder:text-on-surface-variant/20"/>
+      </div>
+      <div class="flex justify-end mt-2 text-sm text-on-surface-variant">
+        Balance: <button data-action="br-set-max" class="font-bold hover:underline ml-1" id="br-balance">--</button>
+      </div>
     </div>
-  </div>
 
-  <!-- Embedded page -->
-  <div class="flex-1 min-h-0 w-full">
-    <iframe id="tab-frame" title="Transfer" class="w-full h-full border-0 block"></iframe>
-  </div>
+    <div class="relative h-px bg-outline-variant/15 my-4">
+      <button data-action="bridge-swap" class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-10 h-10 bg-surface-container-lowest border border-outline-variant/10 shadow-md rounded-full flex items-center justify-center text-on-surface-variant hover:text-primary hover:rotate-180 transition-all duration-300">
+        <span class="material-symbols-outlined text-lg">swap_vert</span>
+      </button>
+    </div>
 
+    <div class="bg-surface-container-lowest rounded-3xl p-5 shadow-sm">
+      <p class="text-sm text-on-surface-variant mb-2">To</p>
+      <div class="flex items-end justify-between gap-4">
+        <button data-action="open-picker" data-ctx="bridge-to" class="inline-flex items-center gap-2 bg-surface-container-low pl-1.5 pr-3 py-1.5 rounded-full border border-outline-variant/10 hover:bg-surface-container-high transition-colors flex-shrink-0">
+          <span class="relative"><img id="br-to-icon" class="w-8 h-8 rounded-full" alt=""/><img id="br-to-chain-icon" class="w-4 h-4 rounded-full absolute -right-1 -bottom-0.5 border border-surface-container-lowest" alt=""/></span>
+          <span id="br-to-label" class="font-bold text-sm">--</span>
+          <span class="material-symbols-outlined text-base text-on-surface-variant">expand_more</span>
+        </button>
+        <span id="br-output" class="flex-1 text-right text-4xl font-black text-on-background min-w-0 truncate">--</span>
+      </div>
+      <div class="mt-3">
+        <button data-action="bridge-toggle-recip" class="text-xs font-bold text-primary hover:underline flex items-center gap-1">
+          <span class="material-symbols-outlined text-sm">add</span><span id="br-recip-toggle-text">Send to a different address</span>
+        </button>
+        <div id="br-recip-wrap" class="hidden mt-2">
+          <input id="br-recip" type="text" placeholder="0x… or name.eth" class="w-full px-4 py-3 rounded-xl border border-outline-variant/15 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-primary/30 bg-surface-container-lowest"/>
+          <p id="br-recip-err" class="hidden text-xs text-error mt-1">Invalid address</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="flex items-center justify-between py-3 px-1 text-sm">
+      <span class="text-on-surface-variant">Fee</span><span id="br-fee" class="font-bold text-on-surface">--</span>
+    </div>
+    <button id="br-action" data-action="br-execute" class="w-full py-4 bg-surface-container-high text-on-surface-variant rounded-full font-black text-lg">Review Bridge</button>
+  </section>
+
+  <!-- ══════════ SEND PANE ══════════ -->
+  <section id="pane-send" class="hidden">
+    <div class="mb-5">
+      <label class="text-sm font-bold text-on-surface mb-2 block">Recipient</label>
+      <input id="sd-recip" type="text" placeholder="0x… or name.eth" class="w-full px-4 py-3 rounded-xl border border-outline-variant/15 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-primary/30 bg-surface-container-lowest"/>
+      <p id="sd-addr-err" class="hidden text-xs text-error mt-1">Invalid address</p>
+      <p id="sd-ens" class="hidden text-xs text-primary mt-1"></p>
+    </div>
+
+    <div class="mb-5">
+      <label class="text-sm font-bold text-on-surface mb-2 block">Token</label>
+      <button data-action="open-picker" data-ctx="send" class="w-full flex items-center justify-between gap-2 bg-surface-container-lowest px-4 py-3 rounded-xl border border-outline-variant/15 hover:bg-surface-container-low transition-colors">
+        <span class="flex items-center gap-2">
+          <span class="relative"><img id="sd-token-icon" class="w-7 h-7 rounded-full" alt=""/><img id="sd-chain-icon" class="w-4 h-4 rounded-full absolute -right-1 -bottom-0.5 border border-surface-container-lowest" alt=""/></span>
+          <span id="sd-token-label" class="font-bold text-sm">--</span>
+        </span>
+        <span class="material-symbols-outlined text-base text-on-surface-variant">expand_more</span>
+      </button>
+    </div>
+
+    <div class="mb-5">
+      <div class="flex items-center justify-between mb-2">
+        <label class="text-sm font-bold text-on-surface">Amount</label>
+        <div role="tablist" class="inline-flex p-0.5 bg-surface-container-low rounded-full border border-outline-variant/10">
+          <button id="sd-mode-usd" data-action="sd-set-mode" data-arg="usd" class="px-3 py-1 rounded-full text-xs font-bold transition-colors text-on-surface-variant hover:text-on-surface">USD</button>
+          <button id="sd-mode-token" data-action="sd-set-mode" data-arg="token" class="px-3 py-1 rounded-full text-xs font-bold transition-colors bg-primary text-on-primary"><span id="sd-mode-token-label">Token</span></button>
+        </div>
+      </div>
+      <div class="flex items-center bg-surface-container-lowest rounded-xl border border-outline-variant/15 px-4 py-3">
+        <span id="sd-prefix" class="hidden text-2xl font-black text-on-surface-variant mr-1">$</span>
+        <input id="sd-amount" type="number" placeholder="0" class="flex-1 text-2xl font-black text-on-background bg-transparent border-none focus:ring-0 p-0 min-w-0 placeholder:text-on-surface-variant/20"/>
+        <span id="sd-suffix" class="text-base font-bold text-on-surface-variant ml-2">--</span>
+      </div>
+      <div class="flex justify-between mt-2 text-sm text-on-surface-variant">
+        <span id="sd-conv"></span>
+        <span>Balance: <button data-action="sd-set-max" class="font-bold hover:underline" id="sd-balance">--</button></span>
+      </div>
+    </div>
+
+    <button id="sd-action" data-action="sd-execute" class="w-full py-4 bg-surface-container-high text-on-surface-variant rounded-full font-black text-lg">Send</button>
+  </section>
+
+  <!-- ══════════ RECEIVE PANE ══════════ -->
+  <section id="pane-receive" class="hidden">
+    <div id="rc-form">
+      <div class="mb-5 flex items-center gap-3 px-4 py-3 bg-surface-container-lowest rounded-xl border border-outline-variant/15">
+        <span class="material-symbols-outlined text-on-surface-variant">account_balance_wallet</span>
+        <div><p class="text-xs text-on-surface-variant">You receive to</p><p id="rc-myaddr" class="font-mono font-bold text-sm text-on-surface">Connect wallet</p></div>
+      </div>
+
+      <div class="mb-5">
+        <label class="text-sm font-bold text-on-surface mb-2 block">Token</label>
+        <button data-action="open-picker" data-ctx="receive" class="w-full flex items-center justify-between gap-2 bg-surface-container-lowest px-4 py-3 rounded-xl border border-outline-variant/15 hover:bg-surface-container-low transition-colors">
+          <span class="flex items-center gap-2">
+            <span class="relative"><img id="rc-token-icon" class="w-7 h-7 rounded-full" alt=""/><img id="rc-chain-icon" class="w-4 h-4 rounded-full absolute -right-1 -bottom-0.5 border border-surface-container-lowest" alt=""/></span>
+            <span id="rc-token-label" class="font-bold text-sm">--</span>
+          </span>
+          <span class="material-symbols-outlined text-base text-on-surface-variant">expand_more</span>
+        </button>
+      </div>
+
+      <div class="mb-4">
+        <div class="flex items-center justify-between mb-2">
+          <label class="text-sm font-bold text-on-surface">Amount</label>
+          <div role="tablist" class="inline-flex p-0.5 bg-surface-container-low rounded-full border border-outline-variant/10">
+            <button id="rc-mode-usd" data-action="rc-set-mode" data-arg="usd" class="px-3 py-1 rounded-full text-xs font-bold transition-colors bg-primary text-on-primary">USD</button>
+            <button id="rc-mode-token" data-action="rc-set-mode" data-arg="token" class="px-3 py-1 rounded-full text-xs font-bold transition-colors text-on-surface-variant hover:text-on-surface"><span id="rc-mode-token-label">Token</span></button>
+          </div>
+        </div>
+        <div class="flex items-center bg-surface-container-lowest rounded-xl border border-outline-variant/15 px-4 py-3">
+          <span id="rc-prefix" class="text-2xl font-black text-on-surface-variant mr-1">$</span>
+          <input id="rc-amount" type="number" placeholder="0.00" class="flex-1 text-2xl font-black text-on-background bg-transparent border-none focus:ring-0 p-0 min-w-0 placeholder:text-on-surface-variant/20"/>
+          <span id="rc-suffix" class="hidden text-base font-bold text-on-surface-variant ml-2">--</span>
+        </div>
+        <p id="rc-conv" class="text-sm text-on-surface-variant mt-2"></p>
+        <div id="rc-presets" class="flex flex-wrap gap-2 mt-3"></div>
+      </div>
+
+      <div class="mb-5">
+        <label class="text-sm font-bold text-on-surface mb-2 block">Note <span class="text-on-surface-variant font-normal">(optional)</span></label>
+        <textarea id="rc-note" rows="2" placeholder="What's this for?" class="w-full px-4 py-3 rounded-xl border border-outline-variant/15 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 bg-surface-container-lowest resize-none"></textarea>
+      </div>
+
+      <button id="rc-action" data-action="rc-generate" class="w-full py-4 bg-surface-container-high text-on-surface-variant rounded-full font-black text-lg">Create Payment Link</button>
+    </div>
+
+    <div id="rc-share" class="hidden text-center">
+      <div class="w-16 h-16 rounded-full bg-primary flex items-center justify-center mx-auto mb-4">
+        <span class="material-symbols-outlined text-on-primary text-3xl">check</span>
+      </div>
+      <p class="text-lg font-black text-on-background mb-1">Payment link ready</p>
+      <p id="rc-summary" class="text-sm text-on-surface-variant mb-1"></p>
+      <p id="rc-note-disp" class="hidden text-sm text-on-surface-variant italic mb-4"></p>
+      <div class="bg-surface-container-low rounded-xl p-3 mb-4 break-all text-xs font-mono text-on-surface text-left" id="rc-url"></div>
+      <div class="flex gap-3">
+        <button data-action="rc-copy" class="flex-1 py-3 bg-surface-container-low text-on-surface rounded-full font-bold text-sm hover:bg-surface-container-high transition-colors flex items-center justify-center gap-2"><span class="material-symbols-outlined text-base">content_copy</span><span id="rc-copy-label">Copy</span></button>
+        <button data-action="rc-share" class="flex-1 py-3 bg-primary text-on-primary rounded-full font-bold text-sm flex items-center justify-center gap-2"><span class="material-symbols-outlined text-base">ios_share</span>Share</button>
+      </div>
+      <button data-action="rc-reset" class="w-full mt-3 py-3 text-on-surface-variant rounded-full font-bold text-sm hover:text-primary transition-colors">Create another</button>
+    </div>
+  </section>
+
+  <!-- ══════════ DEPOSIT PANE ══════════ -->
+  <section id="pane-deposit" class="hidden">
+    <div class="mb-5">
+      <label for="dp-app" class="text-sm font-bold text-on-surface mb-2 block">Deposit to</label>
+      <div class="relative">
+        <select id="dp-app" class="w-full appearance-none px-4 py-3 pr-10 rounded-xl border border-outline-variant/15 bg-surface-container-lowest text-on-surface text-sm font-bold focus:outline-none focus:ring-2 focus:ring-primary/30 cursor-pointer">
+          <option value="hyperliquid">Hyperliquid</option>
+          <option value="polymarket">Polymarket</option>
+        </select>
+        <span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant pointer-events-none">expand_more</span>
+      </div>
+    </div>
+
+    <div id="dp-address-wrap" class="hidden mb-5">
+      <label class="text-sm font-bold text-on-surface mb-2 block">Destination address</label>
+      <input id="dp-address" type="text" placeholder="0x… or name.eth" class="w-full px-4 py-3 rounded-xl border border-outline-variant/15 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-primary/30 bg-surface-container-lowest"/>
+      <p id="dp-addr-err" class="hidden text-xs text-error mt-1">Invalid address</p>
+      <p id="dp-ens" class="hidden text-xs text-primary mt-1"></p>
+    </div>
+
+    <div class="bg-surface-container-lowest rounded-3xl p-5 shadow-sm">
+      <p class="text-sm text-on-surface-variant mb-2">Pay with</p>
+      <div class="flex items-end justify-between gap-4">
+        <button data-action="open-picker" data-ctx="deposit" class="inline-flex items-center gap-2 bg-surface-container-low pl-1.5 pr-3 py-1.5 rounded-full border border-outline-variant/10 hover:bg-surface-container-high transition-colors flex-shrink-0">
+          <span class="relative"><img id="dp-token-icon" class="w-8 h-8 rounded-full" alt=""/><img id="dp-chain-icon" class="w-4 h-4 rounded-full absolute -right-1 -bottom-0.5 border border-surface-container-lowest" alt=""/></span>
+          <span id="dp-token-label" class="font-bold text-sm">--</span>
+          <span class="material-symbols-outlined text-base text-on-surface-variant">expand_more</span>
+        </button>
+        <input id="dp-amount" type="number" placeholder="0" class="flex-1 text-4xl font-black text-on-background bg-transparent border-none focus:ring-0 p-0 min-w-0 text-right placeholder:text-on-surface-variant/20"/>
+      </div>
+      <div class="flex justify-end mt-2 text-sm text-on-surface-variant">
+        Balance: <button data-action="dp-set-max" class="font-bold hover:underline ml-1" id="dp-balance">--</button>
+      </div>
+    </div>
+
+    <div class="flex items-center gap-3 mt-4 px-4 py-3 bg-surface-container-lowest rounded-2xl border border-outline-variant/15">
+      <img id="dp-out-icon" class="w-8 h-8 rounded-full" alt=""/>
+      <div class="flex-1"><p class="text-xs text-on-surface-variant">You receive</p><p id="dp-out-label" class="font-bold text-sm text-on-surface">USDC on Hyperliquid</p></div>
+      <span id="dp-output" class="text-2xl font-black text-on-background">--</span>
+    </div>
+
+    <p id="dp-min-err" class="hidden text-xs text-error mt-2">Below minimum deposit</p>
+    <div class="flex items-center justify-between py-3 px-1 text-sm">
+      <span id="dp-min-note" class="text-on-surface-variant">Minimum deposit $5</span><span id="dp-fee" class="font-bold text-on-surface">--</span>
+    </div>
+    <button id="dp-action" data-action="dp-execute" class="w-full py-4 bg-surface-container-high text-on-surface-variant rounded-full font-black text-lg">Deposit</button>
+  </section>
+
+  <div class="flex justify-center mt-6 opacity-40 hover:opacity-70 transition-opacity">
+    <a href="https://across.to" target="_blank" rel="noopener">
+      <img src="powered-by-across.svg" alt="Powered by Across" class="h-5 dark:hidden"/>
+      <img src="powered-by-across-light.svg" alt="Powered by Across" class="h-5 hidden dark:block"/>
+    </a>
+  </div>
 </main>
 
+<!-- Token Picker Modal -->
+<div id="picker-modal" role="dialog" aria-modal="true" class="fixed inset-0 z-50 hidden">
+  <div class="absolute inset-0 bg-black/30 backdrop-blur-sm" data-action="close-picker"></div>
+  <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md bg-surface-container-lowest rounded-3xl shadow-2xl p-6 max-h-[80vh] flex flex-col">
+    <div class="flex items-center justify-between mb-4">
+      <h3 class="text-lg font-black text-on-background">Choose token & chain</h3>
+      <button data-action="close-picker" aria-label="Close" class="w-9 h-9 rounded-full bg-surface-container-low flex items-center justify-center hover:bg-surface-container-high transition-colors">
+        <span class="material-symbols-outlined text-on-surface-variant">close</span>
+      </button>
+    </div>
+    <input id="picker-search" type="text" placeholder="Search tokens or chains…" class="w-full px-4 py-3 rounded-xl border border-outline-variant/15 text-sm mb-3 focus:outline-none focus:ring-2 focus:ring-primary/30 bg-surface-container-lowest"/>
+    <div id="picker-list" class="overflow-y-auto space-y-1"></div>
+  </div>
+</div>
+
+<!-- Transaction Overlay -->
+<div id="tx-overlay" class="fixed inset-0 z-50 hidden flex-col items-center justify-center bg-background/95 backdrop-blur-sm px-8">
+  <div id="tx-spinner" class="relative w-16 h-16 mb-6">
+    <div class="absolute inset-0 rounded-full border-4 border-surface-container-high"></div>
+    <div class="absolute inset-0 rounded-full border-4 border-primary border-t-transparent animate-spin"></div>
+  </div>
+  <div id="tx-done" class="hidden w-16 h-16 rounded-full bg-primary flex items-center justify-center mb-6">
+    <span class="material-symbols-outlined text-on-primary text-3xl">check</span>
+  </div>
+  <p id="tx-text" class="text-lg font-bold text-on-background text-center">Working…</p>
+  <p id="tx-done-text" class="hidden"></p>
+  <button data-action="close-tx" class="mt-8 px-6 py-3 bg-surface-container-low text-on-surface rounded-full font-bold text-sm hover:bg-surface-container-high transition-colors">Close</button>
+</div>
+
 <!-- Mobile Bottom Nav -->
-<nav class="fixed bottom-5 left-4 right-4 z-50 md:hidden flex items-center justify-around py-3 px-2 bg-surface-container/95 backdrop-blur-xl rounded-full shadow-[0_8px_40px_rgba(0,0,0,0.12)] border border-outline-variant/15">
+<nav class="fixed bottom-5 left-4 right-4 z-40 md:hidden flex items-center justify-around py-3 px-2 bg-surface-container/95 backdrop-blur-xl rounded-full shadow-[0_8px_40px_rgba(0,0,0,0.12)] border border-outline-variant/15">
   <a class="flex flex-col items-center justify-center text-on-surface-variant p-3 transition-transform active:scale-90" href="index.html">
     <span class="material-symbols-outlined">home</span>
     <span class="font-headline text-[10px] font-bold uppercase mt-1">Home</span>
@@ -216,101 +408,10 @@
         <span class="material-symbols-outlined text-on-surface-variant">move_to_inbox</span>
         <span class="font-medium text-sm text-on-surface">Sweep</span>
       </a>
-      <a href="hyperliquid.html" class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-surface-container-high transition-colors">
-        <span class="material-symbols-outlined text-on-surface-variant">account_balance</span>
-        <span class="font-medium text-sm text-on-surface">Hyperliquid</span>
-      </a>
-      <a href="polymarket.html" class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-surface-container-high transition-colors">
-        <span class="material-symbols-outlined text-on-surface-variant">trending_up</span>
-        <span class="font-medium text-sm text-on-surface">Polymarket</span>
-      </a>
     </div>
   </div>
 </div>
 
 </div>
-
-<script>
-(function(){
-  // Map each tab to the page it embeds. Deposit resolves via the app dropdown.
-  var PAGES = {
-    bridge:  'bridge.html',
-    send:    'send.html',
-    receive: 'request.html',
-    deposit: { hyperliquid: 'hyperliquid.html', polymarket: 'polymarket.html' }
-  };
-
-  var TAB_IDS = ['bridge','send','receive','deposit'];
-  var frame = document.getElementById('tab-frame');
-  var depositSelector = document.getElementById('deposit-selector');
-  var depositApp = document.getElementById('deposit-app');
-  var current = null;
-
-  var ACTIVE = 'flex-1 flex items-center justify-center gap-1.5 py-2.5 px-2 rounded-full text-sm font-bold transition-all bg-surface-container-lowest shadow-sm text-on-surface';
-  var INACTIVE = 'flex-1 flex items-center justify-center gap-1.5 py-2.5 px-2 rounded-full text-sm font-bold transition-all text-on-surface-variant hover:text-on-surface';
-
-  // Strip the embedded page's own chrome so only its main card shows inside the iframe.
-  function styleFrame(){
-    try {
-      var doc = frame.contentDocument;
-      if (!doc || doc.getElementById('transfer-embed-style')) return;
-      var style = doc.createElement('style');
-      style.id = 'transfer-embed-style';
-      style.textContent =
-        'aside{display:none!important;}' +
-        'header{display:none!important;}' +
-        'nav.fixed{display:none!important;}' +
-        '#mobile-menu{display:none!important;}' +
-        '.md\\:ml-64{margin-left:0!important;height:auto!important;min-height:0!important;}' +
-        'html,body{background:transparent!important;height:auto!important;}';
-      doc.head.appendChild(style);
-    } catch (e) { /* same-origin expected; ignore otherwise */ }
-  }
-  frame.addEventListener('load', styleFrame);
-
-  function srcFor(tab){
-    if (tab === 'deposit') {
-      var app = depositApp.value || 'hyperliquid';
-      return PAGES.deposit[app] || PAGES.deposit.hyperliquid;
-    }
-    return PAGES[tab];
-  }
-
-  function loadFrame(src){
-    if (frame.getAttribute('src') === src) return;
-    frame.setAttribute('src', src);
-  }
-
-  function setTab(tab, opts){
-    if (TAB_IDS.indexOf(tab) === -1) tab = 'bridge';
-    current = tab;
-    TAB_IDS.forEach(function(t){
-      document.getElementById('tab-' + t).className = (t === tab) ? ACTIVE : INACTIVE;
-    });
-    depositSelector.classList.toggle('hidden', tab !== 'deposit');
-    loadFrame(srcFor(tab));
-    // Reflect the active tab in the URL without reloading.
-    try {
-      var url = new URL(window.location.href);
-      url.searchParams.set('tab', tab);
-      history.replaceState(null, '', url);
-    } catch (e) {}
-  }
-
-  TAB_IDS.forEach(function(t){
-    document.getElementById('tab-' + t).addEventListener('click', function(){ setTab(t); });
-  });
-
-  depositApp.addEventListener('change', function(){
-    if (current === 'deposit') loadFrame(srcFor('deposit'));
-  });
-
-  // Initial tab from ?tab= query param.
-  var params = new URLSearchParams(window.location.search);
-  var initial = params.get('tab');
-  setTab(TAB_IDS.indexOf(initial) !== -1 ? initial : 'bridge');
-})();
-</script>
-
 </body>
 </html>
