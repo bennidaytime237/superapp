@@ -176,13 +176,19 @@ function generateLink(){
   if(note)params.set('note',note);
   generatedUrl=`${window.location.origin}/send.html?${params}`;
 
-  // Show share view
-  document.getElementById('form-view').classList.add('hidden');
-  document.getElementById('share-view').classList.remove('hidden');
-  document.getElementById('share-url').textContent=generatedUrl;
   const summary=amountMode==='usd'
     ? `${fmtUsd(usdAmt)} · ${fmt(tokenAmt)} ${t.symbol} on ${c.name}`
     : (usdAmt!=null?`${fmt(tokenAmt)} ${t.symbol} on ${c.name} · ${fmtUsd(usdAmt)}`:`${fmt(tokenAmt)} ${t.symbol} on ${c.name}`);
+
+  try { sessionStorage.setItem('request-state', JSON.stringify({url:generatedUrl, summary, note})); } catch{}
+
+  showShareView(generatedUrl, summary, note);
+}
+
+function showShareView(url, summary, note){
+  document.getElementById('form-view').classList.add('hidden');
+  document.getElementById('share-view').classList.remove('hidden');
+  document.getElementById('share-url').textContent=url;
   document.getElementById('share-summary').textContent=summary;
   const noteEl=document.getElementById('share-note');
   if(note){noteEl.textContent=`"${note}"`;noteEl.classList.remove('hidden');}
@@ -203,6 +209,7 @@ function shareLink(){
 }
 
 function resetForm(){
+  try { sessionStorage.removeItem('request-state'); } catch{}
   document.getElementById('form-view').classList.remove('hidden');
   document.getElementById('share-view').classList.add('hidden');
   document.getElementById('amount-input').value='';
@@ -251,6 +258,14 @@ function renderPicker(rows){
 function selectToken(ti,ci){selTokenIdx=ti;selChainIdx=ci;closePicker();updateDisplay();}
 
 (async function(){
+  try {
+    const saved=sessionStorage.getItem('request-state');
+    if(saved){
+      const state=JSON.parse(saved);
+      generatedUrl=state.url;
+      showShareView(state.url, state.summary, state.note||'');
+    }
+  } catch{}
   setMode(amountMode);
   updateDisplay();
   fetchPrices().then(onAmountChange);
