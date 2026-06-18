@@ -20,6 +20,24 @@ const ENSDataShape = z.object({
 const ENS_NAME_RE = /^(?=.{1,253}$)([a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}$/;
 const ADDRESS_RE = /^0x[0-9a-fA-F]{40}$/;
 
+async function resolveHL(name) {
+  // Strip .hl suffix to get the bare username
+  const user = name.endsWith('.hl') ? name.slice(0, -3) : name;
+  try {
+    const r = await fetch('https://api.hyperliquid.xyz/info', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ type: 'userByName', user }),
+    });
+    if (!r.ok) return null;
+    const d = await r.json();
+    const addr = d?.address ?? d?.user ?? null;
+    return addr && ADDRESS_RE.test(addr) ? addr : null;
+  } catch {
+    return null;
+  }
+}
+
 async function resolveENS(name) {
   const services = [
     async () => {
@@ -78,7 +96,8 @@ export default async function handler(req, res) {
 
   try {
     if (typeof name === 'string' && ENS_NAME_RE.test(name.toLowerCase())) {
-      const resolved = await resolveENS(name.toLowerCase());
+      const lower = name.toLowerCase();
+      const resolved = lower.endsWith('.hl') ? await resolveHL(lower) : await resolveENS(lower);
       return res.json({ name, address: resolved });
     }
     if (typeof address === 'string' && ADDRESS_RE.test(address) && isValidAddress(address)) {
