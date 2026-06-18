@@ -118,42 +118,43 @@ test('ens - sets Cache-Control header', async () => {
   assert.ok(res._headers['Cache-Control'], 'Cache-Control header should be set');
 });
 
-// .hl resolution tests
+// .hl resolution tests — HyperEVM eth_call / ownerOf approach
 
-test('hl - resolves when API returns plain address string', async () => {
-  globalThis.fetch = jsonFetch('0x5aaeb6053f3e94c9b9a09f33669435e7ef1beaed');
+// Mocks a successful eth_call: address ABI-encoded as 32 bytes (zero-padded left)
+function evmFetch(addr, ok = true) {
+  const padded = addr ? '0x' + addr.replace('0x', '').padStart(64, '0') : '0x';
+  return async () => ({ ok, json: async () => ({ jsonrpc: '2.0', id: 1, result: padded }) });
+}
+
+test('hl - resolves when ownerOf returns a valid address', async () => {
+  globalThis.fetch = evmFetch('0x5aaeb6053f3e94c9b9a09f33669435e7ef1beaed');
   const res = makeRes();
   await handler(makeReq({ name: 'alice.hl' }), res);
   assert.strictEqual(res._status, 200);
   assert.strictEqual(res._body.address, '0x5aaeb6053f3e94c9b9a09f33669435e7ef1beaed');
 });
 
-test('hl - resolves when API returns address in user field', async () => {
-  globalThis.fetch = jsonFetch({ user: '0x5aaeb6053f3e94c9b9a09f33669435e7ef1beaed' });
-  const res = makeRes();
-  await handler(makeReq({ name: 'alice.hl' }), res);
-  assert.strictEqual(res._status, 200);
-  assert.strictEqual(res._body.address, '0x5aaeb6053f3e94c9b9a09f33669435e7ef1beaed');
-});
-
-test('hl - resolves when API returns address in address field', async () => {
-  globalThis.fetch = jsonFetch({ address: '0x5aaeb6053f3e94c9b9a09f33669435e7ef1beaed' });
-  const res = makeRes();
-  await handler(makeReq({ name: 'alice.hl' }), res);
-  assert.strictEqual(res._status, 200);
-  assert.strictEqual(res._body.address, '0x5aaeb6053f3e94c9b9a09f33669435e7ef1beaed');
-});
-
-test('hl - returns null address when API returns null', async () => {
-  globalThis.fetch = jsonFetch(null);
+test('hl - returns null when ownerOf reverts (name not registered)', async () => {
+  globalThis.fetch = async () => ({
+    ok: true,
+    json: async () => ({ jsonrpc: '2.0', id: 1, error: { code: 3, message: 'execution reverted' } }),
+  });
   const res = makeRes();
   await handler(makeReq({ name: 'nobody.hl' }), res);
   assert.strictEqual(res._status, 200);
   assert.strictEqual(res._body.address, null);
 });
 
-test('hl - returns null address when API non-ok', async () => {
-  globalThis.fetch = jsonFetch({}, false);
+test('hl - returns null when ownerOf returns zero address', async () => {
+  globalThis.fetch = evmFetch('0x0000000000000000000000000000000000000000');
+  const res = makeRes();
+  await handler(makeReq({ name: 'nobody.hl' }), res);
+  assert.strictEqual(res._status, 200);
+  assert.strictEqual(res._body.address, null);
+});
+
+test('hl - returns null on non-ok RPC response', async () => {
+  globalThis.fetch = evmFetch('', false);
   const res = makeRes();
   await handler(makeReq({ name: 'nobody.hl' }), res);
   assert.strictEqual(res._status, 200);

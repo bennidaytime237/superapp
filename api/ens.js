@@ -1,7 +1,7 @@
 // ENS forward/reverse resolution via free public services with fallback.
 import { z } from 'zod';
 import { applyCors } from './_cors.js';
-import { isValidAddress } from './_eth-utils.js';
+import { isValidAddress, keccak256 } from './_eth-utils.js';
 
 const ENSIdeasShape = z.object({
   address:     z.string().nullish(),
@@ -19,27 +19,69 @@ const ENSDataShape = z.object({
 // ending in a known TLD. Keeps untrusted query input out of upstream URLs.
 const ENS_NAME_RE = /^(?=.{1,253}$)([a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}$/;
 const ADDRESS_RE = /^0x[0-9a-fA-F]{40}$/;
+const ZERO_ADDR  = '0x0000000000000000000000000000000000000000';
+
+// Hyperliquid Names ERC721 on HyperEVM (https://hyperliquid-names.gitbook.io)
+const HL_NAMES_CONTRACT = '0x1d9d87eBc14e71490bB87f1C39F65BDB979f3cb7';
+const HYPEREVM_RPC      = 'https://rpc.hyperliquid.xyz/evm';
+
+// Convert a Uint8Array to a Latin-1 string so the existing keccak256(str) can
+// hash raw bytes (it uses charCodeAt & 0xff, which round-trips byte values 0-255).
+function bytesToStr(bytes) {
+  let s = '';
+  for (let i = 0; i < bytes.length; i++) s += String.fromCharCode(bytes[i]);
+  return s;
+}
+
+function hexToBytes32(hex) {
+  const b = new Uint8Array(32);
+  for (let i = 0; i < 32; i++) b[i] = parseInt(hex.slice(i * 2, i * 2 + 2), 16);
+  return b;
+}
+
+// ERC-137 namehash — same algorithm ENS uses; Hyperliquid Names uses it as tokenId.
+function namehashBytes(name) {
+  let node = new Uint8Array(32);
+  if (!name) return node;
+  const labels = name.toLowerCase().split('.').filter(Boolean);
+  for (let i = labels.length - 1; i >= 0; i--) {
+    const labelHash = hexToBytes32(keccak256(labels[i]));
+    const buf = new Uint8Array(64);
+    buf.set(node, 0);
+    buf.set(labelHash, 32);
+    node = hexToBytes32(keccak256(bytesToStr(buf)));
+  }
+  return node;
+}
 
 async function resolveHL(name) {
-  // Strip .hl suffix to get the bare username
-  const user = name.endsWith('.hl') ? name.slice(0, -3) : name;
+  const tokenId = namehashBytes(name);
+  const tokenIdHex = Array.from(tokenId).map(b => b.toString(16).padStart(2, '0')).join('');
+  // ownerOf(uint256) selector = 0x6352211e
+  const callData = '0x6352211e' + tokenIdHex;
+
   try {
-    const r = await fetch('https://api.hyperliquid.xyz/info', {
+    const r = await fetch(HYPEREVM_RPC, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ type: 'userByName', user }),
+      body: JSON.stringify({
+        jsonrpc: '2.0',
+        method: 'eth_call',
+        params: [{ to: HL_NAMES_CONTRACT, data: callData }, 'latest'],
+        id: 1,
+      }),
     });
     if (!r.ok) {
-      console.error('[ens] HL API non-ok status', r.status, 'for user:', user);
+      console.error('[ens] HyperEVM non-ok status', r.status, 'for name:', name);
       return null;
     }
-    const d = await r.json();
-    console.log('[ens] HL API raw response for', user, ':', JSON.stringify(d));
-    // Hyperliquid may return the address as a plain string or inside an object
-    const addr = typeof d === 'string' ? d : (d?.address ?? d?.user ?? null);
-    return addr && ADDRESS_RE.test(addr) ? addr : null;
+    const json = await r.json();
+    if (json.error || !json.result || json.result === '0x') return null;
+    // ABI-encoded address: 32 bytes, address is the rightmost 20 bytes (40 hex chars)
+    const addr = '0x' + json.result.slice(-40);
+    return ADDRESS_RE.test(addr) && addr !== ZERO_ADDR ? addr : null;
   } catch (e) {
-    console.error('[ens] HL API fetch error for', user, ':', e.message);
+    console.error('[ens] HyperEVM call error for', name, ':', e.message);
     return null;
   }
 }
