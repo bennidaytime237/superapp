@@ -384,8 +384,8 @@
   // ══════════════════════════════════════════════════════════════════════════
   // RECEIVE (payment request link)
   // ══════════════════════════════════════════════════════════════════════════
-  const PRESETS_USD = [10, 50, 100, 500];
-  const PRESETS_TOKEN = { USDC: [10, 50, 100, 500], USDT: [10, 50, 100, 500], DAI: [10, 50, 100, 500], ETH: [0.01, 0.05, 0.1, 0.5], WBTC: [0.001, 0.005, 0.01, 0.05], POL: [10, 50, 100, 500], BNB: [0.05, 0.1, 0.5, 1] };
+  const PRESETS_USD = [10, 50, 100];
+  const PRESETS_TOKEN = { USDC: [10, 50, 100], USDT: [10, 50, 100], DAI: [10, 50, 100], ETH: [0.01, 0.05, 0.1], WBTC: [0.001, 0.005, 0.01], POL: [10, 50, 100], BNB: [0.05, 0.1, 0.5] };
   const Receive = {
     tok: 1, chn: 2, mode: 'usd', url: '',
     init() { this.applyMode(); this.updateDisplay(); this.updateBtn(); },
