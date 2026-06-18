@@ -705,18 +705,26 @@
     return [...bridgeTx, ...getLocalSends()].sort((a, b) => b.timestamp - a.timestamp);
   }
 
+  function fmtAmt(amt) {
+    return Number(parseFloat(amt).toFixed(2));
+  }
+  function fmtToken(token) {
+    const t = String(token || '');
+    return t.startsWith('0x') ? t.slice(0, 3) : t;
+  }
+
   function txMeta(tx) {
     if (tx.type === 'send') {
-      return { icon: 'send', label: `Sent ${tx.amount} ${tx.token}`, sub: tx.chain };
+      return { icon: 'send', label: `Sent ${fmtAmt(tx.amount)} ${fmtToken(tx.token)}`, sub: tx.chain };
     }
     const appDest = ['hyperliquid', 'hypercore', 'polymarket'];
     if (appDest.some(a => (tx.toChain || '').toLowerCase().includes(a))) {
-      return { icon: 'savings', label: `Deposited ${tx.amount} ${tx.fromToken}`, sub: `${tx.fromChain} → ${tx.toChain}` };
+      return { icon: 'savings', label: `Deposited ${fmtAmt(tx.amount)} ${fmtToken(tx.fromToken)}`, sub: `${tx.fromChain} → ${tx.toChain}` };
     }
     if (tx.fromToken && tx.toToken && tx.fromToken !== tx.toToken) {
-      return { icon: 'swap_horiz', label: `Swapped ${tx.amount} ${tx.fromToken}`, sub: `${tx.fromChain} → ${tx.toChain}` };
+      return { icon: 'swap_horiz', label: `Swapped ${fmtAmt(tx.amount)} ${fmtToken(tx.fromToken)}`, sub: `${tx.fromChain} → ${tx.toChain}` };
     }
-    return { icon: 'layers', label: `Bridged ${tx.amount} ${tx.fromToken}`, sub: `${tx.fromChain} → ${tx.toChain}` };
+    return { icon: 'layers', label: `Bridged ${fmtAmt(tx.amount)} ${fmtToken(tx.fromToken)}`, sub: `${tx.fromChain} → ${tx.toChain}` };
   }
 
   async function renderActivity() {
