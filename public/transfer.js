@@ -467,6 +467,8 @@
       }).catch(() => { ensEl.textContent = short; ensEl.classList.remove('hidden'); });
     },
     copy() { navigator.clipboard.writeText(this.url); const l = $('rc-copy-label'); l.textContent = 'Copied!'; setTimeout(() => l.textContent = 'Copy', 2000); },
+    copyQr() { navigator.clipboard.writeText(this.url); const l = $('rc-copy-qr-label'); l.textContent = 'Copied!'; setTimeout(() => l.textContent = 'Copy Link', 2000); },
+    saveImage() { const c = $('rc-qr'); if (!c) return; const a = document.createElement('a'); a.href = c.toDataURL('image/png'); a.download = 'sage-payment-qr.png'; a.click(); },
     share() { if (navigator.share) navigator.share({ title: 'Payment Request', text: 'Pay me via Sage', url: this.url }).catch(() => {}); else this.copy(); },
     reset() { $('rc-form').classList.remove('hidden'); $('rc-share').classList.add('hidden'); $('rc-amount').value = ''; $('rc-note').value = ''; this.onAmount(); },
   };
@@ -623,6 +625,8 @@
       case 'rc-set-amt': Receive.setAmt(Number(arg)); break;
       case 'rc-generate': Receive.generate(); break;
       case 'rc-copy': Receive.copy(); break;
+      case 'rc-copy-qr': Receive.copyQr(); break;
+      case 'rc-save-image': Receive.saveImage(); break;
       case 'rc-share': Receive.share(); break;
       case 'rc-reset': Receive.reset(); break;
       case 'dp-set-max': Deposit.setMax(); break;

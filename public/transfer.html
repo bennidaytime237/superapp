@@ -283,6 +283,10 @@
         <p id="rc-qr-ens" class="hidden mt-3 text-sm font-bold text-primary"></p>
         <p id="rc-qr-addr" class="hidden mt-0.5 text-xs font-mono text-on-surface-variant"></p>
         <p class="mt-2 text-xs text-on-surface-variant">Scan to pay with Sage</p>
+        <div class="flex gap-2 mt-3">
+          <button data-action="rc-copy-qr" class="flex items-center gap-1.5 px-4 py-2 bg-surface-container-low text-on-surface rounded-full text-sm font-bold hover:bg-surface-container-high transition-colors"><span class="material-symbols-outlined text-base">link</span><span id="rc-copy-qr-label">Copy Link</span></button>
+          <button data-action="rc-save-image" class="flex items-center gap-1.5 px-4 py-2 bg-surface-container-low text-on-surface rounded-full text-sm font-bold hover:bg-surface-container-high transition-colors"><span class="material-symbols-outlined text-base">download</span>Save Image</button>
+        </div>
       </div>
 
       <div class="bg-surface-container-low rounded-xl p-3 mb-4 break-all text-xs font-mono text-on-surface text-left" id="rc-url"></div>
