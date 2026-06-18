@@ -466,6 +466,31 @@
         }
       }).catch(() => { ensEl.textContent = short; ensEl.classList.remove('hidden'); });
     },
+    downloadQR() {
+      const qr = $('rc-qr'); if (!qr) return;
+      const ensEl = $('rc-qr-ens');
+      const label = ensEl && !ensEl.classList.contains('hidden') ? ensEl.textContent.trim() : '';
+      const scale = qr.width / 260;
+      const pad = Math.round(24 * scale);
+      const textH = label ? Math.round(48 * scale) : 0;
+      const out = document.createElement('canvas');
+      out.width = qr.width + pad * 2;
+      out.height = qr.height + pad * 2 + textH;
+      const ctx = out.getContext('2d');
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, out.width, out.height);
+      ctx.drawImage(qr, pad, pad);
+      if (label) {
+        ctx.fillStyle = '#667b68';
+        ctx.font = `bold ${Math.round(18 * scale)}px system-ui, -apple-system, sans-serif`;
+        ctx.textAlign = 'center';
+        ctx.fillText(label, out.width / 2, qr.height + pad + Math.round(32 * scale));
+      }
+      const a = document.createElement('a');
+      a.download = `${label || 'sage-payment'}-qr.png`;
+      a.href = out.toDataURL('image/png');
+      a.click();
+    },
     copy() { navigator.clipboard.writeText(this.url); const l = $('rc-copy-label'); l.textContent = 'Copied!'; setTimeout(() => l.textContent = 'Copy', 2000); },
     share() { if (navigator.share) navigator.share({ title: 'Payment Request', text: 'Pay me via Sage', url: this.url }).catch(() => {}); else this.copy(); },
     reset() { $('rc-form').classList.remove('hidden'); $('rc-share').classList.add('hidden'); $('rc-amount').value = ''; $('rc-note').value = ''; this.onAmount(); },
@@ -622,6 +647,7 @@
       case 'rc-set-mode': Receive.setMode(arg); break;
       case 'rc-set-amt': Receive.setAmt(Number(arg)); break;
       case 'rc-generate': Receive.generate(); break;
+      case 'rc-download-qr': Receive.downloadQR(); break;
       case 'rc-copy': Receive.copy(); break;
       case 'rc-share': Receive.share(); break;
       case 'rc-reset': Receive.reset(); break;
