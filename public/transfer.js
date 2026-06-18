@@ -760,7 +760,7 @@
     const show = allTx.slice(0, 3);
     const EXP = { 1: 'https://etherscan.io/tx/', 42161: 'https://arbiscan.io/tx/', 8453: 'https://basescan.org/tx/', 10: 'https://optimistic.etherscan.io/tx/', 137: 'https://polygonscan.com/tx/', 324: 'https://explorer.zksync.io/tx/', 59144: 'https://lineascan.build/tx/' };
     const rows = show.map(tx => {
-      const ago = timeAgo(tx.timestamp);
+      const ago = new Date(tx.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
       const meta = txMeta(tx);
       const url = tx.type === 'send'
         ? (tx.txHash && tx.chainId ? (EXP[tx.chainId] || 'https://etherscan.io/tx/') + tx.txHash : null)
