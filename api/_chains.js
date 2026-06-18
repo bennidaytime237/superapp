@@ -186,4 +186,6 @@ export const TOKEN_MAP = {
   '0xaC800FD6159c2a2CB8fC31EF74621eB430287a5A': { symbol: 'OP',   decimals: 18 }, // Ethereum
   // ARB (Arbitrum)
   '0x912CE59144191C1204E64559FE8253a0e49E6548': { symbol: 'ARB',  decimals: 18 }, // Arbitrum
+  // USDT0 (Tether crosschain)
+  '0xB8CE59FC3717ada4C02eaDF9682A9e934F625ebb': { symbol: 'USDT0', decimals: 6 }, // Plasma
 };
