@@ -438,6 +438,33 @@
       $('rc-url').textContent = this.url;
       $('rc-summary').textContent = this.mode === 'usd' ? `${fmtUsd(usdAmt)} · ${fmt(tokenAmt)} ${t.symbol} on ${c.name}` : (usdAmt != null ? `${fmt(tokenAmt)} ${t.symbol} on ${c.name} · ${fmtUsd(usdAmt)}` : `${fmt(tokenAmt)} ${t.symbol} on ${c.name}`);
       const nd = $('rc-note-disp'); if (note) { nd.textContent = `"${note}"`; nd.classList.remove('hidden'); } else nd.classList.add('hidden');
+      this.renderQR();
+      this.showEns();
+    },
+    renderQR() {
+      const canvas = $('rc-qr'); if (!canvas || !window.SageQR) return;
+      // Card is always white, so pin the brand sage that keeps strong contrast
+      // regardless of the active light/dark theme.
+      const draw = (logo) => { try { SageQR.render(canvas, this.url, { color: '#667b68', bg: '#ffffff', logo, targetSize: 260, ecLevel: 'H' }); } catch (e) { console.warn('QR render failed', e); } };
+      if (this._logo && this._logo.complete) { draw(this._logo); return; }
+      const img = this._logo || (this._logo = new Image());
+      img.onload = () => draw(img);
+      img.onerror = () => draw(null);
+      if (!img.src) img.src = 'sage-logo.svg'; else if (img.complete) draw(img);
+    },
+    showEns() {
+      const ensEl = $('rc-qr-ens'), addrEl = $('rc-qr-addr');
+      ensEl.classList.add('hidden'); addrEl.classList.add('hidden');
+      if (!walletAddress) return;
+      const short = formatAddr(walletAddress);
+      fetch(`/api/ens?address=${walletAddress}`).then(r => r.json()).then(d => {
+        if (d && d.name) {
+          ensEl.textContent = d.name; ensEl.classList.remove('hidden');
+          addrEl.textContent = short; addrEl.classList.remove('hidden');
+        } else {
+          ensEl.textContent = short; ensEl.classList.remove('hidden');
+        }
+      }).catch(() => { ensEl.textContent = short; ensEl.classList.remove('hidden'); });
     },
     copy() { navigator.clipboard.writeText(this.url); const l = $('rc-copy-label'); l.textContent = 'Copied!'; setTimeout(() => l.textContent = 'Copy', 2000); },
     share() { if (navigator.share) navigator.share({ title: 'Payment Request', text: 'Pay me via Sage', url: this.url }).catch(() => {}); else this.copy(); },

@@ -18,6 +18,7 @@
 <script src="eth-utils.js"></script>
 <script src="config.js"></script>
 <script src="wallet.js"></script>
+<script src="qr.js"></script>
 <script defer src="transfer.js"></script>
 </head>
 <body class="bg-background text-on-surface antialiased">
@@ -274,6 +275,16 @@
       <p class="text-lg font-black text-on-background mb-1">Payment link ready</p>
       <p id="rc-summary" class="text-sm text-on-surface-variant mb-1"></p>
       <p id="rc-note-disp" class="hidden text-sm text-on-surface-variant italic mb-4"></p>
+
+      <div class="flex flex-col items-center mb-4">
+        <div class="p-3 bg-surface-container-lowest rounded-3xl border border-outline-variant/15 shadow-sm">
+          <canvas id="rc-qr" class="block rounded-2xl"></canvas>
+        </div>
+        <p id="rc-qr-ens" class="hidden mt-3 text-sm font-bold text-primary"></p>
+        <p id="rc-qr-addr" class="hidden mt-0.5 text-xs font-mono text-on-surface-variant"></p>
+        <p class="mt-2 text-xs text-on-surface-variant">Scan to pay with Sage</p>
+      </div>
+
       <div class="bg-surface-container-low rounded-xl p-3 mb-4 break-all text-xs font-mono text-on-surface text-left" id="rc-url"></div>
       <div class="flex gap-3">
         <button data-action="rc-copy" class="flex-1 py-3 bg-surface-container-low text-on-surface rounded-full font-bold text-sm hover:bg-surface-container-high transition-colors flex items-center justify-center gap-2"><span class="material-symbols-outlined text-base">content_copy</span><span id="rc-copy-label">Copy</span></button>
