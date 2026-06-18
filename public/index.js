@@ -501,8 +501,7 @@ function renderActivityList(allTx) {
       </div>
       <div class="flex-1 border-b border-outline-variant/10 pb-3">
         <div class="flex justify-between gap-2">
-          <p class="text-sm font-bold text-on-background">Bridged ${tx.fromToken} → ${tx.toToken}</p>
-          <p class="text-sm font-bold text-on-background">${tx.amount} ${tx.fromToken}</p>
+          <p class="text-sm font-bold text-on-background">Bridged ${tx.amount} ${tx.fromToken}</p>
         </div>
         <div class="flex justify-between gap-2">
           <p class="text-xs text-on-surface-variant">${tx.fromChain} → ${tx.toChain}</p>
