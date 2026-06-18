@@ -11,6 +11,8 @@ const DepositRaw = z.object({
   sourceToken:           z.string().nullish(),
   outputToken:           z.string().nullish(),
   destinationToken:      z.string().nullish(),
+  inputTokenSymbol:      z.string().nullish(),
+  outputTokenSymbol:     z.string().nullish(),
   originChainId:         z.number().nullish(),
   sourceChainId:         z.number().nullish(),
   destinationChainId:    z.number().nullish(),
@@ -32,14 +34,23 @@ const DepositRaw = z.object({
 
 const BRIDGE2 = '0x2Df1c51E09aECF9cacB7bc98cB1742757f163dF7'.toLowerCase();
 
-function resolveToken(address) {
-  if (!address) return { symbol: 'ETH', decimals: 18 };
-  // Check exact match first, then case-insensitive
-  if (TOKEN_MAP[address]) return TOKEN_MAP[address];
-  const lower = address.toLowerCase();
-  for (const [k, v] of Object.entries(TOKEN_MAP)) {
-    if (k.toLowerCase() === lower) return v;
+function resolveToken(address, symbolHint) {
+  // Try TOKEN_MAP first for precise symbol + decimals
+  if (address) {
+    if (TOKEN_MAP[address]) return TOKEN_MAP[address];
+    const lower = address.toLowerCase();
+    for (const [k, v] of Object.entries(TOKEN_MAP)) {
+      if (k.toLowerCase() === lower) return v;
+    }
   }
+  // Use symbol from API response if available, with best-guess decimals
+  if (symbolHint) {
+    const upper = symbolHint.toUpperCase();
+    const dec6 = ['USDC', 'USDT', 'USDC.E', 'USDC.e', 'USDS'];
+    const dec8 = ['WBTC', 'TBTC'];
+    return { symbol: symbolHint, decimals: dec6.includes(upper) ? 6 : dec8.includes(upper) ? 8 : 18 };
+  }
+  if (!address) return { symbol: 'ETH', decimals: 18 };
   return { symbol: address.slice(0, 6) + '…', decimals: 18 };
 }
 
@@ -113,8 +124,8 @@ export default async function handler(req, res) {
   }
 
   const deposits = rawDeposits.map(d => {
-    const inToken = resolveToken(d.inputToken || d.sourceToken);
-    const outToken = resolveToken(d.outputToken || d.destinationToken);
+    const inToken = resolveToken(d.inputToken || d.sourceToken, d.inputTokenSymbol);
+    const outToken = resolveToken(d.outputToken || d.destinationToken, d.outputTokenSymbol);
     const fromChainId = d.originChainId || d.sourceChainId;
     const toChainId = d.destinationChainId || d.destChainId;
     const recipient = (d.recipient || '').toLowerCase();

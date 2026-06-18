@@ -460,7 +460,9 @@ function fmtAmt(amt) {
 }
 function fmtToken(token) {
   const t = String(token || '');
-  return t.startsWith('0x') ? t.slice(0, 3) : t;
+  // If it's a full unresolved address, shorten it; proper symbols pass through unchanged
+  if (/^0x[0-9a-fA-F]{10}/.test(t)) return t.slice(0, 6) + '…';
+  return t;
 }
 
 function txMeta(tx) {
