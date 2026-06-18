@@ -26,8 +26,8 @@ let walletAddress=null, selTokenIdx=0, selChainIdx=0, generatedUrl='';
 let amountMode='usd'; // 'usd' or 'token'
 let prices={};
 
-const PRESETS_USD=[10,50,100,500];
-const PRESETS_TOKEN={USDC:[10,50,100,500],USDT:[10,50,100,500],DAI:[10,50,100,500],ETH:[0.01,0.05,0.1,0.5],WBTC:[0.001,0.005,0.01,0.05],POL:[10,50,100,500]};
+const PRESETS_USD=[10,50,100];
+const PRESETS_TOKEN={USDC:[10,50,100],USDT:[10,50,100],DAI:[10,50,100],ETH:[0.01,0.05,0.1],WBTC:[0.001,0.005,0.01],POL:[10,50,100]};
 
 function fmt(n){if(!isFinite(n))return '0';if(n>=1000)return n.toLocaleString('en-US',{maximumFractionDigits:2});if(n>=1)return n.toLocaleString('en-US',{maximumFractionDigits:4});return n.toLocaleString('en-US',{maximumFractionDigits:6});}
 function fmtUsd(n){if(!isFinite(n))return '$0.00';return '$'+n.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});}
