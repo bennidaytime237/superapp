@@ -606,12 +606,14 @@
     Receive.updateMyAddr();
     fetchBalances();
     Bridge.updateBtn(); Send.updateBtn(); Receive.updateBtn(); Deposit.updateBtn();
+    renderActivity();
   }
   function onDisconnected() {
     walletAddress = null; cachedBalances = null;
     $('connect-label').textContent = 'Connect';
     Receive.updateMyAddr(); refreshBalances();
     Bridge.updateBtn(); Send.updateBtn(); Receive.updateBtn(); Deposit.updateBtn();
+    renderActivity();
   }
   // expose for wallet.js shared delegation
   window.connectWallet = connectWallet;
@@ -658,6 +660,107 @@
   document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('picker-modal').classList.contains('hidden')) closePicker(); });
 
   // ══════════════════════════════════════════════════════════════════════════
+  // Sidebar — Bridge Times + Activity
+  // ══════════════════════════════════════════════════════════════════════════
+  function timeAgo(ts) {
+    const sec = Math.floor((Date.now() - ts) / 1000);
+    if (sec < 60) return 'Just now';
+    if (sec < 3600) return Math.floor(sec / 60) + 'm ago';
+    if (sec < 86400) return Math.floor(sec / 3600) + 'h ago';
+    return Math.floor(sec / 86400) + 'd ago';
+  }
+
+  async function fetchBridgeTimes() {
+    const el = document.getElementById('tr-bridge-times');
+    if (!el) return;
+    const cacheKey = 'sage_bridge_times';
+    function renderTimes(data) {
+      el.innerHTML = ['L1 → L2', 'L2 → L1', 'L2 → L2'].map(label => {
+        const val = data[label];
+        const timeStr = val != null ? (val < 60 ? '~' + Math.round(val) + 's' : '~' + (val / 60).toFixed(1) + 'm') : '--';
+        const color = val != null && val < 5 ? 'text-primary' : val != null && val < 30 ? 'text-on-background' : 'text-on-surface-variant';
+        return `<div class="flex-1 bg-surface-container rounded-lg py-2 px-2 text-center">
+          <p class="text-[10px] font-bold text-on-surface-variant mb-0.5">${label}</p>
+          <p class="text-sm font-black ${color}">${timeStr}</p>
+        </div>`;
+      }).join('');
+    }
+    const cached = lsGet(cacheKey, 60 * 60 * 1000);
+    if (cached) renderTimes(cached);
+    try {
+      const res = await fetch('/api/bridge-times');
+      const data = await res.json();
+      if (!data.error) { renderTimes(data); lsSet(cacheKey, data, 60 * 60 * 1000); }
+    } catch (e) { console.warn('Bridge times failed:', e); }
+  }
+
+  async function renderActivity() {
+    const feed = document.getElementById('tr-activity-feed');
+    if (!feed) return;
+    if (!walletAddress) {
+      feed.innerHTML = `<div class="text-center py-8">
+        <span class="material-symbols-outlined text-4xl text-on-surface-variant/30 mb-2">history</span>
+        <p class="text-sm text-on-surface-variant">No transactions yet</p>
+      </div>`;
+      return;
+    }
+    try {
+      const txCacheKey = 'sage_txcache_' + walletAddress.toLowerCase();
+      let allTx = lsGet(txCacheKey, 5 * 60 * 1000) || [];
+      fetch(`/api/transactions?address=${walletAddress}`)
+        .then(r => r.json())
+        .then(data => {
+          const fresh = data.deposits || [];
+          if (fresh.length > 0) {
+            lsSet(txCacheKey, fresh, 5 * 60 * 1000);
+            if (JSON.stringify(fresh) !== JSON.stringify(allTx)) renderActivityList(fresh);
+          }
+        }).catch(() => {});
+      if (allTx.length === 0) {
+        feed.innerHTML = `<div class="text-center py-8">
+          <span class="material-symbols-outlined text-4xl text-on-surface-variant/30 mb-2">history</span>
+          <p class="text-sm text-on-surface-variant">No transactions yet</p>
+        </div>`;
+        return;
+      }
+      renderActivityList(allTx);
+    } catch (e) {
+      console.warn('Activity feed failed:', e);
+    }
+  }
+
+  function renderActivityList(allTx) {
+    const feed = document.getElementById('tr-activity-feed');
+    if (!feed) return;
+    const show = allTx.slice(0, 3);
+    const EXP = { 1: 'https://etherscan.io/tx/', 42161: 'https://arbiscan.io/tx/', 8453: 'https://basescan.org/tx/', 10: 'https://optimistic.etherscan.io/tx/', 137: 'https://polygonscan.com/tx/', 324: 'https://explorer.zksync.io/tx/', 59144: 'https://lineascan.build/tx/' };
+    const rows = show.map(tx => {
+      const ago = timeAgo(tx.timestamp);
+      const url = tx.depositTxHash && tx.fromChainId ? (EXP[tx.fromChainId] || 'https://etherscan.io/tx/') + tx.depositTxHash : null;
+      const body = Safe.html`<div class="w-10 h-10 rounded-full bg-primary-container flex items-center justify-center flex-shrink-0">
+          <span class="material-symbols-outlined text-primary text-lg">layers</span>
+        </div>
+        <div class="flex-1 border-b border-outline-variant/10 pb-3">
+          <div class="flex justify-between gap-2">
+            <p class="text-sm font-bold text-on-background">Bridged ${tx.fromToken} → ${tx.toToken}</p>
+            <p class="text-sm font-bold text-on-background">${tx.amount} ${tx.fromToken}</p>
+          </div>
+          <div class="flex justify-between gap-2">
+            <p class="text-xs text-on-surface-variant">${tx.fromChain} → ${tx.toChain}</p>
+            <p class="text-xs text-primary font-bold">${ago}</p>
+          </div>
+        </div>`;
+      return url
+        ? Safe.html`<a href="${Safe.url(url)}" target="_blank" rel="noopener" class="flex items-center gap-4 px-2 hover:bg-surface-container-low rounded-lg cursor-pointer transition-colors">${body}<span class="material-symbols-outlined text-on-surface-variant text-base flex-shrink-0">open_in_new</span></a>`
+        : Safe.html`<div class="flex items-center gap-4 px-2">${body}</div>`;
+    });
+    const viewAll = allTx.length > 3
+      ? Safe.html`<a href="transactions.html" class="block mt-4 text-center text-sm font-bold text-primary hover:underline">View all ${allTx.length} transactions →</a>`
+      : Safe.html``;
+    Safe.setHTML(feed, Safe.html`<div class="space-y-4">${rows}</div>${viewAll}`);
+  }
+
+  // ══════════════════════════════════════════════════════════════════════════
   // Init
   // ══════════════════════════════════════════════════════════════════════════
   function bindInputs() {
@@ -679,6 +782,8 @@
     switchTab(params.get('tab'));
     await fetchPrices();
     Bridge.onAmount(); Send.onAmount(); Receive.onAmount(); Deposit.onAmount();
+    fetchBridgeTimes();
+    renderActivity();
     if (typeof setupWallet === 'function') {
       await setupWallet({ onConnected, onDisconnected, onChainChanged() { if (walletAddress) fetchBalances(); } });
     }
