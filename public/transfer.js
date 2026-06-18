@@ -694,6 +694,31 @@
     } catch (e) { console.warn('Bridge times failed:', e); }
   }
 
+  function getLocalSends() {
+    try {
+      const k = 'sage_tx_' + (walletAddress || '').toLowerCase();
+      return JSON.parse(localStorage.getItem(k) || '[]').filter(t => t.type === 'send');
+    } catch { return []; }
+  }
+
+  function mergeTx(bridgeTx) {
+    return [...bridgeTx, ...getLocalSends()].sort((a, b) => b.timestamp - a.timestamp);
+  }
+
+  function txMeta(tx) {
+    if (tx.type === 'send') {
+      return { icon: 'send', label: `Sent ${tx.amount} ${tx.token}`, sub: tx.chain };
+    }
+    const appDest = ['hyperliquid', 'hypercore', 'polymarket'];
+    if (appDest.some(a => (tx.toChain || '').toLowerCase().includes(a))) {
+      return { icon: 'savings', label: `Deposited ${tx.amount} ${tx.fromToken}`, sub: `${tx.fromChain} → ${tx.toChain}` };
+    }
+    if (tx.fromToken && tx.toToken && tx.fromToken !== tx.toToken) {
+      return { icon: 'swap_horiz', label: `Swapped ${tx.amount} ${tx.fromToken}`, sub: `${tx.fromChain} → ${tx.toChain}` };
+    }
+    return { icon: 'layers', label: `Bridged ${tx.amount} ${tx.fromToken}`, sub: `${tx.fromChain} → ${tx.toChain}` };
+  }
+
   async function renderActivity() {
     const feed = document.getElementById('tr-activity-feed');
     if (!feed) return;
@@ -706,14 +731,14 @@
     }
     try {
       const txCacheKey = 'sage_txcache_' + walletAddress.toLowerCase();
-      let allTx = lsGet(txCacheKey, 5 * 60 * 1000) || [];
+      let allTx = mergeTx(lsGet(txCacheKey, 5 * 60 * 1000) || []);
       fetch(`/api/transactions?address=${walletAddress}`)
         .then(r => r.json())
         .then(data => {
           const fresh = data.deposits || [];
           if (fresh.length > 0) {
             lsSet(txCacheKey, fresh, 5 * 60 * 1000);
-            if (JSON.stringify(fresh) !== JSON.stringify(allTx)) renderActivityList(fresh);
+            renderActivityList(mergeTx(fresh));
           }
         }).catch(() => {});
       if (allTx.length === 0) {
@@ -735,18 +760,17 @@
     const show = allTx.slice(0, 3);
     const EXP = { 1: 'https://etherscan.io/tx/', 42161: 'https://arbiscan.io/tx/', 8453: 'https://basescan.org/tx/', 10: 'https://optimistic.etherscan.io/tx/', 137: 'https://polygonscan.com/tx/', 324: 'https://explorer.zksync.io/tx/', 59144: 'https://lineascan.build/tx/' };
     const rows = show.map(tx => {
-      const ago = timeAgo(tx.timestamp);
-      const url = tx.depositTxHash && tx.fromChainId ? (EXP[tx.fromChainId] || 'https://etherscan.io/tx/') + tx.depositTxHash : null;
+      const ago = new Date(tx.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+      const meta = txMeta(tx);
+      const url = tx.type === 'send'
+        ? (tx.txHash && tx.chainId ? (EXP[tx.chainId] || 'https://etherscan.io/tx/') + tx.txHash : null)
+        : (tx.depositTxHash && tx.fromChainId ? (EXP[tx.fromChainId] || 'https://etherscan.io/tx/') + tx.depositTxHash : null);
       const body = Safe.html`<div class="w-10 h-10 rounded-full bg-primary-container flex items-center justify-center flex-shrink-0">
-          <span class="material-symbols-outlined text-primary text-lg">layers</span>
+          <span class="material-symbols-outlined text-primary text-lg">${meta.icon}</span>
         </div>
         <div class="flex-1 border-b border-outline-variant/10 pb-3">
           <div class="flex justify-between gap-2">
-            <p class="text-sm font-bold text-on-background">Bridged ${tx.fromToken} → ${tx.toToken}</p>
-            <p class="text-sm font-bold text-on-background">${tx.amount} ${tx.fromToken}</p>
-          </div>
-          <div class="flex justify-between gap-2">
-            <p class="text-xs text-on-surface-variant">${tx.fromChain} → ${tx.toChain}</p>
+            <p class="text-sm font-bold text-on-background">${meta.label}</p>
             <p class="text-xs text-primary font-bold">${ago}</p>
           </div>
         </div>`;
