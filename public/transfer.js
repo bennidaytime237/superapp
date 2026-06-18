@@ -771,9 +771,6 @@
         <div class="flex-1 border-b border-outline-variant/10 pb-3">
           <div class="flex justify-between gap-2">
             <p class="text-sm font-bold text-on-background">${meta.label}</p>
-          </div>
-          <div class="flex justify-between gap-2">
-            <p class="text-xs text-on-surface-variant">${meta.sub}</p>
             <p class="text-xs text-primary font-bold">${ago}</p>
           </div>
         </div>`;
