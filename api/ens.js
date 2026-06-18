@@ -29,12 +29,17 @@ async function resolveHL(name) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ type: 'userByName', user }),
     });
-    if (!r.ok) return null;
+    if (!r.ok) {
+      console.error('[ens] HL API non-ok status', r.status, 'for user:', user);
+      return null;
+    }
     const d = await r.json();
-    // Hyperliquid returns the address as a plain string; also handle object shapes defensively
+    console.log('[ens] HL API raw response for', user, ':', JSON.stringify(d));
+    // Hyperliquid may return the address as a plain string or inside an object
     const addr = typeof d === 'string' ? d : (d?.address ?? d?.user ?? null);
     return addr && ADDRESS_RE.test(addr) ? addr : null;
-  } catch {
+  } catch (e) {
+    console.error('[ens] HL API fetch error for', user, ':', e.message);
     return null;
   }
 }

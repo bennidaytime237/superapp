@@ -117,3 +117,45 @@ test('ens - sets Cache-Control header', async () => {
   await handler(makeReq({ name: 'test.eth' }), res);
   assert.ok(res._headers['Cache-Control'], 'Cache-Control header should be set');
 });
+
+// .hl resolution tests
+
+test('hl - resolves when API returns plain address string', async () => {
+  globalThis.fetch = jsonFetch('0x5aaeb6053f3e94c9b9a09f33669435e7ef1beaed');
+  const res = makeRes();
+  await handler(makeReq({ name: 'alice.hl' }), res);
+  assert.strictEqual(res._status, 200);
+  assert.strictEqual(res._body.address, '0x5aaeb6053f3e94c9b9a09f33669435e7ef1beaed');
+});
+
+test('hl - resolves when API returns address in user field', async () => {
+  globalThis.fetch = jsonFetch({ user: '0x5aaeb6053f3e94c9b9a09f33669435e7ef1beaed' });
+  const res = makeRes();
+  await handler(makeReq({ name: 'alice.hl' }), res);
+  assert.strictEqual(res._status, 200);
+  assert.strictEqual(res._body.address, '0x5aaeb6053f3e94c9b9a09f33669435e7ef1beaed');
+});
+
+test('hl - resolves when API returns address in address field', async () => {
+  globalThis.fetch = jsonFetch({ address: '0x5aaeb6053f3e94c9b9a09f33669435e7ef1beaed' });
+  const res = makeRes();
+  await handler(makeReq({ name: 'alice.hl' }), res);
+  assert.strictEqual(res._status, 200);
+  assert.strictEqual(res._body.address, '0x5aaeb6053f3e94c9b9a09f33669435e7ef1beaed');
+});
+
+test('hl - returns null address when API returns null', async () => {
+  globalThis.fetch = jsonFetch(null);
+  const res = makeRes();
+  await handler(makeReq({ name: 'nobody.hl' }), res);
+  assert.strictEqual(res._status, 200);
+  assert.strictEqual(res._body.address, null);
+});
+
+test('hl - returns null address when API non-ok', async () => {
+  globalThis.fetch = jsonFetch({}, false);
+  const res = makeRes();
+  await handler(makeReq({ name: 'nobody.hl' }), res);
+  assert.strictEqual(res._status, 200);
+  assert.strictEqual(res._body.address, null);
+});
