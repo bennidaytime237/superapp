@@ -357,7 +357,7 @@
 </main>
 
 <!-- Right Sidebar (desktop only) -->
-<aside class="hidden lg:block w-80 fixed right-0 top-[73px] pl-5 pr-4 py-6 space-y-4 border-l border-outline-variant/10 max-h-[calc(100vh-73px)] overflow-y-auto scrollbar-hide bg-background">
+<aside class="hidden lg:block w-80 fixed right-0 top-[73px] pl-5 pr-4 py-6 space-y-4 border-l border-outline-variant/10 max-h-[calc(100vh-113px)] overflow-y-auto scrollbar-hide bg-background">
 
   <!-- Bridge Times -->
   <section class="bg-surface-container-lowest rounded-xl px-5 py-4">
@@ -502,5 +502,57 @@
 </div>
 
 </div>
+
+<!-- Desktop Bottom Bar -->
+<footer class="hidden md:flex fixed bottom-0 left-80 right-0 lg:right-80 z-30 h-10 items-center px-6 bg-surface-container/80 backdrop-blur-xl border border-outline-variant/20 text-xs text-on-surface-variant">
+  <!-- Left: Live + Powered by Across -->
+  <div class="flex-1 flex items-center gap-5">
+    <div class="flex items-center gap-1.5">
+      <span class="w-1.5 h-1.5 rounded-full bg-green-500 shadow-[0_0_6px_1px_rgba(34,197,94,0.6)] animate-pulse"></span>
+      <span class="font-bold text-on-surface text-[11px]">Live</span>
+    </div>
+    <a href="https://across.to" target="_blank" rel="noopener" class="flex items-center opacity-40 hover:opacity-70 transition-opacity">
+      <img src="powered-by-across.svg" alt="Powered by Across" class="h-2.5 dark:hidden"/>
+      <img src="powered-by-across-light.svg" alt="Powered by Across" class="h-2.5 hidden dark:block"/>
+    </a>
+  </div>
+
+  <div class="w-px h-4 bg-outline-variant/30 flex-shrink-0"></div>
+
+  <!-- Center: Socials + Brand -->
+  <div class="flex-1 flex items-center justify-center gap-4">
+    <a href="https://x.com/SageOnchainXYZ" target="_blank" rel="noopener" aria-label="Follow on X" class="hover:text-on-surface transition-colors">
+      <svg viewBox="0 0 24 24" fill="currentColor" class="w-3.5 h-3.5">
+        <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.744l7.73-8.835L1.254 2.25H8.08l4.253 5.622zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+      </svg>
+    </a>
+    <a href="brand.html" class="hover:text-on-surface transition-colors font-medium">Brand</a>
+  </div>
+
+  <div class="w-px h-4 bg-outline-variant/30 flex-shrink-0"></div>
+
+  <!-- Right: ETH price + theme toggle -->
+  <div class="flex-1 flex items-center justify-end gap-5">
+    <span class="flex items-center gap-1 font-medium">
+      <span class="text-on-surface-variant/60">Ξ</span>
+      <span id="footer-eth-price" class="text-on-surface font-bold tabular-nums">--</span>
+    </span>
+    <div class="inline-flex items-center p-0.5 bg-surface-container rounded-full gap-0.5">
+      <button data-theme="light" title="Light mode" class="w-7 h-7 flex items-center justify-center rounded-full transition-all">
+        <span class="material-symbols-outlined" style="font-size:13px">light_mode</span>
+      </button>
+      <button data-theme="dark" title="Dark mode" class="w-7 h-7 flex items-center justify-center rounded-full transition-all">
+        <span class="material-symbols-outlined" style="font-size:13px">dark_mode</span>
+      </button>
+      <button data-theme="system" title="System default" class="w-7 h-7 flex items-center justify-center rounded-full transition-all">
+        <svg viewBox="0 0 24 24" class="w-3.5 h-3.5" fill="currentColor" aria-hidden="true">
+          <path d="M12 2a10 10 0 0 0 0 20V2z"/>
+          <circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="2"/>
+        </svg>
+      </button>
+    </div>
+  </div>
+</footer>
+
 </body>
 </html>

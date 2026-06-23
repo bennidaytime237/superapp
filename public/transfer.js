@@ -813,6 +813,8 @@
     const params = new URLSearchParams(window.location.search);
     switchTab(params.get('tab'));
     await fetchPrices();
+    const footerEth = document.getElementById('footer-eth-price');
+    if (footerEth && prices.ETH) footerEth.textContent = '$' + prices.ETH.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     Bridge.onAmount(); Send.onAmount(); Receive.onAmount(); Deposit.onAmount();
     fetchBridgeTimes();
     renderActivity();
