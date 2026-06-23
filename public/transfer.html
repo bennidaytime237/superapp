@@ -504,7 +504,7 @@
 </div>
 
 <!-- Desktop Bottom Bar -->
-<footer class="hidden md:flex fixed bottom-0 left-80 right-0 z-30 h-10 items-center justify-between px-6 bg-surface-container/80 backdrop-blur-xl border-t border-outline-variant/10 text-xs text-on-surface-variant">
+<footer class="hidden md:flex fixed bottom-0 left-80 right-0 lg:right-80 z-30 h-10 items-center justify-between px-6 bg-surface-container/80 backdrop-blur-xl border-t border-outline-variant/10 text-xs text-on-surface-variant">
   <!-- Left: Live + Powered by Across -->
   <div class="flex items-center gap-5">
     <div class="flex items-center gap-1.5">
@@ -533,9 +533,17 @@
       <span class="text-on-surface-variant/60">Ξ</span>
       <span id="footer-eth-price" class="text-on-surface font-bold tabular-nums">--</span>
     </span>
-    <button data-action="toggle-theme" title="Toggle dark mode" aria-label="Toggle dark mode" class="hover:text-on-surface transition-colors flex items-center">
-      <span class="material-symbols-outlined theme-toggle-icon" style="font-size:14px">dark_mode</span>
-    </button>
+    <div class="inline-flex items-center p-0.5 bg-surface-container rounded-full gap-0.5">
+      <button data-theme="light" title="Light mode" class="w-7 h-7 flex items-center justify-center rounded-full transition-all">
+        <span class="material-symbols-outlined" style="font-size:13px">light_mode</span>
+      </button>
+      <button data-theme="dark" title="Dark mode" class="w-7 h-7 flex items-center justify-center rounded-full transition-all">
+        <span class="material-symbols-outlined" style="font-size:13px">dark_mode</span>
+      </button>
+      <button data-theme="system" title="System default" class="w-7 h-7 flex items-center justify-center rounded-full transition-all">
+        <span class="material-symbols-outlined" style="font-size:13px">brightness_auto</span>
+      </button>
+    </div>
   </div>
 </footer>
 
