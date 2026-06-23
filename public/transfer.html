@@ -504,9 +504,9 @@
 </div>
 
 <!-- Desktop Bottom Bar -->
-<footer class="hidden md:flex fixed bottom-0 left-80 right-0 lg:right-80 z-30 h-10 items-center justify-between px-6 bg-surface-container/80 backdrop-blur-xl border border-outline-variant/20 text-xs text-on-surface-variant">
+<footer class="hidden md:flex fixed bottom-0 left-80 right-0 lg:right-80 z-30 h-10 items-center px-6 bg-surface-container/80 backdrop-blur-xl border border-outline-variant/20 text-xs text-on-surface-variant">
   <!-- Left: Live + Powered by Across -->
-  <div class="flex items-center gap-5">
+  <div class="flex-1 flex items-center gap-5">
     <div class="flex items-center gap-1.5">
       <span class="w-1.5 h-1.5 rounded-full bg-green-500 shadow-[0_0_6px_1px_rgba(34,197,94,0.6)] animate-pulse"></span>
       <span class="font-bold text-on-surface text-[11px]">Live</span>
@@ -517,8 +517,10 @@
     </a>
   </div>
 
+  <div class="w-px h-4 bg-outline-variant/30 flex-shrink-0"></div>
+
   <!-- Center: Socials + Brand -->
-  <div class="flex items-center gap-4">
+  <div class="flex-1 flex items-center justify-center gap-4">
     <a href="https://x.com/SageOnchainXYZ" target="_blank" rel="noopener" aria-label="Follow on X" class="hover:text-on-surface transition-colors">
       <svg viewBox="0 0 24 24" fill="currentColor" class="w-3.5 h-3.5">
         <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.744l7.73-8.835L1.254 2.25H8.08l4.253 5.622zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
@@ -527,8 +529,10 @@
     <a href="brand.html" class="hover:text-on-surface transition-colors font-medium">Brand</a>
   </div>
 
+  <div class="w-px h-4 bg-outline-variant/30 flex-shrink-0"></div>
+
   <!-- Right: ETH price + theme toggle -->
-  <div class="flex items-center gap-5">
+  <div class="flex-1 flex items-center justify-end gap-5">
     <span class="flex items-center gap-1 font-medium">
       <span class="text-on-surface-variant/60">Ξ</span>
       <span id="footer-eth-price" class="text-on-surface font-bold tabular-nums">--</span>
