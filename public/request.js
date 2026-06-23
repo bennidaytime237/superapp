@@ -174,7 +174,7 @@ function generateLink(){
   params.set('currency',amountMode);
   if(amountMode==='usd')params.set('usd',String(usdAmt));
   if(note)params.set('note',note);
-  generatedUrl=`${window.location.origin}/send.html?${params}`;
+  generatedUrl=`${window.location.origin}/payments.html?tab=pay&${params}`;
 
   // Show share view
   document.getElementById('form-view').classList.add('hidden');
