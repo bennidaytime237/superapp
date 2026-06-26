@@ -250,6 +250,7 @@ function renderModalRows(rows) {
     const tIcon = tokenIconUrl(token);
     const cIcon = `https://icons.llamao.fi/icons/chains/rsz_${chain.slug}.jpg`;
     const usdEl = bal > 0 ? Safe.html`<span class="text-xs text-on-surface-variant font-medium">$${fmtNum(usdVal)}</span>` : Safe.html``;
+    const gasEl = token.native ? Safe.html`<span class="ml-1 px-1 rounded-md bg-surface-container-high text-xs font-medium text-on-surface-variant align-middle">Gas Token</span>` : Safe.html``;
 
     return Safe.html`<button data-tidx="${tIdx}" data-chain-id="${chain.id}" class="token-pick w-full flex items-center gap-3 px-4 py-3 ${highlight} rounded-xl transition-colors text-left" data-search="${token.symbol + ' ' + token.name + ' ' + chain.name}">
       <div class="relative flex-shrink-0">
@@ -257,7 +258,7 @@ function renderModalRows(rows) {
         <img src="${Safe.url(cIcon)}" alt="${chain.name}" class="w-5 h-5 rounded-full absolute -bottom-0.5 -right-0.5 border-2 border-surface-container-lowest bg-surface-container-lowest"/>
       </div>
       <div class="flex-1 min-w-0">
-        <p class="font-bold text-[15px] ${bal > 0 ? 'text-on-background' : 'text-on-surface-variant'}">${bal > 0 ? fmtNum(bal) + ' ' : '0 '}${token.symbol}</p>
+        <p class="font-bold text-[15px] ${bal > 0 ? 'text-on-background' : 'text-on-surface-variant'}">${bal > 0 ? fmtNum(bal) + ' ' : '0 '}${token.symbol}${gasEl}</p>
         <p class="text-xs text-on-surface-variant">${token.name} · ${chain.name}</p>
       </div>
       ${usdEl}

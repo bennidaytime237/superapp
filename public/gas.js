@@ -142,12 +142,13 @@ function filterSourceList() {
   const items = rows.map(({t,ti,c,ci,bal}) => {
     const p = prices[t.symbol]||0;
     const usdEl = bal>0 ? Safe.html`<span class="text-xs text-on-surface-variant">$${fmt(bal*p)}</span>` : Safe.html``;
+    const gasEl = t.native ? Safe.html`<span class="ml-1 px-1 rounded-md bg-surface-container-high text-xs font-medium text-on-surface-variant align-middle">Gas Token</span>` : Safe.html``;
     return Safe.html`<button data-ti="${ti}" data-ci="${ci}" class="src-pick w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-surface-container-low transition-colors text-left">
       <div class="relative flex-shrink-0">
         <img src="${Safe.url(tokenIconUrl(t,c.chainId))}" class="w-10 h-10 rounded-full bg-surface-container"/>
         <img src="${Safe.url(chainLogoUrl(c.chainId))}" class="w-5 h-5 rounded-full absolute -bottom-0.5 -right-0.5 border-2 border-surface-container-lowest bg-surface-container-lowest"/>
       </div>
-      <div class="flex-1"><p class="font-bold text-[15px] ${bal>0?'text-on-background':'text-on-surface-variant'}">${bal>0?fmt(bal)+' ':'0 '}${t.symbol}</p><p class="text-xs text-on-surface-variant">${t.name} · ${c.name}</p></div>
+      <div class="flex-1"><p class="font-bold text-[15px] ${bal>0?'text-on-background':'text-on-surface-variant'}">${bal>0?fmt(bal)+' ':'0 '}${t.symbol}${gasEl}</p><p class="text-xs text-on-surface-variant">${t.name} · ${c.name}</p></div>
       ${usdEl}
       <span class="material-symbols-outlined text-on-surface-variant text-base">chevron_right</span>
     </button>`;

@@ -263,7 +263,7 @@ function renderPicker(rows){
         <img src="${Safe.url(TOKEN_ICONS[t.symbol]||'')}" class="w-9 h-9 rounded-full bg-surface-container"/>
         <img src="${Safe.url(chainIcon(c.id))}" class="w-4 h-4 rounded-full absolute -bottom-0.5 -right-0.5 border-2 border-surface-container-lowest bg-surface-container-lowest"/>
       </div>
-      <div class="flex-1"><p class="font-bold text-sm">${bal>0?fmt(bal)+' ':''}${t.symbol}</p><p class="text-xs text-on-surface-variant">${t.name} · ${c.name}</p></div>
+      <div class="flex-1"><p class="font-bold text-sm">${bal>0?fmt(bal)+' ':''}${t.symbol}${t.native?Safe.html`<span class="ml-1 px-1 rounded-md bg-surface-container-high text-xs font-medium text-on-surface-variant align-middle">Gas Token</span>`:Safe.html``}</p><p class="text-xs text-on-surface-variant">${t.name} · ${c.name}</p></div>
       <span class="material-symbols-outlined text-on-surface-variant text-base">chevron_right</span>
     </button>`
   );
