@@ -1,5 +1,3 @@
-function toggleMobileMenu() { document.getElementById('mobile-menu').classList.toggle('hidden'); }
-function closeMobileMenu(e) { if (e.target === document.getElementById('mobile-menu')) document.getElementById('mobile-menu').classList.add('hidden'); }
 
 // ── Config ──
 const CHAINS = {
@@ -81,7 +79,7 @@ function toggleMoreMenu() {
 }
 
 function copyAddress() {
-  navigator.clipboard.writeText(walletAddress);
+  navigator.clipboard.writeText(walletAddress).catch(() => {});
   closeWalletMenu();
   const label = document.getElementById('connect-label');
   const prev = label.textContent;
@@ -93,9 +91,9 @@ function disconnect() {
   closeWalletMenu();
   walletAddress = null;
   localStorage.setItem('sage_disconnected', '1');
-  // Reset header button
+  // Reset header button (click handling stays with the data-action delegation —
+  // assigning onclick here too would fire connectWallet twice per click)
   document.getElementById('connect-label').textContent = 'Connect Wallet';
-  document.getElementById('connect-btn').onclick = connectWallet;
   document.getElementById('connect-btn').className = 'flex items-center gap-2 px-4 py-2 bg-primary text-on-primary rounded-full text-sm font-bold tracking-wide active:scale-95 transition-transform';
   // Reset sidebar
   document.getElementById('sidebar-disconnected').classList.remove('hidden');
@@ -125,7 +123,11 @@ async function connectWallet() {
 }
 
 async function onConnected() {
-  const short = walletAddress.slice(0,6) + '...' + walletAddress.slice(-4);
+  // Capture the address this call is rendering for: every async result below
+  // must be dropped if the user switches accounts before it lands, or account
+  // A's portfolio/ENS name would overwrite account B's.
+  const addr = walletAddress;
+  const short = addr.slice(0,6) + '...' + addr.slice(-4);
 
   // Update header button
   document.getElementById('connect-label').textContent = short;
@@ -137,7 +139,8 @@ async function onConnected() {
   document.getElementById('sidebar-addr').textContent = short;
 
   // Resolve ENS name in background
-  fetch(`/api/ens?address=${walletAddress}`).then(r=>r.json()).then(d=>{
+  fetch(`/api/ens?address=${encodeURIComponent(addr)}`).then(r=>r.json()).then(d=>{
+    if (walletAddress !== addr) return;
     if(d.name){
       document.getElementById('connect-label').textContent=d.name;
       document.getElementById('sidebar-addr').textContent=d.name;
@@ -147,15 +150,22 @@ async function onConnected() {
   renderActivity();
 
   // Kick off both fetches immediately in parallel
-  const balanceFetch = fetch(`/api/balances?address=${walletAddress}&_t=${Date.now()}`);
+  const balanceFetch = fetch(`/api/balances?address=${encodeURIComponent(addr)}&_t=${Date.now()}`);
   // Wait for prices first so renderPortfolio has correct values
-  await fetchPrices();
+  const pricesOk = await fetchPrices();
   // Now await the balance response (likely already in-flight or done)
   try {
     const res = await balanceFetch;
+    if (!res.ok) throw new Error('API error ' + res.status);
     const data = await res.json();
+    if (walletAddress !== addr) return;
     renderPortfolio(data);
+    // Set OR clear the warning — a stale "prices unavailable" must not
+    // outlive a later successful fetch.
+    document.getElementById('hero-change').textContent =
+      pricesOk ? '' : 'Live prices unavailable — totals may be incomplete';
   } catch (e) {
+    if (walletAddress !== addr) return;
     console.error('Balance fetch failed:', e);
     document.getElementById('hero-balance').innerHTML = '<span class="text-on-surface-variant text-lg">Could not load balances — <button data-action="fetch-balances" class="underline text-primary font-bold">retry</button></span>';
   }
@@ -168,6 +178,9 @@ async function fetchPrices() {
     const t = setTimeout(() => ctrl.abort(), 5000);
     const res = await fetch('/api/prices', { signal: ctrl.signal });
     clearTimeout(t);
+    // A 503 carries the hardcoded fallback prices — usable for display, but
+    // the caller must know they aren't live (degraded ⇒ return false below).
+    const degraded = !res.ok;
     const raw = await res.json();
     // Normalise CoinGecko format
     prices = {
@@ -186,18 +199,22 @@ async function fetchPrices() {
       POOL: { usd: raw['pooltogether-v2']?.usd || 0, change: raw['pooltogether-v2']?.usd_24h_change || 0 },
       SNX:  { usd: raw.havven?.usd || 0,            change: raw.havven?.usd_24h_change || 0 },
     };
+    return !degraded;
   } catch {
     console.warn('Could not fetch prices, using defaults');
+    return false;
   }
 }
 
 // ── Balances ──
 async function fetchBalances() {
   if (!walletAddress) return;
+  const addr = walletAddress;
   try {
-    const res = await fetch(`/api/balances?address=${walletAddress}&_t=${Date.now()}`);
+    const res = await fetch(`/api/balances?address=${encodeURIComponent(addr)}&_t=${Date.now()}`);
     if (!res.ok) throw new Error('API error ' + res.status);
     const data = await res.json();
+    if (walletAddress !== addr) return;
     renderPortfolio(data);
   } catch (e) {
     console.error('Balance fetch failed:', e);
@@ -491,17 +508,20 @@ async function renderActivity() {
   }
 
   try {
-    const txCacheKey = 'sage_txcache_' + walletAddress.toLowerCase();
+    const addr = walletAddress;
+    const txCacheKey = 'sage_txcache_' + addr.toLowerCase();
     let allTx = mergeTx(lsGet(txCacheKey, 5 * 60 * 1000) || []);
 
-    fetch(`/api/transactions?address=${walletAddress}`)
+    fetch(`/api/transactions?address=${encodeURIComponent(addr)}`)
       .then(r => r.json())
       .then(data => {
+        // Skip on API failure or if the user switched accounts mid-flight;
+        // otherwise always render — a legitimately-empty fresh result must
+        // replace a stale cached list.
+        if (data.error || walletAddress !== addr) return;
         const fresh = data.deposits || [];
-        if (fresh.length > 0) {
-          lsSet(txCacheKey, fresh, 5 * 60 * 1000);
-          renderActivityList(mergeTx(fresh));
-        }
+        lsSet(txCacheKey, fresh, 5 * 60 * 1000);
+        renderActivityList(mergeTx(fresh));
       }).catch(() => {});
 
     if (allTx.length === 0) {
@@ -524,14 +544,20 @@ async function renderActivity() {
 
 function renderActivityList(allTx) {
   const feed = document.getElementById('activity-feed');
+  if (allTx.length === 0) {
+    feed.innerHTML = `<div class="text-center py-8">
+      <span class="material-symbols-outlined text-4xl text-on-surface-variant/30 mb-2">history</span>
+      <p class="text-sm text-on-surface-variant">No transactions yet</p>
+    </div>`;
+    return;
+  }
   const show = allTx.slice(0, 3);
-  const EXP = {1:'https://etherscan.io/tx/',42161:'https://arbiscan.io/tx/',8453:'https://basescan.org/tx/',10:'https://optimistic.etherscan.io/tx/',137:'https://polygonscan.com/tx/',324:'https://explorer.zksync.io/tx/',59144:'https://lineascan.build/tx/'};
   const rows = show.map(tx => {
     const ago = new Date(tx.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
     const meta = txMeta(tx);
     const url = tx.type === 'send'
-      ? (tx.txHash && tx.chainId ? (EXP[tx.chainId] || 'https://etherscan.io/tx/') + tx.txHash : null)
-      : (tx.depositTxHash && tx.fromChainId ? (EXP[tx.fromChainId] || 'https://etherscan.io/tx/') + tx.depositTxHash : null);
+      ? (tx.txHash && tx.chainId ? explorerTxUrl(tx.chainId, tx.txHash) : null)
+      : (tx.depositTxHash && tx.fromChainId ? explorerTxUrl(tx.fromChainId, tx.depositTxHash) : null);
     const body = Safe.html`<div class="w-10 h-10 rounded-full bg-primary-container flex items-center justify-center flex-shrink-0">
         <span class="material-symbols-outlined text-primary text-lg">${meta.icon}</span>
       </div>
@@ -551,32 +577,30 @@ function renderActivityList(allTx) {
   Safe.setHTML(feed, Safe.html`<div class="space-y-4">${rows}</div>${viewAll}`);
 }
 
-function timeAgo(ts) {
-  const sec = Math.floor((Date.now() - ts) / 1000);
-  if (sec < 60) return 'Just now';
-  if (sec < 3600) return Math.floor(sec / 60) + 'm ago';
-  if (sec < 86400) return Math.floor(sec / 3600) + 'h ago';
-  return Math.floor(sec / 86400) + 'd ago';
-}
-
 (async function init() {
-  if (window.ethereum) {
-    const accounts = await window.ethereum.request({ method: 'eth_accounts' });
-    const userDisconnected = localStorage.getItem('sage_disconnected') === '1';
-    if (accounts.length > 0 && !userDisconnected) {
-      walletAddress = accounts[0];
-      await onConnected();
+  try {
+    if (window.ethereum) {
+      const accounts = await window.ethereum.request({ method: 'eth_accounts' });
+      const userDisconnected = localStorage.getItem('sage_disconnected') === '1';
+      if (accounts.length > 0 && !userDisconnected) {
+        walletAddress = accounts[0];
+        await onConnected();
+      } else {
+        renderActivity();
+      }
+      window.ethereum.on('accountsChanged', (accs) => {
+        if (accs.length === 0) { disconnect(); return; }
+        localStorage.removeItem('sage_disconnected');
+        walletAddress = accs[0];
+        onConnected();
+      });
+      window.ethereum.on('chainChanged', () => { if (walletAddress) onConnected(); });
     } else {
       renderActivity();
     }
-    window.ethereum.on('accountsChanged', (accs) => {
-      if (accs.length === 0) { disconnect(); return; }
-      localStorage.removeItem('sage_disconnected');
-      walletAddress = accs[0];
-      onConnected();
-    });
-    window.ethereum.on('chainChanged', () => { if (walletAddress) onConnected(); });
-  } else {
+  } catch (e) {
+    // A misbehaving provider must not take the rest of the page down with it
+    console.warn('Wallet init failed:', e);
     renderActivity();
   }
   fetchBridgeTimes();
@@ -616,11 +640,6 @@ function toggleBalanceVisibility() {
   const icon = document.getElementById('balance-eye-icon');
   icon.textContent = balancesHidden ? 'visibility_off' : 'visibility';
   if (portfolioData) renderPortfolio(portfolioData);
-}
-
-function formatBalanceDisplay(value) {
-  if (!balancesHidden) return usd(value);
-  return '••••';
 }
 
 // ── Event delegation & input listeners ──────────────────────────────────────

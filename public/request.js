@@ -42,17 +42,24 @@ async function fetchPrices(){
 function tokenPrice(){return prices[TOKENS[selTokenIdx].symbol]||0;}
 
 async function connectWallet() {
-  if(!window.ethereum){alert('Install MetaMask');return;}
-  const accs=await window.ethereum.request({method:'eth_requestAccounts'});
-  walletAddress=accs[0];
-  document.getElementById('connect-label').textContent=formatAddr(walletAddress);
-  document.getElementById('my-address').textContent=formatAddr(walletAddress);
-  resolveWalletENS();
-  updateBtn();
+  if(!window.ethereum){showNoWalletMessage();return;}
+  try{
+    const accs=await window.ethereum.request({method:'eth_requestAccounts'});
+    localStorage.removeItem('sage_disconnected');
+    walletAddress=accs[0];
+    document.getElementById('connect-label').textContent=formatAddr(walletAddress);
+    document.getElementById('my-address').textContent=formatAddr(walletAddress);
+    resolveWalletENS();
+    updateBtn();
+  }catch(e){
+    if(e&&e.code!==4001)console.warn('Wallet connect failed:',e.message||e);
+  }
 }
 function resolveWalletENS(){
   if(!walletAddress)return;
-  fetch(`/api/ens?address=${walletAddress}`).then(r=>r.json()).then(d=>{
+  const addr=walletAddress;
+  fetch(`/api/ens?address=${encodeURIComponent(addr)}`).then(r=>r.json()).then(d=>{
+    if(walletAddress!==addr)return;
     if(d.name){
       document.getElementById('connect-label').textContent=d.name;
       const ensEl=document.getElementById('my-ens');
@@ -271,8 +278,6 @@ function selectToken(ti,ci){selTokenIdx=ti;selChainIdx=ci;closePicker();updateDi
   });
 })();
 
-function toggleMobileMenu() { document.getElementById('mobile-menu').classList.toggle('hidden'); }
-function closeMobileMenu(e) { if (e.target === document.getElementById('mobile-menu')) document.getElementById('mobile-menu').classList.add('hidden'); }
 
 // ── Event delegation & input listeners ──────────────────────────────────────
 document.addEventListener('click', function(e) {

@@ -1,5 +1,3 @@
-function toggleMobileMenu() { document.getElementById('mobile-menu').classList.toggle('hidden'); }
-function closeMobileMenu(e) { if (e.target === document.getElementById('mobile-menu')) document.getElementById('mobile-menu').classList.add('hidden'); }
 
 (function() {
   "use strict";
@@ -63,10 +61,6 @@ function closeMobileMenu(e) { if (e.target === document.getElementById('mobile-m
     if (!d.fillBlockTimestamp || !d.depositBlockTimestamp) return null;
     const diff = (new Date(d.fillBlockTimestamp) - new Date(d.depositBlockTimestamp)) / 1000;
     return diff > 0 ? diff : null;
-  }
-
-  function imgFallback(ev) {
-    ev.target.style.display = "none";
   }
 
   function statusBadge(status) {
@@ -283,11 +277,18 @@ function closeMobileMenu(e) { if (e.target === document.getElementById('mobile-m
 
   // --- Fetch and render all ---
 
+  let fetchSeq = 0;
+  let lastFetchAt = 0;
+
   async function fetchAndRender() {
+    const seq = ++fetchSeq;
+    lastFetchAt = Date.now();
     try {
       const res = await fetch("/api/radar");
       if (!res.ok) throw new Error("HTTP " + res.status);
       const data = await res.json();
+      // A slow response for an older tick must not overwrite newer data
+      if (seq !== fetchSeq) return;
       lsSet('sage_radar_cache', data, 2 * 60 * 1000);
 
       buildMaps(data);
@@ -311,6 +312,9 @@ function closeMobileMenu(e) { if (e.target === document.getElementById('mobile-m
     countdown = 30;
     clearInterval(countdownInterval);
     countdownInterval = setInterval(function() {
+      // Don't poll (or tick down) while the tab is hidden — an abandoned tab
+      // would otherwise hit /api/radar ~2880×/day.
+      if (document.hidden) return;
       countdown--;
       var el = document.getElementById("countdown");
       if (el) el.textContent = countdown + "s";
@@ -320,6 +324,15 @@ function closeMobileMenu(e) { if (e.target === document.getElementById('mobile-m
       }
     }, 1000);
   }
+
+  // Refresh immediately when the user returns to a tab whose data is older
+  // than one refresh cycle (the countdown pauses while hidden).
+  document.addEventListener('visibilitychange', function() {
+    if (!document.hidden && Date.now() - lastFetchAt > 30000) {
+      countdown = 30;
+      fetchAndRender();
+    }
+  });
 
   // --- Init ---
 
@@ -334,10 +347,3 @@ function closeMobileMenu(e) { if (e.target === document.getElementById('mobile-m
   startCountdown();
 
 })();
-
-// ── Event delegation ──────────────────────────────────────────────────────────
-document.addEventListener('click', function(e) {
-  var el = e.target.closest('[data-action]');
-  if (!el) return;
-  // radar.html has no page-specific click actions beyond shared wallet/theme
-});

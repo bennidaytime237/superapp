@@ -21,9 +21,6 @@ let CHAINS = [
   { id: 1868, name: 'Soneium', slug: 'soneium' },
   { id: 999, name: 'HyperEVM', slug: 'hyperliquid%20evm' },
   { id: 232, name: 'Lens', slug: 'lens%20network' },
-  // Virtual destinations — Hyperliquid deposits via Arbitrum
-  { id: 'hl-spot', name: 'Hyperliquid Spot', slug: 'hyperliquid%20evm', virtual: true },
-  { id: 'hl-perp', name: 'Hyperliquid Perp', slug: 'hyperliquid%20evm', virtual: true },
 ];
 
 let TOKENS = [
@@ -54,18 +51,7 @@ let TOKENS = [
 
 ];
 
-// ── Hyperliquid deposit via Across embedded actions ──
-const HL_BRIDGE2 = '0x2Df1c51E09aECF9cacB7bc98cB1742757f163dF7';
-const USDC_ARB = '0xaf88d065e77c8cC2239327C5EDb3A432268e5831';
-const HL_MIN_DEPOSIT = 5_000_000; // 5 USDC in 6 decimals
-
-function isHyperliquidDest() {
-  const dest = CHAINS[toChainIdx];
-  return dest?.virtual && (dest.id === 'hl-spot' || dest.id === 'hl-perp');
-}
-
 // ── State ──
-let mode = 'bridge';
 let fromChainIdx = 0, toChainIdx = 1;
 let fromTokenIdx = 0, toTokenIdx = 1;
 let slippage = 'auto';
@@ -73,7 +59,10 @@ let walletAddress = null;
 let fromBal = null; // raw number
 let prices = {};
 let quoteTimer = null;
-let lastQuote = null; // stores Across swap/approval response
+let lastQuote = null;   // stores Across swap/approval response
+let lastQuoteAt = 0;    // Date.now() when lastQuote was fetched
+let quoteSeq = 0;       // drops stale quote responses that resolve out of order
+const QUOTE_MAX_AGE_MS = 30000; // re-quote before executing anything older
 
 // ── Icon helpers ──
 function tokenIconUrl(token) {
@@ -89,6 +78,7 @@ async function connectWallet() {
   if (!window.ethereum) { alert('Install MetaMask to continue'); return; }
   try {
     const accs = await window.ethereum.request({ method: 'eth_requestAccounts' });
+    localStorage.removeItem('sage_disconnected');
     walletAddress = accs[0];
     document.getElementById('connect-label').textContent = formatAddr(walletAddress);
     resolveWalletENS();
@@ -98,22 +88,26 @@ async function connectWallet() {
 }
 function resolveWalletENS(){
   if(!walletAddress)return;
-  const short=walletAddress.slice(0,6)+'...'+walletAddress.slice(-4);
+  const addr=walletAddress;
+  const short=addr.slice(0,6)+'...'+addr.slice(-4);
   document.getElementById('from-wallet-label').textContent=short;
-  fetch(`/api/ens?address=${walletAddress}`).then(r=>r.json()).then(d=>{
+  fetch(`/api/ens?address=${encodeURIComponent(addr)}`).then(r=>r.json()).then(d=>{
+    if(walletAddress!==addr)return;
     if(d.name){document.getElementById('connect-label').textContent=d.name;document.getElementById('from-wallet-label').textContent=d.name;}
   }).catch(()=>{});
 }
 
 async function updateBalance() {
   if (!walletAddress) return;
+  const addr = walletAddress;
   const token = TOKENS[fromTokenIdx];
   const chainId = CHAINS[fromChainIdx].id;
   try {
-    const res = await fetch(`/api/balances?address=${walletAddress}&_t=${Date.now()}`);
+    const res = await fetch(`/api/balances?address=${encodeURIComponent(addr)}&_t=${Date.now()}`);
+    if (!res.ok) throw new Error('API error ' + res.status);
     const data = await res.json();
+    if (walletAddress !== addr) return;
     cachedBalances = data;
-    console.log('Balances response:', JSON.stringify(data), 'Looking for:', chainId, token.symbol);
     // find balance for this token on this chain (API may return string or number keys)
     const chainData = data[chainId] || data[String(chainId)] || {};
     const bal = chainData[token.symbol] || 0;
@@ -176,13 +170,15 @@ function buildChainGrid(chainsToShow) {
   const grid = document.getElementById('chain-grid');
   let defaultList = CHAINS.filter(c => !c.virtual);
   const list = chainsToShow || (showAllChains ? defaultList : defaultList.slice(0, 11));
-  grid.innerHTML = `<button data-action="set-chain-filter" data-arg="" class="flex flex-col items-center justify-center w-12 h-12 rounded-xl text-[10px] font-bold transition-colors ${modalChainFilter === null ? 'bg-primary text-on-primary' : 'bg-surface-container-low text-on-surface-variant hover:bg-surface-container-high'}">All</button>` +
-    list.map(c => {
-      const active = modalChainFilter === c.id;
-      return `<button data-action="set-chain-filter" data-arg="${c.id}" class="flex flex-col items-center justify-center w-12 h-12 rounded-xl transition-colors ${active ? 'bg-primary' : 'bg-surface-container-low hover:bg-surface-container-high'}" title="${c.name}">
-        <img src="https://icons.llamao.fi/icons/chains/rsz_${c.slug}.jpg" class="w-6 h-6 rounded-full" data-fallback-src="${TW}/${c.slug}/info/logo.png" data-img-fallback/>
+  // Chain names/slugs can arrive from /api/routes at runtime — render through
+  // Safe.html so a poisoned name can't inject markup into the picker.
+  const allBtn = Safe.html`<button data-action="set-chain-filter" data-arg="" class="flex flex-col items-center justify-center w-12 h-12 rounded-xl text-[10px] font-bold transition-colors ${modalChainFilter === null ? 'bg-primary text-on-primary' : 'bg-surface-container-low text-on-surface-variant hover:bg-surface-container-high'}">All</button>`;
+  Safe.setHTML(grid, [allBtn].concat(list.map(c => {
+    const active = modalChainFilter === c.id;
+    return Safe.html`<button data-action="set-chain-filter" data-arg="${c.id}" class="flex flex-col items-center justify-center w-12 h-12 rounded-xl transition-colors ${active ? 'bg-primary' : 'bg-surface-container-low hover:bg-surface-container-high'}" title="${c.name}">
+        <img src="${Safe.url('https://icons.llamao.fi/icons/chains/rsz_' + c.slug + '.jpg')}" class="w-6 h-6 rounded-full" data-fallback-src="${Safe.url(TW + '/' + c.slug + '/info/logo.png')}" data-img-fallback/>
       </button>`;
-    }).join('');
+  })));
   document.getElementById('chain-toggle').textContent = showAllChains ? 'Show less' : 'View all';
 }
 
@@ -315,13 +311,6 @@ function selectToken(tokenIdx, chainId) {
   onAmountChange();
 }
 
-function swapChains() {
-  [fromChainIdx, toChainIdx] = [toChainIdx, fromChainIdx];
-  updateTokenDisplay();
-  updateBalance();
-  onAmountChange();
-}
-
 function swapTokens() {
   [fromTokenIdx, toTokenIdx] = [toTokenIdx, fromTokenIdx];
   [fromChainIdx, toChainIdx] = [toChainIdx, fromChainIdx];
@@ -365,8 +354,6 @@ function updateRate() {
   }
 }
 
-function isSameChain() { return !CHAINS[toChainIdx]?.virtual && fromChainIdx === toChainIdx; }
-
 function updateRoute() {
   document.getElementById('fee-route').textContent = `${CHAINS[fromChainIdx].name} → ${CHAINS[toChainIdx].name} · Across`;
 }
@@ -395,14 +382,10 @@ function updateActionBtn() {
     btn.className = 'w-full py-4 bg-surface-container-high text-on-surface-variant/50 rounded-full font-black text-lg cursor-not-allowed';
     btn.disabled = true;
   } else {
-    btn.textContent = isHyperliquidDest() ? 'Deposit to Hyperliquid' : 'Bridge';
+    btn.textContent = 'Bridge';
     btn.className = 'w-full py-4 bg-primary text-on-primary rounded-full font-black text-lg active:scale-[0.98] transition-transform';
     btn.disabled = false;
   }
-}
-
-function setSlippage(val) {
-  slippage = val;
 }
 
 function toggleFeeBreakdown() {
@@ -435,6 +418,8 @@ function toggleRecipient() {
     document.getElementById('recipient-address').value = '';
     document.getElementById('recipient-error').classList.add('hidden');
     document.getElementById('to-label').textContent = 'Wallet';
+    // Recipient reverted to the connected wallet — the old quote is invalid
+    onAmountChange();
   }
 }
 
@@ -467,8 +452,7 @@ function getNativeWrap(chainId) {
 function updateGasTopupVisibility() {
   const row = document.getElementById('gas-topup-row');
   const destChain = CHAINS[toChainIdx];
-  // Hide for Hyperliquid virtual destinations
-  if (!destChain || destChain.virtual || isHyperliquidDest()) {
+  if (!destChain) {
     row.classList.add('hidden');
     gasTopupEnabled = false;
     return;
@@ -522,12 +506,6 @@ function setMax() {
     onAmountChange();
   }
 }
-function setHalf() {
-  if (fromBal != null) {
-    document.getElementById('input-amount').value = (fromBal / 2).toFixed(6);
-    onAmountChange();
-  }
-}
 
 // ── Quote / Amount ──
 function updateBalanceWarning() {
@@ -567,32 +545,25 @@ function onAmountChange() {
 
 // ── Quote fetcher ──
 async function fetchBestQuote(amount) {
+  const seq = ++quoteSeq;
   try {
   const fromToken = TOKENS[fromTokenIdx];
   const toToken = TOKENS[toTokenIdx];
   const originChain = CHAINS[fromChainIdx].id;
   const destChain = CHAINS[toChainIdx].id;
-  const fp = prices[fromToken.symbol] || 0;
   const tp = prices[toToken.symbol] || 0;
-  const amountWei = BigInt(Math.floor(amount * 10 ** fromToken.decimals)).toString();
-  const sameChain = originChain === destChain;
+  const amountWei = toUnits(amount, fromToken.decimals);
 
-  const candidates = [];
+  let best = null;
+  try {
+    best = await fetchAcrossQuote(originChain, destChain, fromToken, toToken, amountWei);
+  } catch (e) { console.warn('Across quote failed:', e); }
 
-  if (isHyperliquidDest()) {
-    try {
-      const hlResult = await fetchHyperliquidQuote(originChain, fromToken, amountWei);
-      if (hlResult) candidates.push(hlResult);
-    } catch (e) { console.warn('Hyperliquid quote failed:', e); }
-  } else {
-    try {
-      const acrossResult = await fetchAcrossQuote(originChain, destChain, fromToken, toToken, amountWei);
-      if (acrossResult) candidates.push(acrossResult);
-    } catch (e) { console.warn('Across quote failed:', e); }
-  }
+  // A newer quote request was issued while this one was in flight — its result
+  // must win, or a slow response for an older amount executes the wrong trade.
+  if (seq !== quoteSeq) return;
 
-
-  if (candidates.length === 0) {
+  if (!best) {
     routeAvailable = false;
     document.getElementById('fee-display').textContent = 'No route found';
     document.getElementById('fee-route').textContent = '';
@@ -602,14 +573,13 @@ async function fetchBestQuote(amount) {
     return;
   }
 
-  // Pick best output
-  candidates.sort((a, b) => b.outputNum - a.outputNum);
-  const best = candidates[0];
   routeAvailable = true;
   lastQuote = best.quote;
   lastQuote._routeType = best.type;
   lastQuote._provider = best.provider;
   lastQuote._route = best.route;
+  lastQuote._recipient = best.recipient;
+  lastQuoteAt = Date.now();
 
   // Update UI
   document.getElementById('output-amount').textContent = fmtNum(best.outputNum);
@@ -623,10 +593,18 @@ async function fetchBestQuote(amount) {
   document.getElementById('bd-fee').textContent = best.feeDisplay;
   document.getElementById('bd-time').textContent = best.time;
   document.getElementById('bd-slip').textContent = slippage === 'auto' ? 'Auto' : (parseFloat(slippage) * 100) + '%';
+  updateActionBtn();
   } catch (e) {
+    if (seq !== quoteSeq) return;
     console.error('fetchBestQuote error:', e);
+    // Same reset as the no-route path — the button must not stay enabled
+    // next to a price-ratio estimate when quoting failed.
+    routeAvailable = false;
     document.getElementById('fee-display').textContent = 'Quote error';
     document.getElementById('fee-route').textContent = '';
+    document.getElementById('output-amount').textContent = '--';
+    document.getElementById('output-usd').textContent = '';
+    updateActionBtn();
   }
 }
 
@@ -636,12 +614,13 @@ async function fetchAcrossQuote(originChain, destChain, fromToken, toToken, amou
   const outputAddr = toToken.native ? toToken.wrapAddresses?.[destChain] : toToken.addresses[destChain];
   if (!inputAddr || !outputAddr) return null;
 
-  const recipient = getRecipient();
+  const recipient = getRecipient() || walletAddress || '0x0000000000000000000000000000000000000000';
+  const depositor = walletAddress || '0x0000000000000000000000000000000000000000';
   const params = new URLSearchParams({
     tradeType: 'exactInput', amount: amountWei, inputToken: inputAddr, outputToken: outputAddr,
     originChainId: originChain, destinationChainId: destChain,
-    depositor: walletAddress || '0x0000000000000000000000000000000000000000',
-    recipient: recipient || walletAddress || '0x0000000000000000000000000000000000000000',
+    depositor: depositor,
+    recipient: recipient,
     slippage: slippage,
   });
 
@@ -652,7 +631,6 @@ async function fetchAcrossQuote(originChain, destChain, fromToken, toToken, amou
   if (!res.ok) return null;
   const data = await res.json();
 
-  console.log('Across response keys:', Object.keys(data), 'steps:', data.steps, 'expectedOutput:', data.expectedOutput);
   // Try multiple possible field paths for the output amount
   const rawOutput = data.steps?.bridge?.outputAmount ?? data.expectedOutput ?? data.outputAmount ?? data.minExpectedInputTokenAmount ?? null;
   if (!rawOutput) { console.warn('Across: no output field found in response'); return null; }
@@ -676,59 +654,7 @@ async function fetchAcrossQuote(originChain, destChain, fromToken, toToken, amou
     time: '~2 seconds',
     type: 'across',
     quote: data,
-  };
-}
-
-
-// ── Hyperliquid deposit quote ──
-// Routes: any token on any chain → USDC on Arbitrum → Bridge2 deposit → Hyperliquid
-async function fetchHyperliquidQuote(originChain, fromToken, amountWei) {
-  const inputAddr = fromToken.native ? fromToken.wrapAddresses?.[originChain] : fromToken.addresses[originChain];
-  if (!inputAddr) return null;
-
-  // Output is always USDC on Arbitrum
-  const outputAddr = USDC_ARB;
-  const destChain = 42161; // Arbitrum
-
-  // Use Across POST /swap/approval with embedded action to deposit to Bridge2
-  // The action: transfer USDC to Bridge2 contract (simple ERC20 transfer triggers deposit)
-  const params = new URLSearchParams({
-    tradeType: 'exactInput', amount: amountWei,
-    inputToken: inputAddr, outputToken: outputAddr,
-    originChainId: originChain, destinationChainId: destChain,
-    depositor: walletAddress || '0x0000000000000000000000000000000000000000',
-    recipient: HL_BRIDGE2, // USDC goes directly to Bridge2 — triggers deposit for depositor
-    slippage: 'auto',
-  });
-
-  const ctrl = new AbortController();
-  const t = setTimeout(() => ctrl.abort(), 8000);
-  const res = await fetch(`${ACROSS_API}/swap/approval?${params}`, { signal: ctrl.signal });
-  clearTimeout(t);
-  if (!res.ok) return null;
-  const data = await res.json();
-
-  const fp = prices[fromToken.symbol] || 0;
-  const rawOutput = data.steps?.bridge?.outputAmount || data.expectedOutput || '0';
-  const outputNum = Number(BigInt(rawOutput)) / 1e6; // USDC 6 decimals
-  const rawFee = data.fees?.total || data.fees?.totalRelayFee?.total || '0';
-  const totalFee = Number(BigInt(rawFee)) / 10 ** fromToken.decimals;
-
-  if (outputNum < 5) {
-    return { outputNum, provider: 'Hyperliquid', route: 'Below 5 USDC minimum', feeDisplay: '--', time: '--', type: 'error', quote: null };
-  }
-
-  const dest = CHAINS[toChainIdx];
-  const destLabel = dest.id === 'hl-spot' ? 'Spot' : 'Perp';
-
-  return {
-    outputNum,
-    provider: 'Across → Hyperliquid',
-    route: `${fromToken.symbol} → USDC → Hyperliquid ${destLabel}`,
-    feeDisplay: `~$${fmtNum(totalFee * fp)}`,
-    time: '~2 min',
-    type: 'hyperliquid',
-    quote: data,
+    recipient: recipient,
   };
 }
 
@@ -772,12 +698,30 @@ function stopTxTimer() {
 let txRedirectTimer = null;
 let txCountdownInterval = null;
 
-const EXPLORERS = {
-  1:'https://etherscan.io/tx/',42161:'https://arbiscan.io/tx/',8453:'https://basescan.org/tx/',
-  10:'https://optimistic.etherscan.io/tx/',137:'https://polygonscan.com/tx/',324:'https://explorer.zksync.io/tx/',
-  59144:'https://lineascan.build/tx/',34443:'https://explorer.mode.network/tx/',81457:'https://blastscan.io/tx/',
-  534352:'https://scrollscan.com/tx/',7777777:'https://explorer.zora.energy/tx/',
-};
+// Saves a bridge to localStorage for the dashboard activity feed. Called as
+// soon as the deposit tx is sent — a bridge whose fill-poll times out is
+// still a real transaction and must appear in history.
+function saveTxHistory(summary, txHash) {
+  try {
+    const historyKey = 'sage_tx_' + (walletAddress || '').toLowerCase();
+    const history = JSON.parse(localStorage.getItem(historyKey) || '[]');
+    history.unshift({
+      type: 'bridge',
+      summary,
+      time: 0,
+      fromToken: TOKENS[fromTokenIdx].symbol,
+      toToken: TOKENS[toTokenIdx].symbol,
+      fromChain: CHAINS[fromChainIdx].name,
+      toChain: CHAINS[toChainIdx].name,
+      fromChainId: CHAINS[fromChainIdx].id,
+      amount: document.getElementById('input-amount').value,
+      timestamp: Date.now(),
+      txHash: txHash || null,
+    });
+    if (history.length > 20) history.length = 20;
+    localStorage.setItem(historyKey, JSON.stringify(history));
+  } catch {}
+}
 
 function showTxSuccess(summary, elapsedSec, txHash, chainId) {
   if (txTimerInterval) { clearInterval(txTimerInterval); txTimerInterval = null; }
@@ -797,26 +741,6 @@ function showTxSuccess(summary, elapsedSec, txHash, chainId) {
     });
   }
 
-  // Save to localStorage for dashboard activity feed
-  try {
-    const historyKey = 'sage_tx_' + (walletAddress || 'unknown').toLowerCase();
-    const history = JSON.parse(localStorage.getItem(historyKey) || '[]');
-    history.unshift({
-      type: 'bridge',
-      summary,
-      time: elapsedSec,
-      fromToken: TOKENS[fromTokenIdx].symbol,
-      toToken: TOKENS[toTokenIdx].symbol,
-      fromChain: CHAINS[fromChainIdx].name,
-      toChain: CHAINS[toChainIdx].name,
-      fromChainId: CHAINS[fromChainIdx].id,
-      amount: document.getElementById('input-amount').value,
-      timestamp: Date.now(),
-      txHash: txHash || null,
-    });
-    if (history.length > 20) history.length = 20;
-    localStorage.setItem(historyKey, JSON.stringify(history));
-  } catch {}
   document.getElementById('tx-summary').textContent = summary;
   document.getElementById('tx-time-final').textContent = elapsedSec.toFixed(1) + 's';
 
@@ -843,6 +767,8 @@ function showTxSuccess(summary, elapsedSec, txHash, chainId) {
   if (elapsedSec < 5) {
     const text = encodeURIComponent('I just moved money onchain with Sage. Cents. Seconds. Sage. \u{1F33F}');
     shareBtn.href = `https://x.com/intent/tweet?text=${text}`;
+    // Restore the label — showTxPending repurposes this button as an explorer link
+    shareBtn.textContent = 'Share on X';
     shareBtn.classList.remove('hidden');
   } else {
     shareBtn.classList.add('hidden');
@@ -896,11 +822,29 @@ function closeTxScreen() {
   updateBalance();
 }
 
+// The quote must be re-fetched before signing when it is stale, was built for
+// a different recipient/wallet, or is missing — the swapTx calldata embeds the
+// recipient, so signing a mismatched quote sends funds to the wrong address.
+function quoteNeedsRefresh() {
+  if (!lastQuote) return true;
+  if (Date.now() - lastQuoteAt > QUOTE_MAX_AGE_MS) return true;
+  const currentRecipient = getRecipient() || walletAddress;
+  if ((lastQuote._recipient || '').toLowerCase() !== (currentRecipient || '').toLowerCase()) return true;
+  return false;
+}
+
 async function executeSwap() {
   if (!walletAddress) { connectWallet(); return; }
   const amount = parseFloat(document.getElementById('input-amount').value) || 0;
   if (amount <= 0) return;
   if (fromBal != null && amount > fromBal) return;
+  // A non-empty but invalid recipient means the user intended a third-party
+  // destination — refuse to fall back to their own wallet silently.
+  const recipInput = document.getElementById('recipient-address');
+  if (recipInput && recipInput.value.trim() && !EthUtils.isValidAddress(recipInput.value.trim())) {
+    validateRecipient();
+    return;
+  }
 
   const fromSym = TOKENS[fromTokenIdx].symbol;
   const toSym = TOKENS[toTokenIdx].symbol;
@@ -908,46 +852,49 @@ async function executeSwap() {
   const toChainName = CHAINS[toChainIdx].name;
 
   try {
-    if (!lastQuote) await fetchBestQuote(amount);
-    if (!lastQuote) throw new Error('Could not get quote');
-    const routeType = lastQuote._routeType;
-    const provider = lastQuote._provider;
+    // Cancel any pending debounce quote: its seq-guard would otherwise void
+    // the quote we are about to await here.
+    clearTimeout(quoteTimer);
+    if (quoteNeedsRefresh()) await fetchBestQuote(amount);
+    if (!lastQuote || quoteNeedsRefresh()) throw new Error('Could not get quote');
 
-    if (routeType === 'across') {
-      // Standard Across bridge
-      if (lastQuote.approvalTxns?.length) {
-        showTxScreen('Approving...', `Approve ${fromSym} for bridging`);
-        for (const tx of lastQuote.approvalTxns) { await sendTx(tx); }
-      }
-      showTxScreen('Confirm in wallet...', `${amount} ${fromSym} → ${toSym}`);
-      const hash = await sendTx(lastQuote.swapTx);
-      startTxTimer();
-      showTxScreen('Bridging...', `${fromChainName} → ${toChainName} via Across`);
+    if (lastQuote.approvalTxns?.length) {
+      showTxScreen('Approving...', `Approve ${fromSym} for bridging`);
+      for (const tx of lastQuote.approvalTxns) { await sendTx(tx); }
+    }
+    showTxScreen('Confirm in wallet...', `${amount} ${fromSym} → ${toSym}`);
+    const hash = await sendTx(lastQuote.swapTx);
+    startTxTimer();
+    showTxScreen('Bridging...', `${fromChainName} → ${toChainName} via Across`);
 
-      // Fire gas top-up bridge in parallel (don't wait for main fill first)
-      const gasTopupPromise = gasTopupEnabled
-        ? executeGasTopup().catch(e => console.warn('Gas top-up failed (non-fatal):', e))
-        : null;
+    // The deposit tx is real from this point — record it regardless of
+    // whether the fill confirms inside the polling window.
+    saveTxHistory(`${amount} ${fromSym} on ${fromChainName} → ${toSym} on ${toChainName}`, hash);
 
-      await pollFill(CHAINS[fromChainIdx].id, hash);
-      const elapsed = stopTxTimer();
-      showTxSuccess(`${amount} ${fromSym} on ${fromChainName} → ${toSym} on ${toChainName}`, elapsed, hash, CHAINS[fromChainIdx].id);
+    const filled = await pollFill(CHAINS[fromChainIdx].id, hash);
+    const elapsed = stopTxTimer();
 
-    } else if (routeType === 'hyperliquid') {
-      // Same as Across bridge — USDC lands on Bridge2 and Hyperliquid credits the user
-      if (lastQuote.approvalTxns?.length) {
-        showTxScreen('Approving...', `Approve ${fromSym}`);
-        for (const tx of lastQuote.approvalTxns) { await sendTx(tx); }
-      }
-      showTxScreen('Confirm in wallet...', `${amount} ${fromSym} → Hyperliquid`);
-      const hash = await sendTx(lastQuote.swapTx);
-      const dest = CHAINS[toChainIdx];
-      const destLabel = dest.id === 'hl-spot' ? 'Spot' : 'Perp';
-      startTxTimer();
-      showTxScreen('Depositing...', `→ Hyperliquid ${destLabel}`);
-      await pollFill(CHAINS[fromChainIdx].id, hash);
-      const elapsed = stopTxTimer();
-      showTxSuccess(`${amount} ${fromSym} → USDC on Hyperliquid ${destLabel}`, elapsed, hash, CHAINS[fromChainIdx].id);
+    if (!filled) {
+      // Never claim success for a fill we could not confirm
+      showTxPending(hash);
+      return;
+    }
+
+    // Run the gas top-up sequentially before the success screen — running it
+    // in parallel made the two flows fight over the tx overlay and prompt the
+    // wallet at the same time.
+    let gasTopupFailed = false;
+    if (gasTopupEnabled) {
+      await executeGasTopup().catch(e => {
+        console.warn('Gas top-up failed (non-fatal):', e);
+        gasTopupFailed = true;
+      });
+    }
+
+    showTxSuccess(`${amount} ${fromSym} on ${fromChainName} → ${toSym} on ${toChainName}`, elapsed, hash, CHAINS[fromChainIdx].id);
+    if (gasTopupFailed) {
+      const summary = document.getElementById('tx-summary');
+      if (summary) summary.textContent += ' (Note: the gas top-up did not complete.)';
     }
   } catch (e) {
     console.error('Tx failed:', e);
@@ -955,6 +902,29 @@ async function executeSwap() {
     const btn = document.getElementById('action-btn');
     btn.textContent = e.code === 4001 ? 'Rejected' : 'Failed';
     setTimeout(() => updateActionBtn(), 2000);
+  }
+}
+
+// Shown when the fill was not confirmed within the polling window: the deposit
+// tx went through, but we won't pretend the bridge completed.
+function showTxPending(txHash) {
+  document.getElementById('tx-loading').classList.add('hidden');
+  document.getElementById('tx-success').classList.remove('hidden');
+  let msg = 'Still pending — your deposit was submitted but the fill has not been confirmed yet. Check the transaction status on the explorer.';
+  if (gasTopupEnabled) msg += ' The gas top-up was not started; retry it once the bridge completes.';
+  document.getElementById('tx-summary').textContent = msg;
+  document.getElementById('tx-time-final').textContent = '';
+  const congratsEl = document.getElementById('tx-congrats');
+  if (congratsEl) congratsEl.textContent = 'Bridge still in progress';
+  const shareBtn = document.getElementById('tx-share-btn');
+  if (shareBtn) {
+    if (txHash) {
+      shareBtn.href = explorerTxUrl(CHAINS[fromChainIdx].id, txHash);
+      shareBtn.textContent = 'View on explorer';
+      shareBtn.classList.remove('hidden');
+    } else {
+      shareBtn.classList.add('hidden');
+    }
   }
 }
 
@@ -1023,30 +993,25 @@ async function sendTx(tx) {
   return txHash;
 }
 
-async function waitForTx(hash, chainId) {
-  const chainHex = '0x' + chainId.toString(16);
-  for (let i = 0; i < 60; i++) {
-    const receipt = await window.ethereum.request({
-      method: 'eth_getTransactionReceipt', params: [hash],
-    });
-    if (receipt && receipt.status) return receipt;
-    await new Promise(r => setTimeout(r, 2000));
-  }
-}
-
+/**
+ * Polls Across for the fill status of a deposit. Starts fast (fills are often
+ * sub-second, and the on-screen timer should stop promptly) then backs off to
+ * 2s so a slow fill doesn't hammer the status API with ~800 requests.
+ * @returns {Promise<boolean>} true if the fill was confirmed within ~4 minutes.
+ */
 async function pollFill(originChainId, txHash) {
-  // Poll fast so the on-screen timer stops within ~300ms of the actual fill,
-  // not up to 2s late. Across fills are often sub-second once the deposit is seen.
-  const intervalMs = 300;
-  const maxIters = Math.ceil(240000 / intervalMs); // ~4 minute ceiling, same as before
-  for (let i = 0; i < maxIters; i++) {
+  const deadline = Date.now() + 240000;
+  let intervalMs = 300;
+  while (Date.now() < deadline) {
     try {
       const res = await fetch(`${ACROSS_API}/deposit/status?originChainId=${originChainId}&depositTxHash=${txHash}`);
       const data = await res.json();
-      if (data.status === 'filled') return;
+      if (data.status === 'filled') return true;
     } catch {}
     await new Promise(r => setTimeout(r, intervalMs));
+    if (intervalMs < 2000) intervalMs = Math.min(intervalMs * 1.5, 2000);
   }
+  return false;
 }
 
 // ── Helpers ──
@@ -1063,25 +1028,30 @@ async function loadRoutes() {
     if (!res.ok) return;
     const { chains, tokens, routes } = await res.json();
 
-    // Enrich TOKENS with any new tokens from Across that we don't have
+    // Enrich TOKENS with any new tokens from Across that we don't have.
+    // The API response is treated as untrusted: addresses are validated, and
+    // curated entries are never overwritten — a poisoned response replacing
+    // the USDC address would silently redirect every bridge.
     if (Array.isArray(tokens)) {
       for (const t of tokens) {
+        if (!t.symbol || !t.chainId || !t.address || !EthUtils.isValidAddress(t.address)) continue;
         const existing = TOKENS.find(x => x.symbol === t.symbol);
         if (existing) {
-          // Add any new chain addresses
-          if (t.chainId && t.address) {
+          // Only ADD addresses for chains we don't already know, and only if
+          // the decimals agree — a symbol collision with different decimals
+          // would make every amount off by orders of magnitude.
+          if (existing.addresses[t.chainId] === undefined &&
+              (t.decimals === undefined || t.decimals === existing.decimals)) {
             existing.addresses[t.chainId] = t.address;
           }
-        } else if (t.symbol && t.address && t.chainId) {
-          // New token we didn't have
-          const newToken = {
+        } else {
+          TOKENS.push({
             symbol: t.symbol,
             name: t.name || t.symbol,
             decimals: t.decimals || 18,
             native: false,
             addresses: { [t.chainId]: t.address },
-          };
-          TOKENS.push(newToken);
+          });
         }
       }
     }
@@ -1098,7 +1068,6 @@ async function loadRoutes() {
         }
       }
     }
-    console.log(`Loaded ${TOKENS.length} tokens across ${CHAINS.length} chains from Across`);
   } catch (e) {
     console.warn('Could not load Across routes, using defaults:', e);
   }
@@ -1124,11 +1093,15 @@ async function loadRoutes() {
       document.getElementById('connect-label').textContent = formatAddr(addr);
       resolveWalletENS();
       updateBalance();
-      updateActionBtn();
+      // Any quote fetched before/for another wallet embeds the wrong
+      // depositor/recipient — drop it and re-quote for this account.
+      lastQuote = null;
+      onAmountChange();
     },
     onDisconnected() {
       walletAddress = null;
       document.getElementById('connect-label').textContent = 'Connect';
+      lastQuote = null;
       updateBalance();
       updateActionBtn();
     },
@@ -1137,8 +1110,6 @@ async function loadRoutes() {
   updateActionBtn();
 })();
 
-function toggleMobileMenu() { document.getElementById('mobile-menu').classList.toggle('hidden'); }
-function closeMobileMenu(e) { if (e.target === document.getElementById('mobile-menu')) document.getElementById('mobile-menu').classList.add('hidden'); }
 
 // ── Event delegation & input listeners ──────────────────────────────────────
 document.addEventListener('click', function(e) {
@@ -1151,9 +1122,8 @@ document.addEventListener('click', function(e) {
     case 'close-token-modal':    closeTokenModal(); break;
     case 'swap-tokens':          swapTokens(); break;
     case 'set-max':              setMax(); break;
+    case 'set-gas-usd':          setGasUsd(Number(arg)); break;
     case 'toggle-fee-breakdown': toggleFeeBreakdown(); break;
-    case 'close-source-picker':  closeSourcePicker(); break;
-    case 'open-source-picker':   openSourcePicker(); break;
     case 'toggle-gas-topup':     toggleGasTopup(); break;
     case 'close-tx-screen':      closeTxScreen(); break;
     case 'toggle-all-chains':    toggleAllChains(); break;
@@ -1169,4 +1139,11 @@ document.addEventListener('DOMContentLoaded', function() {
   if (chainSearch) chainSearch.addEventListener('input', filterChainGrid);
   var tokenSearch = document.getElementById('token-search');
   if (tokenSearch) tokenSearch.addEventListener('input', filterTokenList);
+  // Editing the recipient invalidates the current quote — the swapTx calldata
+  // embeds the recipient, so the quote must be re-fetched.
+  var recipEl = document.getElementById('recipient-address');
+  if (recipEl) recipEl.addEventListener('input', function() {
+    validateRecipient();
+    onAmountChange();
+  });
 });

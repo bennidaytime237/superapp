@@ -7,6 +7,7 @@
 (function(){var t=localStorage.getItem('sage-theme')||(window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');document.documentElement.className=t;})();
 </script>
 <title>Transactions - Sage</title>
+<meta name="description" content="Your full crosschain transaction history — bridges, sends, and deposits — in one list."/>
 <link rel="icon" type="image/svg+xml" href="favicon.svg"/>
 <link rel="stylesheet" href="tailwind.output.css"/>
 <link rel="stylesheet" href="page-styles.css"/>
@@ -15,6 +16,7 @@
 <link rel="stylesheet" href="theme.css"/>
 <script src="theme.js"></script>
 <script src="safe-dom.js"></script>
+<script src="config.js"></script>
 <script src="wallet.js"></script>
 
 </head>
@@ -90,7 +92,7 @@
   <div id="sidebar-wallet" class="mt-auto p-4 bg-surface-container rounded-3xl">
     <div id="sidebar-disconnected">
       <p class="text-xs text-on-surface-variant mb-3 text-center tracking-wide">Connect your wallet to get started</p>
-      <button onclick="connectWallet()" class="w-full py-3 px-4 bg-primary text-on-primary rounded-full text-sm font-bold tracking-wide shadow-sm active:scale-[0.98] transition-transform">
+      <button data-action="connect-wallet" class="w-full py-3 px-4 bg-primary text-on-primary rounded-full text-sm font-bold tracking-wide shadow-sm active:scale-[0.98] transition-transform">
         Connect Wallet
       </button>
     </div>
@@ -104,7 +106,7 @@
           <p id="sidebar-addr" class="text-xs text-on-surface-variant font-mono">0x...</p>
         </div>
       </div>
-      <button onclick="window.location.href='bridge.html'" class="w-full py-3 px-4 bg-primary text-on-primary rounded-full text-sm font-bold shadow-sm active:scale-[0.98] transition-transform">
+      <button data-action="navigate" data-arg="bridge.html" class="w-full py-3 px-4 bg-primary text-on-primary rounded-full text-sm font-bold shadow-sm active:scale-[0.98] transition-transform">
         Bridge
       </button>
     </div>
@@ -124,7 +126,7 @@
     </div>
     <div class="flex items-center gap-3">
       <a href="index.html" class="md:hidden text-sm font-medium text-on-surface-variant hover:text-primary flex items-center gap-1">
-        <span class="material-symbols-outlined text-sm">arrow_back</span> Back
+        <span class="material-symbols-outlined text-sm">arrow_back</span>Dashboard
       </a>
       <div class="relative">
         <button data-action="toggle-info-menu" title="Info" aria-label="Info and more" class="flex items-center gap-2 px-3 py-1.5 bg-surface-container rounded-full text-on-surface-variant hover:text-primary hover:bg-surface-container-high transition-all flex-shrink-0">

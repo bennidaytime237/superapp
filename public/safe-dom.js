@@ -25,6 +25,7 @@
     if (/^\s*(javascript|vbscript|file):/i.test(s)) return false;
     if (/^\s*data:/i.test(s) && !/^\s*data:image\//i.test(s)) return false;
     if (/^(https?:|mailto:|tel:)/i.test(s)) return true;
+    if (/^\/\//.test(s)) return false; // protocol-relative — points at an arbitrary external host
     if (/^[\/?#]/.test(s)) return true; // relative
     if (/^[\w.-]+(\/|$)/.test(s)) return true; // bare relative path
     return false;

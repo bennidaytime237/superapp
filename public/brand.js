@@ -13,7 +13,10 @@ function downloadSVG(src, filename) {
 
 function downloadAsPNG(svgSrc, filename, svgW, svgH) {
   fetch(svgSrc)
-    .then(function(r) { return r.text(); })
+    .then(function(r) {
+      if (!r.ok) throw new Error('SVG fetch failed: ' + r.status);
+      return r.text();
+    })
     .then(function(svgText) {
       var scale = 2;
       var canvas = document.createElement('canvas');
@@ -28,7 +31,8 @@ function downloadAsPNG(svgSrc, filename, svgW, svgH) {
         triggerDownload(canvas.toDataURL('image/png'), filename);
       };
       img.src = dataUri;
-    });
+    })
+    .catch(function(e) { console.warn('PNG download failed:', e.message); });
 }
 
 function downloadBrandKit() {
@@ -47,10 +51,3 @@ document.addEventListener('click', function(e) {
     downloadBrandKit();
   }
 });
-
-function showBrandKitSoon() {
-  var btn = document.getElementById('brand-kit-btn');
-  var msg = document.getElementById('brand-kit-soon');
-  if (btn) btn.classList.add('hidden');
-  if (msg) msg.classList.remove('hidden');
-}

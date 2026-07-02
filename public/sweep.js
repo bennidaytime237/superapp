@@ -50,22 +50,30 @@ function setDest(i){ destIdx=i; renderDestBtns(); buildSweepItems(); }
 
 // ── Wallet ──
 async function connectWallet(){
-  if(!window.ethereum){alert('Install MetaMask');return;}
-  const accs=await window.ethereum.request({method:'eth_requestAccounts'});
-  walletAddress=accs[0];
-  document.getElementById('connect-label').textContent=formatAddr(walletAddress);
-  resolveWalletENS(walletAddress);
-  loadBalances();
+  if(!window.ethereum){showNoWalletMessage();return;}
+  try{
+    const accs=await window.ethereum.request({method:'eth_requestAccounts'});
+    localStorage.removeItem('sage_disconnected');
+    walletAddress=accs[0];
+    document.getElementById('connect-label').textContent=formatAddr(walletAddress);
+    resolveWalletENS(walletAddress);
+    loadBalances();
+  }catch(e){
+    if(e&&e.code!==4001)console.warn('Wallet connect failed:',e.message||e);
+  }
 }
 
 async function loadBalances(){
   if(!walletAddress)return;
+  const addr=walletAddress;
   document.getElementById('assets-list').innerHTML='<div class="py-8 text-center text-sm text-on-surface-variant flex items-center justify-center gap-2"><div class="w-4 h-4 rounded-full border-2 border-primary border-t-transparent animate-spin"></div>Loading balances...</div>';
   try{
     const [bRes,pRes]=await Promise.all([
-      fetch(`/api/balances?address=${walletAddress}&_t=${Date.now()}`),
+      fetch(`/api/balances?address=${encodeURIComponent(addr)}&_t=${Date.now()}`),
       fetch('/api/prices'),
     ]);
+    if(!bRes.ok)throw new Error('API error '+bRes.status);
+    if(walletAddress!==addr)return;
     cachedBalances=await bRes.json();
     const raw=await pRes.json();
     prices={ETH:raw.ethereum?.usd||0,WETH:raw.ethereum?.usd||0,WBTC:raw['wrapped-bitcoin']?.usd||0,USDC:1,USDT:1,DAI:1,POL:raw['polygon-ecosystem-token']?.usd||raw['matic-network']?.usd||0,UMA:raw.uma?.usd||0,ACX:raw['across-protocol']?.usd||0};
@@ -81,14 +89,20 @@ function buildSweepItems(){
     const cid=Number(chainId);
     const chain=CHAINS.find(c=>c.id===cid);
     if(!chain)continue;
-    for(const [symbol,amount] of Object.entries(tokens)){
-      if(!amount||amount<=0)continue;
+    for(const [symbol,rawAmount] of Object.entries(tokens)){
+      if(!rawAmount||rawAmount<=0)continue;
       // Skip if already dest token on dest chain
       if(cid===dest.chainId&&symbol===dest.symbol)continue;
       const meta=TOKEN_META[symbol];
       if(!meta)continue;
       const inputAddr=meta.native?meta.wrapAddresses?.[cid]:meta.addresses?.[cid];
       if(!inputAddr)continue;
+      // Native tokens must leave enough behind to pay for the sweep tx itself —
+      // sweeping the full balance makes the transaction unpayable.
+      const GAS_RESERVE={1:0.005,56:0.001,137:0.05};
+      const reserve=meta.native?(GAS_RESERVE[cid]??0.0005):0;
+      const amount=Math.max(0,rawAmount-reserve);
+      if(amount<=0)continue;
       const price=prices[symbol]||0;
       const usdValue=amount*price;
       if(usdValue<0.5)continue; // skip dust
@@ -179,7 +193,7 @@ async function executeSweep(){
     const item=sel[i];
     btn.textContent=`Bridge ${i+1}/${sel.length}: ${item.symbol} on ${item.chainName}...`;
     try{
-      const amountWei=BigInt(Math.floor(item.amount*10**item.meta.decimals)).toString();
+      const amountWei=toUnits(item.amount,item.meta.decimals);
       const params=new URLSearchParams({
         tradeType:'exactInput',amount:amountWei,
         inputToken:item.inputAddr,outputToken:dest.address,
@@ -249,8 +263,6 @@ function fmt(n){if(n>=1000)return n.toLocaleString('en-US',{maximumFractionDigit
   });
 })();
 
-function toggleMobileMenu() { document.getElementById('mobile-menu').classList.toggle('hidden'); }
-function closeMobileMenu(e) { if (e.target === document.getElementById('mobile-menu')) document.getElementById('mobile-menu').classList.add('hidden'); }
 
 // ── Event delegation & input listeners ──────────────────────────────────────
 document.addEventListener('click', function(e) {
@@ -259,9 +271,6 @@ document.addEventListener('click', function(e) {
   var action = el.dataset.action;
   var arg = el.dataset.arg;
   switch (action) {
-    case 'fetch-balances': fetchBalances(); break;
-    case 'select-all':    selectAll(); break;
-    case 'select-none':   selectNone(); break;
     case 'toggle-all':    toggleAll(); break;
     case 'execute-sweep': executeSweep(); break;
     case 'set-dest':      setDest(Number(arg)); break;

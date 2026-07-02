@@ -8,32 +8,50 @@ function encodeBalanceOf(address) {
   return '0x70a08231' + addr;
 }
 
-async function rpc(urls, method, params) {
-  // Try each RPC until one works
-  if (typeof urls === 'string') urls = [urls];
+/**
+ * Sends one JSON-RPC batch (all token queries for a chain in a single POST),
+ * trying each RPC URL in order. Results from multiple URLs are merged so a
+ * primary RPC that answers only part of the batch (rate limits, disabled
+ * methods) still gets its gaps filled by the fallback URLs — matching the
+ * per-token fallback behavior of the previous implementation.
+ * @param {string[]} urls
+ * @param {Array<{jsonrpc: string, id: number, method: string, params: unknown[]}>} batch
+ * @returns {Promise<Map<number, string> | null>} id → result hex, or null if every RPC failed
+ */
+async function rpcBatch(urls, batch) {
+  const byId = new Map();
   for (const url of urls) {
+    const missing = batch.filter(req => !byId.has(req.id));
+    if (missing.length === 0) break;
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 5000);
     try {
-      const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 5000);
       const res = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ jsonrpc: '2.0', id: 1, method, params }),
+        body: JSON.stringify(missing),
         signal: controller.signal,
       });
-      clearTimeout(timeout);
       const json = await res.json();
-      if (json.result !== undefined) return json.result;
-      if (json.error) console.warn(`RPC error from ${url}:`, json.error.message);
+      if (!Array.isArray(json)) {
+        console.warn(`RPC batch from ${url} returned non-array:`, json?.error?.message || typeof json);
+        continue;
+      }
+      for (const entry of json) {
+        if (entry && entry.result !== undefined) byId.set(entry.id, entry.result);
+        else if (entry?.error) console.warn(`RPC error from ${url} (id ${entry?.id}):`, entry.error.message);
+      }
     } catch (e) {
       console.warn(`RPC failed ${url}:`, e.message);
+    } finally {
+      clearTimeout(timeout);
     }
   }
-  return null;
+  return byId.size > 0 ? byId : null;
 }
 
 function fromHex(hex, decimals) {
-  if (!hex || hex === '0x' || hex === '0x0' || hex === null) return 0;
+  if (!hex || hex === '0x' || hex === '0x0') return 0;
   const raw = BigInt(hex);
   const divisor = BigInt(10 ** decimals);
   const whole = raw / divisor;
@@ -49,30 +67,45 @@ export default async function handler(req, res) {
   }
 
   const results = {};
+  let anyChainFailed = false;
 
   await Promise.all(
     Object.entries(RPC_LIST).map(async ([chainIdStr, rpcUrls]) => {
       const chainId = Number(chainIdStr);
       const tokens = TOKENS[chainId] || [];
-      const chainBalances = {};
+      if (tokens.length === 0) return;
 
-      await Promise.all(tokens.map(async (token) => {
+      const batch = tokens.map((token, i) => ({
+        jsonrpc: '2.0',
+        id: i,
+        method: token.address ? 'eth_call' : 'eth_getBalance',
+        params: token.address
+          ? [{ to: token.address, data: encodeBalanceOf(address) }, 'latest']
+          : [address, 'latest'],
+      }));
+
+      const byId = await rpcBatch(rpcUrls, batch);
+      if (!byId) {
+        // Every RPC for this chain failed — that is NOT a zero balance; flag it
+        // so the response isn't edge-cached as if it were.
+        anyChainFailed = true;
+        return;
+      }
+
+      const chainBalances = {};
+      tokens.forEach((token, i) => {
         try {
-          let raw;
-          if (!token.address) {
-            raw = await rpc(rpcUrls, 'eth_getBalance', [address, 'latest']);
-          } else {
-            raw = await rpc(rpcUrls, 'eth_call', [
-              { to: token.address, data: encodeBalanceOf(address) },
-              'latest',
-            ]);
-          }
+          const raw = byId.get(i);
+          // A single token erroring on every RPC is skipped (like the previous
+          // per-token implementation) — only a fully unreadable chain (byId
+          // null above) disables caching.
+          if (raw === undefined) return;
           const amount = fromHex(raw, token.decimals);
           if (amount > 0) chainBalances[token.symbol] = amount;
         } catch (e) {
-          console.warn(`Balance check failed for ${token.symbol} on chain ${chainId}:`, e.message);
+          console.warn(`Balance parse failed for ${token.symbol} on chain ${chainId}:`, e.message);
         }
-      }));
+      });
 
       if (Object.keys(chainBalances).length > 0) {
         results[chainId] = chainBalances;
@@ -80,6 +113,11 @@ export default async function handler(req, res) {
     })
   );
 
-  res.setHeader('Cache-Control', 's-maxage=10, stale-while-revalidate=30');
+  // Partial results (an entire chain unreadable) must not be served from cache
+  // for 40s — a wallet showing $0 on transient RPC failure is a bad lie.
+  res.setHeader(
+    'Cache-Control',
+    anyChainFailed ? 'no-store' : 's-maxage=10, stale-while-revalidate=30'
+  );
   return res.json(results);
 }

@@ -7,6 +7,7 @@
 (function(){var t=localStorage.getItem('sage-theme')||(window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');document.documentElement.className=t;})();
 </script>
 <title>Transfer - Sage</title>
+<meta name="description" content="Bridge, send, receive, and deposit crypto from one screen with Sage."/>
 <link rel="icon" type="image/svg+xml" href="favicon.svg"/>
 <link rel="stylesheet" href="tailwind.output.css"/>
 <link rel="stylesheet" href="page-styles.css"/>
@@ -188,7 +189,7 @@
   <!-- ══════════ SEND PANE ══════════ -->
   <section id="pane-send" class="hidden">
     <div class="mb-5">
-      <label class="text-sm font-bold text-on-surface mb-2 block">Recipient</label>
+      <label for="sd-recip" class="text-sm font-bold text-on-surface mb-2 block">Recipient</label>
       <input id="sd-recip" type="text" placeholder="0x… or name.eth / name.hl" class="w-full px-4 py-3 rounded-xl border border-outline-variant/15 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-primary/30 bg-surface-container-lowest"/>
       <p id="sd-addr-err" class="hidden text-xs text-error mt-1">Invalid address</p>
       <p id="sd-ens" class="hidden text-xs text-primary mt-1"></p>
@@ -264,7 +265,7 @@
       </div>
 
       <div class="mb-5">
-        <label class="text-sm font-bold text-on-surface mb-2 block">Note <span class="text-on-surface-variant font-normal">(optional)</span></label>
+        <label for="rc-note" class="text-sm font-bold text-on-surface mb-2 block">Note <span class="text-on-surface-variant font-normal">(optional)</span></label>
         <textarea id="rc-note" rows="2" placeholder="What's this for?" class="w-full px-4 py-3 rounded-xl border border-outline-variant/15 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 bg-surface-container-lowest resize-none"></textarea>
       </div>
 
@@ -287,7 +288,7 @@
         <p id="rc-qr-addr" class="hidden mt-0.5 text-xs font-mono text-on-surface-variant"></p>
         <p class="mt-2 text-xs text-on-surface-variant">Scan to pay with Sage</p>
         <button data-action="rc-download-qr" class="mt-3 flex items-center gap-1.5 px-4 py-2 bg-surface-container-low text-on-surface-variant rounded-full text-xs font-bold hover:bg-surface-container-high hover:text-on-surface transition-colors">
-          <span class="material-symbols-outlined text-sm" style="font-size:16px">download</span>Save as PNG
+          <span class="material-symbols-outlined text-sm icon-16">download</span>Save as PNG
         </button>
       </div>
 
@@ -306,15 +307,15 @@
       <label for="dp-app" class="text-sm font-bold text-on-surface mb-2 block">Deposit to</label>
       <div class="relative">
         <select id="dp-app" class="w-full appearance-none px-4 py-3 pr-10 rounded-xl border border-outline-variant/15 bg-surface-container-lowest text-on-surface text-sm font-bold focus:outline-none focus:ring-2 focus:ring-primary/30 cursor-pointer">
-          <option value="hyperliquid">Hyperliquid</option>
           <option value="polymarket">Polymarket</option>
+          <option value="hyperliquid" disabled>Hyperliquid (temporarily unavailable)</option>
         </select>
         <span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant pointer-events-none">expand_more</span>
       </div>
     </div>
 
     <div id="dp-address-wrap" class="hidden mb-5">
-      <label class="text-sm font-bold text-on-surface mb-2 block">Destination address</label>
+      <label for="dp-address" class="text-sm font-bold text-on-surface mb-2 block">Destination address</label>
       <input id="dp-address" type="text" placeholder="0x… or name.eth" class="w-full px-4 py-3 rounded-xl border border-outline-variant/15 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-primary/30 bg-surface-container-lowest"/>
       <p id="dp-addr-err" class="hidden text-xs text-error mt-1">Invalid address</p>
       <p id="dp-ens" class="hidden text-xs text-primary mt-1"></p>
@@ -337,7 +338,7 @@
 
     <div class="flex items-center gap-3 mt-4 px-4 py-3 bg-surface-container-lowest rounded-2xl border border-outline-variant/15">
       <img id="dp-out-icon" class="w-8 h-8 rounded-full" alt=""/>
-      <div class="flex-1"><p class="text-xs text-on-surface-variant">You receive</p><p id="dp-out-label" class="font-bold text-sm text-on-surface">USDC on Hyperliquid</p></div>
+      <div class="flex-1"><p class="text-xs text-on-surface-variant">You receive</p><p id="dp-out-label" class="font-bold text-sm text-on-surface">USDC on Polygon</p></div>
       <span id="dp-output" class="text-2xl font-black text-on-background">--</span>
     </div>
 
@@ -497,6 +498,14 @@
         <span class="material-symbols-outlined text-on-surface-variant">move_to_inbox</span>
         <span class="font-medium text-sm text-on-surface">Sweep</span>
       </a>
+      <a href="hyperliquid.html" class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-surface-container-high transition-colors">
+        <span class="material-symbols-outlined text-on-surface-variant">account_balance</span>
+        <span class="font-medium text-sm text-on-surface">Hyperliquid</span>
+      </a>
+      <a href="polymarket.html" class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-surface-container-high transition-colors">
+        <span class="material-symbols-outlined text-on-surface-variant">trending_up</span>
+        <span class="font-medium text-sm text-on-surface">Polymarket</span>
+      </a>
     </div>
   </div>
 </div>
@@ -539,10 +548,10 @@
     </span>
     <div class="inline-flex items-center p-0.5 bg-surface-container rounded-full gap-0.5">
       <button data-theme="light" title="Light mode" class="w-7 h-7 flex items-center justify-center rounded-full transition-all">
-        <span class="material-symbols-outlined" style="font-size:13px">light_mode</span>
+        <span class="material-symbols-outlined icon-13">light_mode</span>
       </button>
       <button data-theme="dark" title="Dark mode" class="w-7 h-7 flex items-center justify-center rounded-full transition-all">
-        <span class="material-symbols-outlined" style="font-size:13px">dark_mode</span>
+        <span class="material-symbols-outlined icon-13">dark_mode</span>
       </button>
       <button data-theme="system" title="System default" class="w-7 h-7 flex items-center justify-center rounded-full transition-all">
         <svg viewBox="0 0 24 24" class="w-3.5 h-3.5" fill="currentColor" aria-hidden="true">

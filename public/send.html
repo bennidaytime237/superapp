@@ -7,6 +7,7 @@
 (function(){var t=localStorage.getItem('sage-theme')||(window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');document.documentElement.className=t;})();
 </script>
 <title>Send Tokens - Sage</title>
+<meta name="description" content="Send tokens to any address or ENS name, on any supported chain — with optional bridge-first sending from another chain."/>
 <link rel="icon" type="image/svg+xml" href="favicon.svg"/>
 <link rel="stylesheet" href="tailwind.output.css"/>
 <link rel="stylesheet" href="page-styles.css"/>
@@ -92,7 +93,7 @@
   <div id="sidebar-wallet" class="mt-auto p-4 bg-surface-container rounded-3xl">
     <div id="sidebar-disconnected">
       <p class="text-xs text-on-surface-variant mb-3 text-center tracking-wide">Connect your wallet to get started</p>
-      <button onclick="connectWallet()" class="w-full py-3 px-4 bg-primary text-on-primary rounded-full text-sm font-bold tracking-wide shadow-sm active:scale-[0.98] transition-transform">
+      <button data-action="connect-wallet" class="w-full py-3 px-4 bg-primary text-on-primary rounded-full text-sm font-bold tracking-wide shadow-sm active:scale-[0.98] transition-transform">
         Connect Wallet
       </button>
     </div>
@@ -106,7 +107,7 @@
           <p id="sidebar-addr" class="text-xs text-on-surface-variant font-mono">0x...</p>
         </div>
       </div>
-      <button onclick="window.location.href='bridge.html'" class="w-full py-3 px-4 bg-primary text-on-primary rounded-full text-sm font-bold shadow-sm active:scale-[0.98] transition-transform">
+      <button data-action="navigate" data-arg="bridge.html" class="w-full py-3 px-4 bg-primary text-on-primary rounded-full text-sm font-bold shadow-sm active:scale-[0.98] transition-transform">
         Bridge
       </button>
     </div>
@@ -167,7 +168,7 @@
 
   <!-- Recipient -->
   <div class="mb-5">
-    <label class="text-sm font-bold text-on-surface mb-2 block">Recipient address</label>
+    <label for="recipient" class="text-sm font-bold text-on-surface mb-2 block">Recipient address</label>
     <input id="recipient" type="text" placeholder="0x... or name.eth / name.hl" class="w-full px-4 py-3 rounded-xl border border-primary/20 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-primary/40 bg-surface-container-lowest text-on-surface"/>
     <p id="addr-error" class="hidden text-xs text-error mt-1">Invalid address</p>
     <div id="ens-resolved" class="hidden mt-1.5 flex items-center gap-1">
@@ -182,8 +183,8 @@
     <button data-action="open-picker" class="w-full flex items-center justify-between px-4 py-3 bg-surface-container-lowest rounded-xl border border-outline-variant/10 hover:border-primary/30 transition-colors">
       <div class="flex items-center gap-3">
         <div class="relative">
-          <img id="from-token-icon" src="" class="w-8 h-8 rounded-full"/>
-          <img id="from-chain-icon" src="" class="w-5 h-5 rounded-full absolute -right-1 -bottom-0.5 border-2 border-surface-container-lowest bg-surface-container-lowest"/>
+          <img id="from-token-icon" src="" class="w-8 h-8 rounded-full" alt=""/>
+          <img id="from-chain-icon" src="" class="w-5 h-5 rounded-full absolute -right-1 -bottom-0.5 border-2 border-surface-container-lowest bg-surface-container-lowest" alt=""/>
         </div>
         <span id="from-label" class="font-bold text-sm">ETH on Ethereum</span>
       </div>
@@ -236,8 +237,8 @@
       <button data-action="open-bridge-picker" class="w-full flex items-center justify-between px-3 py-2.5 bg-surface-container-low rounded-xl border border-outline-variant/10 hover:border-primary/30 transition-colors">
         <span class="flex items-center gap-3">
           <span class="relative">
-            <img id="bridge-token-icon" src="" class="w-7 h-7 rounded-full" hidden/>
-            <img id="bridge-chain-icon" src="" class="w-4 h-4 rounded-full absolute -right-1 -bottom-0.5 border-2 border-surface-container-lowest bg-surface-container-lowest" hidden/>
+            <img id="bridge-token-icon" src="" class="w-7 h-7 rounded-full" hidden alt=""/>
+            <img id="bridge-chain-icon" src="" class="w-4 h-4 rounded-full absolute -right-1 -bottom-0.5 border-2 border-surface-container-lowest bg-surface-container-lowest" hidden alt=""/>
             <span id="bridge-token-placeholder" class="w-7 h-7 rounded-full bg-surface-container flex items-center justify-center"><span class="material-symbols-outlined text-on-surface-variant text-base">add</span></span>
           </span>
           <span class="text-left">

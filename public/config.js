@@ -64,3 +64,59 @@ const TOKEN_ICON_MAP = {
 
 // Alias used by pages that reference TOKEN_ICONS directly.
 const TOKEN_ICONS = TOKEN_ICON_MAP;
+
+// Block-explorer tx-URL prefixes keyed by chain ID. Single source of truth —
+// index.js and transactions.js both link activity rows through this map.
+const EXPLORER_TX = {
+  1:       'https://etherscan.io/tx/',
+  42161:   'https://arbiscan.io/tx/',
+  8453:    'https://basescan.org/tx/',
+  10:      'https://optimistic.etherscan.io/tx/',
+  137:     'https://polygonscan.com/tx/',
+  56:      'https://bscscan.com/tx/',
+  324:     'https://explorer.zksync.io/tx/',
+  59144:   'https://lineascan.build/tx/',
+  34443:   'https://explorer.mode.network/tx/',
+  81457:   'https://blastscan.io/tx/',
+  534352:  'https://scrollscan.com/tx/',
+  7777777: 'https://explorer.zora.energy/tx/',
+  130:     'https://uniscan.xyz/tx/',
+  57073:   'https://explorer.inkonchain.com/tx/',
+  1868:    'https://soneium.blockscout.com/tx/',
+  480:     'https://worldscan.org/tx/',
+  1135:    'https://blockscout.lisk.com/tx/',
+};
+
+/**
+ * @param {number | string} chainId
+ * @param {string} txHash
+ * @returns {string} Explorer URL for the transaction (etherscan as last resort).
+ */
+function explorerTxUrl(chainId, txHash) {
+  return (EXPLORER_TX[chainId] || 'https://etherscan.io/tx/') + txHash;
+}
+
+/**
+ * Converts a decimal amount (number or string) to base units without going
+ * through IEEE-754 multiplication. `amount * 10 ** 18` rounds for any value
+ * above ~9 ETH (2^53 in wei) — sometimes UP, which makes "Max" sends revert.
+ * @param {number | string} amount
+ * @param {number} decimals
+ * @returns {string} Integer string in base units (floor of the exact value).
+ */
+function toUnits(amount, decimals) {
+  let s = String(amount).trim();
+  // Normalize exponential notation (String(1e-7) === "1e-7") to plain decimal —
+  // rejecting it here would silently turn dust amounts into 0-value transfers.
+  if (/e/i.test(s)) {
+    const n = Number(s);
+    if (!Number.isFinite(n) || n < 0) return '0';
+    // 'fullwide' avoids exponential output for values >= 1e21 too
+    s = n.toLocaleString('fullwide', { useGrouping: false, maximumFractionDigits: 20 });
+  }
+  if (!/^\d*\.?\d*$/.test(s) || s === '' || s === '.') return '0';
+  const [whole = '0', frac = ''] = s.split('.');
+  const fracPadded = (frac + '0'.repeat(decimals)).slice(0, decimals);
+  const combined = (whole + fracPadded).replace(/^0+(?=\d)/, '');
+  return BigInt(combined).toString();
+}

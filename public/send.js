@@ -35,19 +35,27 @@ let bridgeEnabled=false, bridgeTokenIdx=null, bridgeChainIdx=null, bridgeBal=nul
 let lastBridgeQuote=null, bridgeInputNeeded=null, bridgeRouteAvailable=false, bridgeQuoteLoading=false, bridgeQuoteTimer=null;
 
 async function connectWallet() {
-  if(!window.ethereum){alert('Install MetaMask');return;}
-  const accs=await window.ethereum.request({method:'eth_requestAccounts'});
-  walletAddress=accs[0];
-  document.getElementById('connect-label').textContent=formatAddr(walletAddress);
-  resolveWalletENS(walletAddress);
-  fetchBalance(); updateBtn();
-  if(bridgeEnabled)scheduleBridgeQuote();
+  if(!window.ethereum){showNoWalletMessage();return;}
+  try{
+    const accs=await window.ethereum.request({method:'eth_requestAccounts'});
+    localStorage.removeItem('sage_disconnected');
+    walletAddress=accs[0];
+    document.getElementById('connect-label').textContent=formatAddr(walletAddress);
+    resolveWalletENS(walletAddress);
+    fetchBalance(); updateBtn();
+    if(bridgeEnabled)scheduleBridgeQuote();
+  }catch(e){
+    if(e&&e.code!==4001)console.warn('Wallet connect failed:',e.message||e);
+  }
 }
 
 async function fetchBalance() {
   if(!walletAddress)return;
+  const addr=walletAddress;
   try {
-    const res=await fetch(`/api/balances?address=${walletAddress}&_t=${Date.now()}`);
+    const res=await fetch(`/api/balances?address=${encodeURIComponent(addr)}&_t=${Date.now()}`);
+    if(!res.ok)throw new Error('API error '+res.status);
+    if(walletAddress!==addr)return;
     cachedBalances=await res.json();
     const t=TOKENS[selTokenIdx], cid=CHAINS[selChainIdx].id;
     const bal=cachedBalances?.[cid]?.[t.symbol]||0;
@@ -204,7 +212,7 @@ function toHex(n) { return '0x'+BigInt(n).toString(16); }
 function encodeTransfer(to, amount, decimals) {
   const selector='0xa9059cbb';
   const addrPad=to.toLowerCase().replace('0x','').padStart(64,'0');
-  const amtWei=BigInt(Math.floor(amount*10**decimals));
+  const amtWei=BigInt(toUnits(amount,decimals));
   const amtPad=amtWei.toString(16).padStart(64,'0');
   return selector+addrPad+amtPad;
 }
@@ -258,7 +266,7 @@ async function doSendTransfer(amount,recipient){
   document.getElementById('tx-text').textContent='Confirming...';
   let txParams, hash;
   if(t.native) {
-    const amtWei=BigInt(Math.floor(amount*10**t.decimals));
+    const amtWei=BigInt(toUnits(amount,t.decimals));
     txParams={from:walletAddress,to:recipient,value:toHex(amtWei),chainId:'0x'+c.id.toString(16)};
     hash=await sendTx(c.id,txParams);
   } else {
@@ -268,14 +276,21 @@ async function doSendTransfer(amount,recipient){
     hash=await sendTx(c.id,txParams);
   }
   document.getElementById('tx-text').textContent='Waiting for confirmation...';
-  // Poll for receipt
-  for(let i=0;i<60;i++){
-    try{const r=await window.ethereum.request({method:'eth_getTransactionReceipt',params:[hash]});if(r&&r.blockNumber)break;}catch{}
-    await new Promise(r=>setTimeout(r,2000));
+  // Poll for receipt and check its status — a mined-but-reverted transfer is
+  // NOT a success, and a receipt that never shows up is only "pending".
+  let receipt=null;
+  for(let i=0;i<60&&!receipt;i++){
+    try{const r=await window.ethereum.request({method:'eth_getTransactionReceipt',params:[hash]});if(r&&r.blockNumber)receipt=r;}catch{}
+    if(!receipt)await new Promise(r=>setTimeout(r,2000));
   }
   document.getElementById('tx-status').classList.add('hidden');
+  if(receipt&&receipt.status==='0x0'){
+    btn.textContent='Transfer failed';
+    setTimeout(updateBtn,3000);
+    throw new Error('Transfer reverted on-chain');
+  }
   document.getElementById('tx-done').classList.remove('hidden');
-  btn.textContent='Transfer complete!';
+  btn.textContent=receipt?'Transfer complete!':'Transfer pending — check the explorer';
   // Save to history
   try{const k='sage_tx_'+(walletAddress||'').toLowerCase();const h=JSON.parse(localStorage.getItem(k)||'[]');h.unshift({type:'send',summary:`Sent ${amount} ${t.symbol} on ${c.name}`,token:t.symbol,chain:c.name,chainId:c.id,amount:String(amount),to:recipient,timestamp:Date.now(),txHash:hash});if(h.length>20)h.length=20;localStorage.setItem(k,JSON.stringify(h));}catch{}
   fetchBalance();
@@ -423,7 +438,7 @@ async function fetchBridgeQuote(){
   const inputAddr=srcT.native?srcT.wrapAddresses?.[srcC.id]:srcT.addresses[srcC.id];
   const outputAddr=destT.native?destT.wrapAddresses?.[destC.id]:destT.addresses[destC.id];
   if(!inputAddr||!outputAddr){setBridgeQuoteText('No route available for this pair');updateBtn();return;}
-  const outWei=BigInt(Math.floor(amt*10**destT.decimals)).toString();
+  const outWei=toUnits(amt,destT.decimals);
   bridgeQuoteLoading=true;setBridgeQuoteText('Finding best route…');updateBtn();
   try{
     const params=new URLSearchParams({
@@ -469,9 +484,10 @@ async function sendBridgeTx(tx){
 async function pollFill(originChainId,txHash){
   const intervalMs=1500,max=Math.ceil(240000/intervalMs);
   for(let i=0;i<max;i++){
-    try{const r=await fetch(`${ACROSS_API}/deposit/status?originChainId=${originChainId}&depositTxHash=${txHash}`);const d=await r.json();if(d.status==='filled')return;}catch{}
+    try{const r=await fetch(`${ACROSS_API}/deposit/status?originChainId=${originChainId}&depositTxHash=${txHash}`);const d=await r.json();if(d.status==='filled')return true;}catch{}
     await new Promise(r=>setTimeout(r,intervalMs));
   }
+  return false;
 }
 
 async function executeBridgeThenSend(amount,recipient){
@@ -494,7 +510,14 @@ async function executeBridgeThenSend(amount,recipient){
     document.getElementById('tx-text').textContent=`Confirm bridge of ${srcT.symbol}...`;
     const hash=await sendBridgeTx(q.swapTx);
     document.getElementById('tx-text').textContent=`Bridging ${srcC.name} → ${destC.name}...`;
-    await pollFill(srcC.id,hash);
+    const filled=await pollFill(srcC.id,hash);
+    if(!filled){
+      // The bridged funds have not arrived — sending now would revert.
+      document.getElementById('tx-text').textContent='Bridge still pending — the send was not started. Retry once the bridge completes.';
+      btn.textContent='Bridge pending';
+      setTimeout(updateBtn,4000);
+      return;
+    }
     document.getElementById('tx-text').textContent='Bridge complete — preparing send...';
     await fetchBalance();
     // Now run the standard send with the freshly bridged funds
@@ -581,8 +604,6 @@ async function executeBridgeThenSend(amount,recipient){
   });
 })();
 
-function toggleMobileMenu() { document.getElementById('mobile-menu').classList.toggle('hidden'); }
-function closeMobileMenu(e) { if (e.target === document.getElementById('mobile-menu')) document.getElementById('mobile-menu').classList.add('hidden'); }
 
 // ── Event delegation & input listeners ──────────────────────────────────────
 document.addEventListener('click', function(e) {

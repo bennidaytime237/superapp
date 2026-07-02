@@ -8,12 +8,19 @@ document.addEventListener('error', function(e) {
   var img = e.target;
   if (!img || img.tagName !== 'IMG' || !img.hasAttribute('data-img-fallback')) return;
   var fallback = img.getAttribute('data-fallback-src');
-  if (fallback && img.src !== fallback) {
+  // The applied-flag (not a src comparison) prevents an infinite error loop when
+  // a relative fallback URL never string-matches the absolute img.src property.
+  if (fallback && !img.hasAttribute('data-fallback-applied')) {
+    img.setAttribute('data-fallback-applied', '1');
     img.src = fallback;
   } else {
     img.style.display = 'none';
   }
 }, true); // capture phase — error doesn't bubble
+
+// ── Mobile menu (shared by all pages that render #mobile-menu) ───────────────
+function toggleMobileMenu() { document.getElementById('mobile-menu').classList.toggle('hidden'); }
+function closeMobileMenu(e) { if (e.target === document.getElementById('mobile-menu')) document.getElementById('mobile-menu').classList.add('hidden'); }
 
 // ── Shared click delegation for wallet / navigation actions ──────────────────
 document.addEventListener('click', function(e) {
@@ -81,9 +88,14 @@ function formatAddr(address) {
  */
 function resolveWalletENS(address) {
   if (!address) return;
-  fetch(`/api/ens?address=${address}`)
+  fetch(`/api/ens?address=${encodeURIComponent(address)}`)
     .then(r => r.json())
-    .then(d => { if (d.name) document.getElementById('connect-label').textContent = d.name; })
+    .then(d => {
+      // Ignore stale responses that land after the user switched accounts.
+      if (typeof walletAddress !== 'undefined' && walletAddress && walletAddress !== address) return;
+      var lbl = document.getElementById('connect-label');
+      if (d.name && lbl) lbl.textContent = d.name;
+    })
     .catch(() => {});
 }
 
@@ -194,13 +206,17 @@ function clearSidebarWallet() {
  */
 async function connectWallet() {
   if (!window.ethereum) { showNoWalletMessage(); return; }
-  const accs = await window.ethereum.request({ method: 'eth_requestAccounts' });
-  if (accs[0]) {
-    updateSidebarWallet(accs[0]);
-    const btn = document.getElementById('connect-btn');
-    const lbl = document.getElementById('connect-label');
-    if (lbl) lbl.textContent = formatAddr(accs[0]);
-    if (btn) btn.onclick = null;
+  try {
+    const accs = await window.ethereum.request({ method: 'eth_requestAccounts' });
+    if (accs[0]) {
+      localStorage.removeItem('sage_disconnected');
+      updateSidebarWallet(accs[0]);
+      const lbl = document.getElementById('connect-label');
+      if (lbl) lbl.textContent = formatAddr(accs[0]);
+    }
+  } catch (e) {
+    // 4001 = user dismissed the wallet prompt; not an error worth surfacing
+    if (e && e.code !== 4001) console.warn('Wallet connect failed:', e.message || e);
   }
 }
 
@@ -208,12 +224,16 @@ async function connectWallet() {
 document.addEventListener('DOMContentLoaded', async () => {
   if (!window.ethereum) return;
   try {
-    const accs = await window.ethereum.request({ method: 'eth_accounts' });
-    if (accs[0]) updateSidebarWallet(accs[0]);
+    // The listener registers unconditionally — only the initial resurrect is
+    // skipped when the user explicitly disconnected, so the sidebar still
+    // follows account switches after a later reconnect.
     window.ethereum.on('accountsChanged', a => {
-      if (a[0]) updateSidebarWallet(a[0]);
+      if (a[0] && localStorage.getItem('sage_disconnected') !== '1') updateSidebarWallet(a[0]);
       else clearSidebarWallet();
     });
+    if (localStorage.getItem('sage_disconnected') === '1') return;
+    const accs = await window.ethereum.request({ method: 'eth_accounts' });
+    if (accs[0]) updateSidebarWallet(accs[0]);
   } catch {}
 });
 
@@ -258,7 +278,8 @@ function lsSet(key, value, ttlMs) {
   try {
     localStorage.setItem(key, payload);
   } catch (e) {
-    if (e && e.name === 'QuotaExceededError') {
+    // code 22 covers older Safari's QUOTA_EXCEEDED_ERR
+    if (e && (e.name === 'QuotaExceededError' || e.code === 22)) {
       try { evictSageCache(); localStorage.setItem(key, payload); } catch {}
     }
   }

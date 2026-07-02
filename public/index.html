@@ -6,7 +6,8 @@
 <script>
 (function(){var t=localStorage.getItem('sage-theme')||(window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');document.documentElement.className=t;})();
 </script>
-<title>Sage | Onchain Dashboard</title>
+<title>Dashboard - Sage</title>
+<meta name="description" content="Sage — your onchain dashboard. Track balances across 17+ chains, bridge in seconds via Across, send, request, and manage crypto in one place."/>
 <link rel="icon" type="image/svg+xml" href="favicon.svg"/>
 <link rel="stylesheet" href="tailwind.output.css"/>
 <link rel="stylesheet" href="page-styles.css"/>
@@ -203,11 +204,11 @@
               </button>
               <div id="deposit-menu" class="hidden absolute left-0 top-full mt-2 bg-surface-container-lowest rounded-lg shadow-lg border border-outline-variant/10 overflow-hidden z-50 min-w-[210px]">
                 <a href="hyperliquid.html" class="flex items-center gap-3 px-4 py-3 text-sm font-medium text-on-surface hover:bg-surface-container-low transition-colors">
-                  <img src="hyperliquid-logo.svg" class="w-5 h-5 rounded-md"/>
+                  <img src="hyperliquid-logo.svg" class="w-5 h-5 rounded-md" alt=""/>
                   Hyperliquid
                 </a>
                 <a href="polymarket.html" class="flex items-center gap-3 px-4 py-3 text-sm font-medium text-on-surface hover:bg-surface-container-low transition-colors">
-                  <img src="polymarket-logo.svg" class="w-5 h-5 rounded-md"/>
+                  <img src="polymarket-logo.svg" class="w-5 h-5 rounded-md" alt=""/>
                   Polymarket
                 </a>
               </div>
@@ -232,7 +233,7 @@
                 </a>
                 <a href="transactions.html" class="flex items-center gap-3 px-4 py-3 text-sm font-medium text-on-surface hover:bg-surface-container-low transition-colors">
                   <span class="material-symbols-outlined text-base text-primary">receipt_long</span>
-                  Transfers
+                  Transactions
                 </a>
               </div>
             </div>

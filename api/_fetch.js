@@ -1,6 +1,7 @@
-// Shared fetch helper with per-attempt timeout, retry on 429, and exponential backoff.
-// Retries on 429 (rate-limited) and network/abort errors. Other non-ok statuses are
-// returned as-is so callers can decide how to handle them.
+// Shared fetch helper with per-attempt timeout, retry on 429, and linear backoff.
+// Retries on 429 (rate-limited, honoring Retry-After when present) and network/abort
+// errors. Other non-ok statuses are returned as-is so callers can decide how to
+// handle them.
 
 /**
  * @typedef {Object} FetchWithRetryOptions
@@ -8,6 +9,15 @@
  * @property {number} [baseDelay=1000] - Base ms delay; multiplied by attempt index for backoff.
  * @property {number} [timeout=8000]   - Per-attempt abort timeout in ms.
  */
+
+// Delay before retrying a 429: prefer the server's Retry-After (seconds), capped
+// so a hostile/huge value cannot stall the function past its duration budget.
+function retryAfterMs(res, fallbackMs) {
+  const header = typeof res.headers?.get === 'function' ? res.headers.get('retry-after') : null;
+  const secs = Number(header);
+  if (header && Number.isFinite(secs) && secs >= 0) return Math.min(secs * 1000, 5000);
+  return fallbackMs;
+}
 
 /**
  * Fetches a URL with automatic retry on 429 and network errors.
@@ -25,7 +35,7 @@ export async function fetchWithRetry(url, opts = {}, { retries = 3, baseDelay = 
       const res = await fetch(url, { ...opts, signal: ctrl.signal });
       clearTimeout(timer);
       if (res.status === 429 && i < retries - 1) {
-        await new Promise(r => setTimeout(r, baseDelay * (i + 1)));
+        await new Promise(r => setTimeout(r, retryAfterMs(res, baseDelay * (i + 1))));
         continue;
       }
       return res;
