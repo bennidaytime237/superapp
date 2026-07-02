@@ -8,10 +8,8 @@
 
   const ACROSS_API = 'https://app.across.to/api';
   const ZERO = '0x0000000000000000000000000000000000000000';
-  const USDC_ARB = '0xaf88d065e77c8cC2239327C5EDb3A432268e5831';
   const USDC_POLYGON = '0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359';
-  const HL_BRIDGE = '0x2Df1c51E09aECF9cacB7bc98cB1742757f163dF7'; // Across→Hyperliquid forwarder
-  const HL_MIN = 5, PM_MIN = 3;
+  const PM_MIN = 3;
 
   const CHAINS = [
     { id: 1,      name: 'Ethereum' },
@@ -46,7 +44,6 @@
   ];
 
   const USDC_ICON = TOKEN_ICONS['USDC'];
-  const HL_OUT_ICON = 'https://icons.llamao.fi/icons/chains/rsz_hyperliquid.jpg';
 
   let walletAddress = null, prices = {}, cachedBalances = null;
 
@@ -69,9 +66,18 @@
 
   async function fetchBalances() {
     if (!walletAddress) { cachedBalances = null; refreshBalances(); return; }
+    const addr = walletAddress;
     try {
-      cachedBalances = await (await fetch(`/api/balances?address=${walletAddress}&_t=${Date.now()}`)).json();
-    } catch { cachedBalances = null; }
+      const res = await fetch(`/api/balances?address=${encodeURIComponent(addr)}&_t=${Date.now()}`);
+      if (!res.ok) throw new Error('API error ' + res.status);
+      const data = await res.json();
+      // Guard AFTER the body is parsed — the account can change during either await
+      if (walletAddress !== addr) return;
+      cachedBalances = data;
+    } catch {
+      if (walletAddress !== addr) return; // stale failure must not wipe the current account's data
+      cachedBalances = null;
+    }
     refreshBalances();
   }
   function refreshBalances() { Bridge.refreshBal(); Send.refreshBal(); Deposit.refreshBal(); }
@@ -189,11 +195,12 @@
   async function acrossQuote({ fromT, fromC, outputToken, destChainId, amount, recipient, outDecimals }) {
     const inputAddr = addrFor(fromT, fromC);
     if (!inputAddr) return null;
-    const amountWei = BigInt(Math.floor(amount * 10 ** fromT.decimals)).toString();
+    const amountWei = toUnits(amount, fromT.decimals);
+    const effectiveRecipient = recipient || walletAddress || ZERO;
     const params = new URLSearchParams({
       tradeType: 'exactInput', amount: amountWei, inputToken: inputAddr, outputToken,
       originChainId: fromC.id, destinationChainId: destChainId,
-      depositor: walletAddress || ZERO, recipient: recipient || walletAddress || ZERO, slippage: 'auto',
+      depositor: walletAddress || ZERO, recipient: effectiveRecipient, slippage: 'auto',
     });
     const ctrl = new AbortController();
     const tm = setTimeout(() => ctrl.abort(), 8000);
@@ -202,6 +209,7 @@
     finally { clearTimeout(tm); }
     if (!res.ok) return null;
     const data = await res.json();
+    data._recipient = effectiveRecipient;
     const rawOut = data.steps?.bridge?.outputAmount ?? data.expectedOutput ?? data.outputAmount ?? '0';
     let out = 0; try { out = Number(BigInt(rawOut)) / 10 ** outDecimals; } catch { out = parseFloat(rawOut) / 10 ** outDecimals || 0; }
     return { data, out };
@@ -209,9 +217,10 @@
 
   async function pollFill(originChainId, hash) {
     for (let i = 0; i < 120; i++) {
-      try { const d = await (await fetch(`${ACROSS_API}/deposit/status?originChainId=${originChainId}&depositTxHash=${hash}`)).json(); if (d.status === 'filled') return; } catch {}
+      try { const d = await (await fetch(`${ACROSS_API}/deposit/status?originChainId=${originChainId}&depositTxHash=${hash}`)).json(); if (d.status === 'filled') return true; } catch {}
       await new Promise(r => setTimeout(r, 2000));
     }
+    return false;
   }
 
   const DIM = 'w-full py-4 bg-surface-container-high text-on-surface-variant rounded-full font-black text-lg';
@@ -277,7 +286,7 @@
       const bal = balOf(t, c);
       if (!walletAddress) { btn.textContent = 'Connect Wallet'; btn.className = ACTIVE; }
       else if (amt <= 0) { btn.textContent = 'Enter amount'; btn.className = DIM; }
-      else if (bal && amt > bal) { btn.textContent = 'Insufficient balance'; btn.className = DIM; }
+      else if (cachedBalances && amt > bal) { btn.textContent = 'Insufficient balance'; btn.className = DIM; }
       else if (this.recipOpen && !this.recip.get()) { btn.textContent = 'Enter recipient'; btn.className = DIM; }
       else { btn.textContent = 'Review Bridge'; btn.className = ACTIVE; }
     },
@@ -285,19 +294,24 @@
       if (!walletAddress) return connectWallet();
       const amount = parseFloat($('br-amount').value) || 0; if (amount <= 0) return;
       const ft = TOKENS[this.fromT], fc = CHAINS[this.fromC], tt = TOKENS[this.toT], tc = CHAINS[this.toC];
+      if (cachedBalances && amount > balOf(ft, fc)) return;
       if (this.recipOpen && !this.recip.get()) return;
       try {
         txShow('Preparing route…');
-        if (!this.lastQuote) await this.quote(amount);
+        // Re-quote if missing or built for a different recipient
+        const wantRecipient = (this.recip.get() || walletAddress || '').toLowerCase();
+        if (!this.lastQuote || (this.lastQuote._recipient || '').toLowerCase() !== wantRecipient) await this.quote(amount);
         if (!this.lastQuote) throw new Error('No quote');
+        if ((this.lastQuote._recipient || '').toLowerCase() !== wantRecipient) throw new Error('Quote recipient mismatch');
         const q = this.lastQuote;
         if (q.approvalTxns?.length) { txProgress('Approving…'); for (const tx of q.approvalTxns) await sendAcrossTx(tx); }
         txProgress('Confirm in wallet…');
         const hash = await sendAcrossTx(q.swapTx);
         txProgress(`Bridging to ${tc.name}…`);
-        await pollFill(fc.id, hash);
+        const filled = await pollFill(fc.id, hash);
         saveHistory({ type: 'bridge', summary: `Bridged ${amount} ${ft.symbol} (${fc.name}) → ${tt.symbol} on ${tc.name}`, fromToken: ft.symbol, toToken: tt.symbol, fromChain: fc.name, toChain: tc.name, fromChainId: fc.id, amount: String(amount), txHash: hash });
-        txDone('Bridge complete!');
+        if (filled) txDone('Bridge complete!');
+        else txProgress('Still pending — the bridge has not confirmed yet. Check back in a few minutes.');
         fetchBalances();
       } catch (e) { console.error(e); txProgress(e.code === 4001 ? 'Rejected' : (e.message || 'Failed')); setTimeout(txHide, 1800); }
     },
@@ -347,13 +361,13 @@
       if (!walletAddress) { btn.textContent = 'Connect Wallet'; btn.className = ACTIVE; }
       else if (!addr) { btn.textContent = 'Enter address'; btn.className = DIM; }
       else if (amt <= 0) { btn.textContent = 'Enter amount'; btn.className = DIM; }
-      else if (bal && amt > bal) { btn.textContent = 'Insufficient balance'; btn.className = DIM; }
+      else if (cachedBalances && amt > bal) { btn.textContent = 'Insufficient balance'; btn.className = DIM; }
       else { btn.textContent = 'Send'; btn.className = ACTIVE; }
     },
     encodeTransfer(to, amount, decimals) {
       const sel = '0xa9059cbb';
       const addrPad = to.toLowerCase().replace('0x', '').padStart(64, '0');
-      const amt = BigInt(Math.floor(amount * 10 ** decimals)).toString(16).padStart(64, '0');
+      const amt = BigInt(toUnits(amount, decimals)).toString(16).padStart(64, '0');
       return sel + addrPad + amt;
     },
     async execute() {
@@ -361,21 +375,23 @@
       const amount = this.tokenAmount(); if (amount <= 0) return;
       const recipient = this.recip.get(); if (!recipient) return;
       const t = TOKENS[this.tok], c = CHAINS[this.chn], bal = balOf(t, c);
-      if (bal && amount > bal) return;
+      if (cachedBalances && amount > bal) return;
       try {
         txShow('Confirm in wallet…');
         const chainHex = '0x' + c.id.toString(16);
         const current = await window.ethereum.request({ method: 'eth_chainId' });
         if (current !== chainHex) { try { await window.ethereum.request({ method: 'wallet_switchEthereumChain', params: [{ chainId: chainHex }] }); } catch (e) { if (e.code === 4902) throw new Error('Add chain to wallet'); throw e; } }
         let txParams;
-        if (t.native) txParams = { from: walletAddress, to: recipient, value: toHex(BigInt(Math.floor(amount * 10 ** t.decimals))), chainId: chainHex };
+        if (t.native) txParams = { from: walletAddress, to: recipient, value: toHex(BigInt(toUnits(amount, t.decimals))), chainId: chainHex };
         else txParams = { from: walletAddress, to: t.addresses[c.id], data: this.encodeTransfer(recipient, amount, t.decimals), value: '0x0', chainId: chainHex };
         try { txParams.gas = await window.ethereum.request({ method: 'eth_estimateGas', params: [txParams] }); } catch {}
         const hash = await window.ethereum.request({ method: 'eth_sendTransaction', params: [txParams] });
         txProgress('Waiting for confirmation…');
-        for (let i = 0; i < 60; i++) { try { const r = await window.ethereum.request({ method: 'eth_getTransactionReceipt', params: [hash] }); if (r && r.blockNumber) break; } catch {} await new Promise(r => setTimeout(r, 2000)); }
+        let receipt = null;
+        for (let i = 0; i < 60 && !receipt; i++) { try { const r = await window.ethereum.request({ method: 'eth_getTransactionReceipt', params: [hash] }); if (r && r.blockNumber) receipt = r; } catch {} if (!receipt) await new Promise(r => setTimeout(r, 2000)); }
+        if (receipt && receipt.status === '0x0') throw new Error('Transfer reverted on-chain');
         saveHistory({ type: 'send', summary: `Sent ${amount} ${t.symbol} on ${c.name}`, token: t.symbol, chain: c.name, chainId: c.id, amount: String(amount), to: recipient, txHash: hash });
-        txDone('Transfer complete!');
+        txDone(receipt ? 'Transfer complete!' : 'Transfer pending — check the explorer');
         fetchBalances();
       } catch (e) { console.error(e); txProgress(e.code === 4001 ? 'Rejected' : (e.message || 'Failed')); setTimeout(txHide, 1800); }
     },
@@ -500,9 +516,13 @@
   // DEPOSIT (Hyperliquid / Polymarket)
   // ══════════════════════════════════════════════════════════════════════════
   const Deposit = {
-    app: 'hyperliquid', tok: 1, chn: 1, recip: null, lastQuote: null, timer: null,
+    // NOTE: Hyperliquid deposits are intentionally not offered. The previous
+    // implementation bridged with recipient = HL Bridge2, but an Across fill
+    // delivers tokens from the relayer/SpokePool — Bridge2 credits the sender
+    // of the transfer, so the user's HL account never received the funds.
+    // Re-enable only with Across's proper embedded-actions/permit integration.
+    app: 'polymarket', tok: 1, chn: 1, recip: null, lastQuote: null, timer: null,
     cfg: {
-      hyperliquid: { name: 'Hyperliquid', out: 'USDC on Hyperliquid', outToken: USDC_ARB, destChain: 42161, min: HL_MIN, recipient: () => HL_BRIDGE, needAddr: false },
       polymarket:  { name: 'Polymarket',  out: 'USDC on Polygon',     outToken: USDC_POLYGON, destChain: 137,  min: PM_MIN, recipient: () => Deposit.recip.get(), needAddr: true },
     },
     init() { this.recip = makeAddrValidator('dp-address', 'dp-addr-err', 'dp-ens'); this.applyApp(); this.updateDisplay(); this.updateBtn(); },
@@ -511,7 +531,7 @@
     applyApp() {
       const cfg = this.cfg[this.app];
       $('dp-out-label').textContent = cfg.out;
-      $('dp-out-icon').src = this.app === 'hyperliquid' ? HL_OUT_ICON : USDC_ICON;
+      $('dp-out-icon').src = USDC_ICON;
       $('dp-address-wrap').classList.toggle('hidden', !cfg.needAddr);
       $('dp-min-note').textContent = `Minimum deposit $${cfg.min}`;
     },
@@ -551,29 +571,37 @@
       if (!walletAddress) { btn.textContent = 'Connect Wallet'; btn.className = ACTIVE; }
       else if (cfg.needAddr && !this.recip.get()) { btn.textContent = `Enter ${cfg.name} address`; btn.className = DIM; }
       else if (amt <= 0) { btn.textContent = 'Enter amount'; btn.className = DIM; }
-      else if (bal && amt > bal) { btn.textContent = 'Insufficient balance'; btn.className = DIM; }
-      else if (usd > 0 && usd < cfg.min) { minErr.classList.remove('hidden'); btn.textContent = 'Amount too low'; btn.className = DIM; }
+      else if (cachedBalances && amt > bal) { btn.textContent = 'Insufficient balance'; btn.className = DIM; }
+      else if (usd < cfg.min) { minErr.classList.remove('hidden'); btn.textContent = 'Amount too low'; btn.className = DIM; }
       else { btn.textContent = `Deposit to ${cfg.name}`; btn.className = ACTIVE; }
     },
     async execute() {
       if (!walletAddress) return connectWallet();
       const cfg = this.cfg[this.app], amount = parseFloat($('dp-amount').value) || 0; if (amount <= 0) return;
       const t = TOKENS[this.tok], c = CHAINS[this.chn], bal = balOf(t, c);
-      if (bal && amount > bal) return;
-      if (amount * priceOf(t) < cfg.min && amount * priceOf(t) > 0) return;
-      if (cfg.needAddr && !this.recip.get()) return;
+      if (cachedBalances && amount > bal) return;
+      // Unknown price must block, not bypass, the minimum — sub-minimum
+      // deposits are discarded by the destination app.
+      if (amount * priceOf(t) < cfg.min) return;
+      const recipient = cfg.needAddr ? this.recip.get() : null;
+      if (cfg.needAddr && !recipient) return;
       try {
         txShow('Preparing route…');
-        if (!this.lastQuote) await this.quote(amount);
+        // Re-quote if missing or built for a different recipient — the swapTx
+        // calldata embeds the recipient address.
+        const wantRecipient = (cfg.recipient() || '').toLowerCase();
+        if (!this.lastQuote || (this.lastQuote._recipient || '').toLowerCase() !== wantRecipient) await this.quote(amount);
         if (!this.lastQuote) throw new Error('No quote');
+        if ((this.lastQuote._recipient || '').toLowerCase() !== wantRecipient) throw new Error('Quote recipient mismatch');
         const q = this.lastQuote;
         if (q.approvalTxns?.length) { txProgress('Approving…'); for (const tx of q.approvalTxns) await sendAcrossTx(tx); }
         txProgress('Confirm in wallet…');
         const hash = await sendAcrossTx(q.swapTx);
         txProgress(`Depositing to ${cfg.name}…`);
-        await pollFill(c.id, hash);
+        const filled = await pollFill(c.id, hash);
         saveHistory({ type: 'bridge', summary: `${cfg.name} deposit: ${amount} ${t.symbol} → ${cfg.out}`, fromToken: t.symbol, toToken: 'USDC', fromChain: c.name, toChain: cfg.name, fromChainId: c.id, amount: String(amount), txHash: hash });
-        txDone('Deposit complete!');
+        if (filled) txDone('Deposit complete!');
+        else txProgress('Still pending — the bridge has not confirmed yet. Check back in a few minutes.');
         fetchBalances();
       } catch (e) { console.error(e); txProgress(e.code === 4001 ? 'Rejected' : (e.message || 'Failed')); setTimeout(txHide, 1800); }
     },
@@ -596,8 +624,13 @@
   // ══════════════════════════════════════════════════════════════════════════
   async function connectWallet() {
     if (!window.ethereum) { if (typeof showNoWalletMessage === 'function') showNoWalletMessage(); else alert('Install MetaMask'); return; }
-    const accs = await window.ethereum.request({ method: 'eth_requestAccounts' });
-    if (accs[0]) onConnected(accs[0]);
+    try {
+      const accs = await window.ethereum.request({ method: 'eth_requestAccounts' });
+      localStorage.removeItem('sage_disconnected');
+      if (accs[0]) onConnected(accs[0]);
+    } catch (e) {
+      if (e && e.code !== 4001) console.warn('Wallet connect failed:', e.message || e);
+    }
   }
   function onConnected(addr) {
     walletAddress = addr;
@@ -615,10 +648,8 @@
     Bridge.updateBtn(); Send.updateBtn(); Receive.updateBtn(); Deposit.updateBtn();
     renderActivity();
   }
-  // expose for wallet.js shared delegation
+  // expose for wallet.js shared delegation (mobile menu handlers live in wallet.js)
   window.connectWallet = connectWallet;
-  window.toggleMobileMenu = function () { $('mobile-menu').classList.toggle('hidden'); };
-  window.closeMobileMenu = function (e) { if (e.target === $('mobile-menu')) $('mobile-menu').classList.add('hidden'); };
 
   // ══════════════════════════════════════════════════════════════════════════
   // Event delegation
@@ -662,14 +693,6 @@
   // ══════════════════════════════════════════════════════════════════════════
   // Sidebar — Bridge Times + Activity
   // ══════════════════════════════════════════════════════════════════════════
-  function timeAgo(ts) {
-    const sec = Math.floor((Date.now() - ts) / 1000);
-    if (sec < 60) return 'Just now';
-    if (sec < 3600) return Math.floor(sec / 60) + 'm ago';
-    if (sec < 86400) return Math.floor(sec / 3600) + 'h ago';
-    return Math.floor(sec / 86400) + 'd ago';
-  }
-
   async function fetchBridgeTimes() {
     const el = document.getElementById('tr-bridge-times');
     if (!el) return;
@@ -738,16 +761,16 @@
       return;
     }
     try {
-      const txCacheKey = 'sage_txcache_' + walletAddress.toLowerCase();
+      const addr = walletAddress;
+      const txCacheKey = 'sage_txcache_' + addr.toLowerCase();
       let allTx = mergeTx(lsGet(txCacheKey, 5 * 60 * 1000) || []);
-      fetch(`/api/transactions?address=${walletAddress}`)
+      fetch(`/api/transactions?address=${encodeURIComponent(addr)}`)
         .then(r => r.json())
         .then(data => {
+          if (data.error || walletAddress !== addr) return;
           const fresh = data.deposits || [];
-          if (fresh.length > 0) {
-            lsSet(txCacheKey, fresh, 5 * 60 * 1000);
-            renderActivityList(mergeTx(fresh));
-          }
+          lsSet(txCacheKey, fresh, 5 * 60 * 1000);
+          renderActivityList(mergeTx(fresh));
         }).catch(() => {});
       if (allTx.length === 0) {
         feed.innerHTML = `<div class="text-center py-8">
@@ -765,14 +788,20 @@
   function renderActivityList(allTx) {
     const feed = document.getElementById('tr-activity-feed');
     if (!feed) return;
+    if (allTx.length === 0) {
+      feed.innerHTML = `<div class="text-center py-8">
+        <span class="material-symbols-outlined text-4xl text-on-surface-variant/30 mb-2">history</span>
+        <p class="text-sm text-on-surface-variant">No transactions yet</p>
+      </div>`;
+      return;
+    }
     const show = allTx.slice(0, 3);
-    const EXP = { 1: 'https://etherscan.io/tx/', 42161: 'https://arbiscan.io/tx/', 8453: 'https://basescan.org/tx/', 10: 'https://optimistic.etherscan.io/tx/', 137: 'https://polygonscan.com/tx/', 324: 'https://explorer.zksync.io/tx/', 59144: 'https://lineascan.build/tx/' };
     const rows = show.map(tx => {
       const ago = new Date(tx.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
       const meta = txMeta(tx);
       const url = tx.type === 'send'
-        ? (tx.txHash && tx.chainId ? (EXP[tx.chainId] || 'https://etherscan.io/tx/') + tx.txHash : null)
-        : (tx.depositTxHash && tx.fromChainId ? (EXP[tx.fromChainId] || 'https://etherscan.io/tx/') + tx.depositTxHash : null);
+        ? (tx.txHash && tx.chainId ? explorerTxUrl(tx.chainId, tx.txHash) : null)
+        : (tx.depositTxHash && tx.fromChainId ? explorerTxUrl(tx.fromChainId, tx.depositTxHash) : null);
       const body = Safe.html`<div class="w-10 h-10 rounded-full bg-primary-container flex items-center justify-center flex-shrink-0">
           <span class="material-symbols-outlined text-primary text-lg">${meta.icon}</span>
         </div>

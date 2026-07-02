@@ -21,11 +21,15 @@ function makeReq(query = {}, method = 'GET') {
   return { query, method, headers: {} };
 }
 
-// Return a JSON-RPC response for the given hex value
-function rpcOk(result) {
-  return {
-    ok: true,
-    json: async () => ({ jsonrpc: '2.0', id: 1, result }),
+// Build a mock fetch that answers a JSON-RPC *batch* request; `resolve` maps
+// each request in the batch to its result hex.
+function batchFetch(resolve) {
+  return async (_url, opts) => {
+    const batch = JSON.parse(opts.body);
+    return {
+      ok: true,
+      json: async () => batch.map(req => ({ jsonrpc: '2.0', id: req.id, result: resolve(req) })),
+    };
   };
 }
 
@@ -65,11 +69,7 @@ test('balances - OPTIONS preflight returns 204', async () => {
 
 test('balances - valid lowercase address returns results object', async () => {
   // 0.1 ETH in hex = 0x16345785d8a0000
-  globalThis.fetch = async (_url, opts) => {
-    const body = JSON.parse(opts.body);
-    const result = body.method === 'eth_getBalance' ? '0x16345785d8a0000' : '0x0';
-    return rpcOk(result);
-  };
+  globalThis.fetch = batchFetch(req => req.method === 'eth_getBalance' ? '0x16345785d8a0000' : '0x0');
 
   const req = makeReq({ address: '0x5aaeb6053f3e94c9b9a09f33669435e7ef1beaed' });
   const res = makeRes();
@@ -84,7 +84,7 @@ test('balances - valid lowercase address returns results object', async () => {
 });
 
 test('balances - zero balances are excluded from results', async () => {
-  globalThis.fetch = async () => rpcOk('0x0');
+  globalThis.fetch = batchFetch(() => '0x0');
 
   const req = makeReq({ address: '0x5aaeb6053f3e94c9b9a09f33669435e7ef1beaed' });
   const res = makeRes();
@@ -96,12 +96,13 @@ test('balances - zero balances are excluded from results', async () => {
 });
 
 test('balances - RPC errors are silently skipped', async () => {
-  // Return a JSON-RPC error (not a network throw) so the AbortController timer
-  // is cleared normally — avoids a 5 s hang from dangling setTimeout handles.
-  globalThis.fetch = async () => ({
-    ok: true,
-    json: async () => ({ jsonrpc: '2.0', id: 1, error: { message: 'execution reverted' } }),
-  });
+  globalThis.fetch = async (_url, opts) => {
+    const batch = JSON.parse(opts.body);
+    return {
+      ok: true,
+      json: async () => batch.map(r => ({ jsonrpc: '2.0', id: r.id, error: { message: 'execution reverted' } })),
+    };
+  };
 
   const req = makeReq({ address: '0x5aaeb6053f3e94c9b9a09f33669435e7ef1beaed' });
   const res = makeRes();
@@ -110,10 +111,12 @@ test('balances - RPC errors are silently skipped', async () => {
   // Should still succeed (return 200 with empty object) even when all RPCs fail
   assert.strictEqual(res._status, 200);
   assert.deepStrictEqual(res._body, {});
+  // Failure must not be cached as if it were a real zero-balance answer
+  assert.strictEqual(res._headers['Cache-Control'], 'no-store');
 });
 
 test('balances - sets Cache-Control header', async () => {
-  globalThis.fetch = async () => rpcOk('0x0');
+  globalThis.fetch = batchFetch(() => '0x0');
 
   const req = makeReq({ address: '0x5aaeb6053f3e94c9b9a09f33669435e7ef1beaed' });
   const res = makeRes();

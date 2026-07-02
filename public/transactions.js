@@ -1,5 +1,3 @@
-function toggleMobileMenu() { document.getElementById('mobile-menu').classList.toggle('hidden'); }
-function closeMobileMenu(e) { if (e.target === document.getElementById('mobile-menu')) document.getElementById('mobile-menu').classList.add('hidden'); }
 
 let walletAddress = null;
 let txData = [];
@@ -95,11 +93,16 @@ function updateConnectBtn() {
 }
 
 async function connectWallet() {
-  if (!window.ethereum) { alert('Install MetaMask'); return; }
-  const accs = await window.ethereum.request({ method:'eth_requestAccounts' });
-  walletAddress = accs[0];
-  updateConnectBtn();
-  await loadTransactions();
+  if (!window.ethereum) { showNoWalletMessage(); return; }
+  try {
+    const accs = await window.ethereum.request({ method:'eth_requestAccounts' });
+    localStorage.removeItem('sage_disconnected');
+    walletAddress = accs[0];
+    updateConnectBtn();
+    await loadTransactions();
+  } catch (e) {
+    if (e && e.code !== 4001) console.warn('Wallet connect failed:', e.message || e);
+  }
 }
 
 async function initWallet() {
@@ -149,14 +152,21 @@ async function loadTransactions() {
   }
 
   // Fetch fresh in background
+  const addr = walletAddress;
   try {
-    const res = await fetch(`/api/transactions?address=${walletAddress}`);
+    const res = await fetch(`/api/transactions?address=${encodeURIComponent(addr)}`);
     const data = await res.json();
+    // Drop the response if the user switched accounts while it was in flight —
+    // checked before the error throw so a stale failure can't paint the retry
+    // UI over the new account's loading state.
+    if (walletAddress !== addr) return;
+    if (data.error) throw new Error(data.error);
     txData = data.deposits || [];
     lsSet(cacheKey(), txData, 5 * 60 * 1000);
     populateFilters();
     render();
   } catch (e) {
+    if (walletAddress !== addr) return;
     console.error('Failed to load transactions:', e);
     if (!txData.length) {
       list.innerHTML = '<div class="text-center py-16"><p class="text-on-surface-variant">Failed to load transactions</p><button data-action="load-transactions" class="mt-4 px-6 py-3 bg-primary text-on-primary rounded-full font-bold text-sm">Retry</button></div>';
@@ -168,13 +178,6 @@ function showMore() {
   visibleCount += PAGE_SIZE;
   render(false);
 }
-
-const EXP = {
-  1:'https://etherscan.io/tx/',42161:'https://arbiscan.io/tx/',8453:'https://basescan.org/tx/',
-  10:'https://optimistic.etherscan.io/tx/',137:'https://polygonscan.com/tx/',324:'https://explorer.zksync.io/tx/',
-  59144:'https://lineascan.build/tx/',34443:'https://explorer.mode.network/tx/',81457:'https://blastscan.io/tx/',
-  534352:'https://scrollscan.com/tx/',7777777:'https://explorer.zora.energy/tx/',
-};
 
 function shortAddr(a) { return a ? a.slice(0,6)+'…'+a.slice(-4) : '--'; }
 
@@ -195,7 +198,15 @@ function render(resetPage) {
   });
 
   if (history.length === 0) {
-    showEmpty('No transactions yet');
+    if (txData.length === 0) {
+      showEmpty('No transactions yet');
+    } else {
+      // The wallet has transactions — the filters/search just matched none.
+      list.innerHTML = `<div class="text-center py-16">
+        <span class="material-symbols-outlined text-5xl text-on-surface-variant/20 mb-3">search_off</span>
+        <p class="text-on-surface-variant">No transactions match your filters</p>
+      </div>`;
+    }
     return;
   }
 
@@ -204,8 +215,8 @@ function render(resetPage) {
     const dateStr = date.toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' });
     const timeStr = date.toLocaleTimeString('en-US', { hour:'2-digit', minute:'2-digit' });
 
-    const depositUrl = tx.depositTxHash && tx.fromChainId ? (EXP[tx.fromChainId] || 'https://etherscan.io/tx/') + tx.depositTxHash : null;
-    const fillUrl = tx.fillTxHash && tx.toChainId ? (EXP[tx.toChainId] || 'https://etherscan.io/tx/') + tx.fillTxHash : null;
+    const depositUrl = tx.depositTxHash && tx.fromChainId ? explorerTxUrl(tx.fromChainId, tx.depositTxHash) : null;
+    const fillUrl = tx.fillTxHash && tx.toChainId ? explorerTxUrl(tx.toChainId, tx.fillTxHash) : null;
 
     let statusBadge = Safe.html``;
     if (tx.status === 'filled') {
@@ -291,7 +302,7 @@ function render(resetPage) {
   if (smb) smb.addEventListener('click', showMore);
 }
 
-initWallet();
+initWallet().catch(e => console.warn('Wallet init failed:', e));
 
 // ── Event delegation & input listeners ──────────────────────────────────────
 document.addEventListener('click', function(e) {
@@ -306,5 +317,5 @@ document.addEventListener('click', function(e) {
 });
 document.addEventListener('DOMContentLoaded', function() {
   var si = document.getElementById('search-input');
-  if (si) si.addEventListener('input', render);
+  if (si) si.addEventListener('input', function() { render(); });
 });

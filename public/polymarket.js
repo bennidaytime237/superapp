@@ -54,18 +54,26 @@ function renderSavedAddresses(){
 function useAddress(addr){document.getElementById('pm-address').value=addr;validateAddr();}
 
 async function connectWallet() {
-  if(!window.ethereum){alert('Install MetaMask');return;}
-  const accs=await window.ethereum.request({method:'eth_requestAccounts'});
-  walletAddress=accs[0];
-  document.getElementById('connect-label').textContent=formatAddr(walletAddress);
-  resolveWalletENS(walletAddress);
-  fetchBalance(); updateBtn();
+  if(!window.ethereum){showNoWalletMessage();return;}
+  try{
+    const accs=await window.ethereum.request({method:'eth_requestAccounts'});
+    localStorage.removeItem('sage_disconnected');
+    walletAddress=accs[0];
+    document.getElementById('connect-label').textContent=formatAddr(walletAddress);
+    resolveWalletENS(walletAddress);
+    fetchBalance(); updateBtn();
+  }catch(e){
+    if(e&&e.code!==4001)console.warn('Wallet connect failed:',e.message||e);
+  }
 }
 
 async function fetchBalance() {
   if(!walletAddress)return;
+  const addr=walletAddress;
   try {
-    const res=await fetch(`/api/balances?address=${walletAddress}&_t=${Date.now()}`);
+    const res=await fetch(`/api/balances?address=${encodeURIComponent(addr)}&_t=${Date.now()}`);
+    if(!res.ok)throw new Error('API error '+res.status);
+    if(walletAddress!==addr)return;
     cachedBalances=await res.json();
     const t=TOKENS[fromTokenIdx], cid=CHAINS[fromChainIdx].id;
     const bal=cachedBalances?.[cid]?.[t.symbol]||0;
@@ -94,6 +102,9 @@ function validateAddr() {
   const v=document.getElementById('pm-address').value.trim();
   const ensEl=document.getElementById('ens-resolved');
   resolvedAddr=null; ensEl.classList.add('hidden');
+  // The recipient is baked into the quote's swapTx calldata — any change to
+  // the address invalidates the current quote and requires a fresh one.
+  lastQuote=null;
   if(v.endsWith('.eth')&&v.length>4){
     document.getElementById('addr-error').classList.add('hidden');
     ensEl.textContent='Resolving...';ensEl.classList.remove('hidden');
@@ -102,13 +113,13 @@ function validateAddr() {
       fetch(`/api/ens?name=${encodeURIComponent(v)}`).then(r=>r.json()).then(d=>{
         if(d.address&&d.address!=='0x0000000000000000000000000000000000000000'){resolvedAddr=d.address;ensEl.textContent=`→ ${d.address.slice(0,6)}...${d.address.slice(-4)}`;}
         else{ensEl.textContent='ENS name not found';}
-        updateBtn();
+        onAmountChange();
       }).catch(()=>{ensEl.textContent='Could not resolve';});
     },500);
   } else {
     document.getElementById('addr-error').classList.toggle('hidden',!v||EthUtils.isValidAddress(v));
   }
-  updateBtn();
+  onAmountChange();
 }
 function getPmAddr(){
   if(resolvedAddr)return resolvedAddr;
@@ -127,7 +138,7 @@ function updateBtn() {
   else if(!addr){btn.textContent='Enter Polymarket address';btn.className='w-full py-4 bg-surface-container-high text-on-surface-variant rounded-full font-black text-lg';}
   else if(amt<=0){btn.textContent='Enter amount';btn.className='w-full py-4 bg-surface-container-high text-on-surface-variant rounded-full font-black text-lg';}
   else if(fromBal!=null&&amt>fromBal){btn.textContent='Insufficient balance';btn.className='w-full py-4 bg-surface-container-high text-on-surface-variant rounded-full font-black text-lg';}
-  else if(usdVal<PM_MIN_DEPOSIT&&usdVal>0){if(minErr)minErr.classList.remove('hidden');btn.textContent='Amount too low';btn.className='w-full py-4 bg-surface-container-high text-on-surface-variant rounded-full font-black text-lg';}
+  else if(usdVal<PM_MIN_DEPOSIT){if(minErr)minErr.classList.remove('hidden');btn.textContent='Amount too low';btn.className='w-full py-4 bg-surface-container-high text-on-surface-variant rounded-full font-black text-lg';}
   else{btn.textContent='Deposit to Polymarket';btn.className='w-full py-4 bg-pm-blue text-white rounded-full font-black text-lg active:scale-[0.98] transition-transform';}
 }
 
@@ -146,7 +157,7 @@ async function fetchQuote(amount) {
     const t=TOKENS[fromTokenIdx], c=CHAINS[fromChainIdx];
     const inputAddr=t.native?t.wrapAddresses?.[c.id]:t.addresses[c.id];
     if(!inputAddr)return;
-    const amountWei=BigInt(Math.floor(amount*10**t.decimals)).toString();
+    const amountWei=toUnits(amount,t.decimals);
     const recipient=getPmAddr()||walletAddress||'0x0000000000000000000000000000000000000000';
     const params=new URLSearchParams({
       tradeType:'exactInput',amount:amountWei,inputToken:inputAddr,outputToken:USDC_POLYGON,
@@ -160,6 +171,7 @@ async function fetchQuote(amount) {
     clearTimeout(tm);
     if(!res.ok)return;
     const data=await res.json();
+    data._recipient=recipient;
     lastQuote=data;
     const rawOut=data.steps?.bridge?.outputAmount??data.expectedOutput??data.outputAmount??'0';
     let out=0; try{out=Number(BigInt(rawOut))/1e6;}catch{out=parseFloat(rawOut)/1e6||0;}
@@ -176,13 +188,18 @@ async function execute() {
   const amount=parseFloat(document.getElementById('input-amount').value)||0;
   if(amount<=0)return;
   if(fromBal!=null&&amount>fromBal)return;
+  // Unknown price (usdVal 0) must BLOCK, not bypass, the minimum check —
+  // a sub-minimum deposit is discarded by Polymarket.
   const usdVal=amount*(prices[TOKENS[fromTokenIdx].symbol]||0);
-  if(usdVal<PM_MIN_DEPOSIT&&usdVal>0)return;
+  if(usdVal<PM_MIN_DEPOSIT)return;
   const addr=getPmAddr();
   if(!addr)return;
   try {
-    if(!lastQuote) await fetchQuote(amount);
+    // Re-quote if missing or built for a different recipient — the swapTx
+    // calldata embeds the recipient, so a stale quote sends funds elsewhere.
+    if(!lastQuote||(lastQuote._recipient||'').toLowerCase()!==addr.toLowerCase()) await fetchQuote(amount);
     if(!lastQuote) throw new Error('No quote');
+    if((lastQuote._recipient||'').toLowerCase()!==addr.toLowerCase()) throw new Error('Quote recipient mismatch');
     const btn=document.getElementById('action-btn');
     if(lastQuote.approvalTxns?.length){
       btn.textContent='Approving...';
@@ -195,13 +212,21 @@ async function execute() {
     btn.textContent='Bridging...';
     document.getElementById('tx-text').textContent='Bridging to Polygon...';
     // Poll fill
-    for(let i=0;i<120;i++){
-      try{const r=await fetch(`${ACROSS_API}/deposit/status?originChainId=${CHAINS[fromChainIdx].id}&depositTxHash=${hash}`);const d=await r.json();if(d.status==='filled')break;}catch{}
-      await new Promise(r=>setTimeout(r,2000));
+    let filled=false;
+    for(let i=0;i<120&&!filled;i++){
+      try{const r=await fetch(`${ACROSS_API}/deposit/status?originChainId=${CHAINS[fromChainIdx].id}&depositTxHash=${hash}`);const d=await r.json();if(d.status==='filled')filled=true;}catch{}
+      if(!filled)await new Promise(r=>setTimeout(r,2000));
     }
     document.getElementById('tx-status').classList.add('hidden');
-    document.getElementById('tx-done').classList.remove('hidden');
-    btn.textContent='Deposit complete!';
+    if(filled){
+      document.getElementById('tx-done').classList.remove('hidden');
+      btn.textContent='Deposit complete!';
+    }else{
+      // Don't claim success for a fill that was never confirmed
+      document.getElementById('tx-text').textContent='Still pending — the bridge has not confirmed yet. Check back in a few minutes.';
+      document.getElementById('tx-status').classList.remove('hidden');
+      btn.textContent='Bridge pending...';
+    }
     // Save to history
     try{const k='sage_tx_'+(walletAddress||'').toLowerCase();const h=JSON.parse(localStorage.getItem(k)||'[]');h.unshift({type:'bridge',summary:`Polymarket deposit: ${amount} ${TOKENS[fromTokenIdx].symbol} → USDC`,fromToken:TOKENS[fromTokenIdx].symbol,toToken:'USDC',fromChain:CHAINS[fromChainIdx].name,toChain:'Polygon',fromChainId:CHAINS[fromChainIdx].id,amount:String(amount),timestamp:Date.now(),txHash:hash});if(h.length>20)h.length=20;localStorage.setItem(k,JSON.stringify(h));}catch{}
     saveAddress(addr);
@@ -295,8 +320,6 @@ function fmt(n){if(n>=1000)return n.toLocaleString('en-US',{maximumFractionDigit
   });
 })();
 
-function toggleMobileMenu() { document.getElementById('mobile-menu').classList.toggle('hidden'); }
-function closeMobileMenu(e) { if (e.target === document.getElementById('mobile-menu')) document.getElementById('mobile-menu').classList.add('hidden'); }
 
 // ── Event delegation & input listeners ──────────────────────────────────────
 document.addEventListener('click', function(e) {

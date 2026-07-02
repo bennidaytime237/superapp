@@ -34,18 +34,19 @@ export default async function handler(req, res) {
         destinationChainId: route.destinationChainId,
         amount: route.amount,
       });
-      const r = await fetchWithRetry(`${BASE}?${params}`);
+      const r = await fetchWithRetry(`${BASE}?${params}`, {}, { retries: 2, timeout: 4000 });
       if (!r.ok) { result[route.label] = null; return; }
       const data = await r.json();
-      // Try known field names for estimated fill time
-      const secs = data.estimatedFillTimeSec
-        || data.estimatedFillTime
-        || data.expectedFillTimeSec
-        || data.expectedFillTime
-        || data.fillTime
-        || data.estimatedTime
-        || null;
-      result[route.label] = secs;
+      // Try known field names for estimated fill time. Coerce to Number so
+      // both numeric and numeric-string payloads work; a legitimate 0 must
+      // not be dropped, and non-numeric values must not leak to clients.
+      const fields = ['estimatedFillTimeSec', 'estimatedFillTime', 'expectedFillTimeSec', 'expectedFillTime', 'fillTime', 'estimatedTime'];
+      const secs = fields
+        .map(k => data[k])
+        .filter(v => v !== null && v !== undefined && v !== '')
+        .map(Number)
+        .find(Number.isFinite);
+      result[route.label] = secs ?? null;
     } catch (e) {
       result[route.label] = null;
     }

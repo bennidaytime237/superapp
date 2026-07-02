@@ -1,7 +1,16 @@
 import { z } from 'zod';
 import { applyCors } from './_cors.js';
+import { fetchWithRetry } from './_fetch.js';
 import { isValidAddress } from './_eth-utils.js';
 import { CHAIN_NAMES, TOKEN_MAP } from './_chains.js';
+
+// Lowercase-keyed, prototype-free copy of TOKEN_MAP: O(1) case-insensitive
+// lookups, and upstream-supplied strings like "__proto__" can't hit inherited
+// Object members.
+const TOKEN_MAP_LOWER = Object.create(null);
+for (const [addr, meta] of Object.entries(TOKEN_MAP)) {
+  TOKEN_MAP_LOWER[addr.toLowerCase()] = meta;
+}
 
 const DepositRaw = z.object({
   depositTxHash:         z.string().nullish(),
@@ -35,18 +44,15 @@ const DepositRaw = z.object({
 const BRIDGE2 = '0x2Df1c51E09aECF9cacB7bc98cB1742757f163dF7'.toLowerCase();
 
 function resolveToken(address, symbolHint) {
-  // Try TOKEN_MAP first for precise symbol + decimals
+  // Try the token map first for precise symbol + decimals
   if (address) {
-    if (TOKEN_MAP[address]) return TOKEN_MAP[address];
-    const lower = address.toLowerCase();
-    for (const [k, v] of Object.entries(TOKEN_MAP)) {
-      if (k.toLowerCase() === lower) return v;
-    }
+    const known = TOKEN_MAP_LOWER[address.toLowerCase()];
+    if (known) return known;
   }
   // Use symbol from API response if available, with best-guess decimals
   if (symbolHint) {
     const upper = symbolHint.toUpperCase();
-    const dec6 = ['USDC', 'USDT', 'USDC.E', 'USDC.e', 'USDS'];
+    const dec6 = ['USDC', 'USDT', 'USDC.E', 'USDS'];
     const dec8 = ['WBTC', 'TBTC'];
     return { symbol: symbolHint, decimals: dec6.includes(upper) ? 6 : dec8.includes(upper) ? 8 : 18 };
   }
@@ -75,37 +81,16 @@ export default async function handler(req, res) {
 
   const url = `https://app.across.to/api/deposits?address=${address.toLowerCase()}&limit=25&status=filled`;
   let data = null;
-  let lastErr = null;
 
-  // Retry with backoff on 429
-  for (let attempt = 0; attempt < 3; attempt++) {
-    try {
-      if (attempt > 0) await new Promise(r => setTimeout(r, 1000 * attempt));
-      const ctrl = new AbortController();
-      const t = setTimeout(() => ctrl.abort(), 10000);
-      const response = await fetch(url, {
-        signal: ctrl.signal,
-        headers: { 'Accept': 'application/json' },
-      });
-      clearTimeout(t);
-      if (response.status === 429) {
-        lastErr = `429 rate limited (attempt ${attempt + 1})`;
-        continue;
-      }
-      if (!response.ok) {
-        const errBody = await response.text().catch(() => '');
-        lastErr = `${response.status}: ${errBody.slice(0, 200)}`;
-        break;
-      }
-      data = await response.json();
-      break;
-    } catch (e) {
-      lastErr = e.message;
+  try {
+    const response = await fetchWithRetry(url, { headers: { 'Accept': 'application/json' } }, { retries: 3, timeout: 8000 });
+    if (!response.ok) {
+      const errBody = await response.text().catch(() => '');
+      throw new Error(`${response.status}: ${errBody.slice(0, 200)}`);
     }
-  }
-
-  if (!data) {
-    console.error('All Across endpoints failed. Last error:', lastErr);
+    data = await response.json();
+  } catch (e) {
+    console.error('Across deposits fetch failed:', e.message);
     return res.status(502).json({ error: 'Could not reach Across API', deposits: [] });
   }
 
@@ -129,20 +114,22 @@ export default async function handler(req, res) {
     const fromChainId = d.originChainId || d.sourceChainId;
     const toChainId = d.destinationChainId || d.destChainId;
     const recipient = (d.recipient || '').toLowerCase();
-    let toChain = CHAIN_NAMES[toChainId] || `Chain ${toChainId}`;
+    let toChain = toChainId == null ? 'Unknown chain' : (CHAIN_NAMES[toChainId] || `Chain ${toChainId}`);
     if (recipient === BRIDGE2) toChain = 'Hyperliquid';
 
     const inputAmt = formatAmount(d.inputAmount || d.amount, inToken.decimals);
     const outputAmt = formatAmount(d.outputAmount, outToken.decimals);
-    const inputNum = parseFloat((inputAmt || '0').replace(/,/g, ''));
-    const outputNum = parseFloat((outputAmt || '0').replace(/,/g, ''));
 
     const depositMs = toMs(d.depositBlockTimestamp) || toMs(d.quoteTimestamp) || toMs(d.depositDate) || 0;
     const fillMs = toMs(d.fillBlockTimestamp) || 0;
     const fillDuration = (fillMs && depositMs && fillMs > depositMs) ? Math.round((fillMs - depositMs) / 1000) : null;
 
-    // Detect Sage transactions via depositor metadata or known patterns
-    const isSage = !!(d.message && d.message !== '0x') || false;
+    // Detect Sage transactions via deposit message metadata
+    const isSage = !!(d.message && d.message !== '0x');
+
+    const bridgeFee = parseFloat(d.bridgeFeeUsd);
+    const swapFee = parseFloat(d.swapFeeUsd);
+    const hasFeeData = Number.isFinite(bridgeFee) || Number.isFinite(swapFee);
 
     return {
       type: 'bridge',
@@ -152,7 +139,7 @@ export default async function handler(req, res) {
       toToken: outToken.symbol,
       amount: inputAmt,
       outputAmount: outputAmt,
-      fromChain: CHAIN_NAMES[fromChainId] || `Chain ${fromChainId}`,
+      fromChain: fromChainId == null ? 'Unknown chain' : (CHAIN_NAMES[fromChainId] || `Chain ${fromChainId}`),
       toChain,
       fromChainId,
       toChainId,
@@ -161,9 +148,9 @@ export default async function handler(req, res) {
       timestamp: depositMs,
       fillDuration,
       status: d.status || 'filled',
-      bridgeFeeUsd: d.bridgeFeeUsd || null,
-      swapFeeUsd: d.swapFeeUsd || null,
-      totalFeeUsd: ((parseFloat(d.bridgeFeeUsd)||0) + (parseFloat(d.swapFeeUsd)||0)) || null,
+      bridgeFeeUsd: d.bridgeFeeUsd ?? null,
+      swapFeeUsd: d.swapFeeUsd ?? null,
+      totalFeeUsd: hasFeeData ? (Number.isFinite(bridgeFee) ? bridgeFee : 0) + (Number.isFinite(swapFee) ? swapFee : 0) : null,
       isSage,
     };
   });

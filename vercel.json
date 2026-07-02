@@ -26,7 +26,7 @@
       "headers": [
         {
           "key": "Content-Security-Policy",
-          "value": "default-src 'self'; script-src 'self' 'sha256-/2GAu7IsS3jaVtqmsaOOSdGQSwZ7u0uA3M9pTe6YuCU='; style-src 'self' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: https://icons.llamao.fi https://raw.githubusercontent.com; connect-src 'self' https://app.across.to https://api.coingecko.com https://coins.llama.fi; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'; upgrade-insecure-requests"
+          "value": "default-src 'self'; script-src 'self' 'sha256-NiJCxGAkCstXUkg4pq3kj/RNJZ+cugQB53NEnNHvbMI='; style-src 'self' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: https://icons.llamao.fi https://raw.githubusercontent.com; connect-src 'self' https://app.across.to https://api.coingecko.com https://coins.llama.fi; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'; upgrade-insecure-requests"
         }
       ]
     }

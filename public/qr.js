@@ -337,9 +337,18 @@
       if (c < 0x80) out.push(c);
       else if (c < 0x800) { out.push(0xC0 | (c >> 6), 0x80 | (c & 0x3F)); }
       else if (c >= 0xD800 && c <= 0xDBFF) {
-        const c2 = str.charCodeAt(++i);
-        c = 0x10000 + ((c & 0x3FF) << 10) + (c2 & 0x3FF);
-        out.push(0xF0 | (c >> 18), 0x80 | ((c >> 12) & 0x3F), 0x80 | ((c >> 6) & 0x3F), 0x80 | (c & 0x3F));
+        const c2 = str.charCodeAt(i + 1);
+        if (c2 >= 0xDC00 && c2 <= 0xDFFF) {
+          i++;
+          c = 0x10000 + ((c & 0x3FF) << 10) + (c2 & 0x3FF);
+          out.push(0xF0 | (c >> 18), 0x80 | ((c >> 12) & 0x3F), 0x80 | ((c >> 6) & 0x3F), 0x80 | (c & 0x3F));
+        } else {
+          // Unpaired high surrogate — encode U+FFFD instead of corrupting the payload
+          out.push(0xEF, 0xBF, 0xBD);
+        }
+      } else if (c >= 0xDC00 && c <= 0xDFFF) {
+        // Unpaired low surrogate
+        out.push(0xEF, 0xBF, 0xBD);
       } else { out.push(0xE0 | (c >> 12), 0x80 | ((c >> 6) & 0x3F), 0x80 | (c & 0x3F)); }
     }
     return out;

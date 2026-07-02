@@ -74,6 +74,7 @@ async function connectWallet() {
   if (!window.ethereum) { alert('Install MetaMask'); return; }
   try {
     const accs = await window.ethereum.request({ method:'eth_requestAccounts' });
+    localStorage.removeItem('sage_disconnected');
     walletAddress = accs[0];
     document.getElementById('connect-label').textContent = formatAddr(walletAddress);
     resolveWalletENS(walletAddress);
@@ -84,9 +85,13 @@ async function connectWallet() {
 
 async function fetchBalance() {
   if (!walletAddress) return;
+  const addr = walletAddress;
   try {
-    const res = await fetch(`/api/balances?address=${walletAddress}`);
-    cachedBalances = await res.json();
+    const res = await fetch(`/api/balances?address=${encodeURIComponent(addr)}&_t=${Date.now()}`);
+    if (!res.ok) throw new Error('API error ' + res.status);
+    const data = await res.json();
+    if (walletAddress !== addr) return;
+    cachedBalances = data;
     const bal = cachedBalances[sourceChain().chainId]?.[sourceToken().symbol] || 0;
     sourceBalance = bal;
     document.getElementById('source-balance').textContent = `Balance: ${fmt(bal)} ${sourceToken().symbol}`;
@@ -270,7 +275,7 @@ async function executeGas() {
     if (!inputAddr) throw new Error('No input token address');
 
     // Fetch all quotes in parallel
-    const amountPerWei = BigInt(Math.floor(perChain * 10 ** decimals)).toString();
+    const amountPerWei = toUnits(perChain, decimals);
     const quotePromises = selected.map(async (dest) => {
       const outputAddr = dest.gasWrap;
       if (!outputAddr) return null;
@@ -288,21 +293,49 @@ async function executeGas() {
     const quotes = (await Promise.all(quotePromises)).filter(Boolean);
     if (quotes.length === 0) throw new Error('No quotes available');
 
-    // Handle approvals first (all go to same spender, so one approval is enough)
+    // Handle approvals first. Every quote's approval is approve(spender,
+    // amountPerWei) — byte-identical — but approve() OVERWRITES the allowance,
+    // so N bridges need ONE approval for N × amountPerWei, not N copies (or a
+    // deduped single one) that each leave allowance = amountPerWei and make
+    // bridges 2..N revert. Sum the amounts per (chain, token, spender) and
+    // send one patched approval per group.
     const allApprovals = quotes.flatMap(q => q.approvalTxns || []);
     if (allApprovals.length > 0) {
       btn.textContent = 'Approving...';
-      // Dedupe approvals by spender (usually same contract)
-      const seen = new Set();
+      const APPROVE_SELECTOR = '0x095ea7b3';
+      const MAX_UINT256 = (1n << 256n) - 1n;
+      const groups = new Map();
+      const passthrough = [];
       for (const tx of allApprovals) {
-        const key = tx.to + tx.data;
-        if (seen.has(key)) continue;
-        seen.add(key);
-        await sendTx(tx);
+        const data = (tx.data || '').toLowerCase();
+        if (data.startsWith(APPROVE_SELECTOR) && data.length === 2 + 8 + 64 + 64) {
+          const spender = data.slice(10, 74);
+          const amount = BigInt('0x' + data.slice(74));
+          if (amount === 0n) {
+            // approve(spender, 0) is a reset (USDT-style tokens require it
+            // before a new nonzero allowance) — it must be sent as-is, in
+            // order, never folded into a sum.
+            passthrough.push(tx);
+            continue;
+          }
+          const key = `${tx.chainId}|${(tx.to || '').toLowerCase()}|${spender}`;
+          const g = groups.get(key);
+          if (g) g.total += amount;
+          else groups.set(key, { tx, spender, total: amount });
+        } else {
+          passthrough.push(tx); // unknown shape — send as-is rather than guess
+        }
+      }
+      // Resets first (preserving order), then one summed approval per group.
+      for (const tx of passthrough) { await sendTx(tx); }
+      for (const { tx, spender, total } of groups.values()) {
+        // Summing N unlimited approvals must not overflow the uint256 field
+        const capped = total > MAX_UINT256 ? MAX_UINT256 : total;
+        const data = APPROVE_SELECTOR + spender + capped.toString(16).padStart(64, '0');
+        await sendTx({ ...tx, data });
       }
     }
 
-    // Bundle all swapTx into one Multicall3 call
     const swapTxs = quotes.map(q => q.swapTx).filter(Boolean);
     if (swapTxs.length === 0) throw new Error('No swap transactions');
 
@@ -321,7 +354,7 @@ async function executeGas() {
 
     // Save to history
     try {
-      const historyKey = 'sage_tx_' + (walletAddress || 'unknown').toLowerCase();
+      const historyKey = 'sage_tx_' + (walletAddress || '').toLowerCase();
       const history = JSON.parse(localStorage.getItem(historyKey) || '[]');
       history.unshift({
         type:'bridge', summary:`Gas top-up: ${total} ${t.symbol} → ${selected.length} chains`,
@@ -388,8 +421,6 @@ function fmt(n) {
   });
 })();
 
-function toggleMobileMenu() { document.getElementById('mobile-menu').classList.toggle('hidden'); }
-function closeMobileMenu(e) { if (e.target === document.getElementById('mobile-menu')) document.getElementById('mobile-menu').classList.add('hidden'); }
 
 // ── Event delegation & input listeners ──────────────────────────────────────
 document.addEventListener('click', function(e) {
@@ -400,10 +431,9 @@ document.addEventListener('click', function(e) {
   switch (action) {
     case 'open-source-picker':  openSourcePicker(); break;
     case 'close-source-picker': closeSourcePicker(); break;
-    case 'set-dest':    setDest(Number(arg)); break;
-    case 'set-gas-usd': setGasUsd(Number(arg)); break;
+    case 'select-all':  selectAll(); break;
+    case 'select-none': selectNone(); break;
     case 'execute-gas': executeGas(); break;
-    case 'set-max':     setMax(); break;
   }
 });
 document.addEventListener('DOMContentLoaded', function() {

@@ -17,9 +17,11 @@ const ALLOWED = (process.env.ALLOWED_ORIGINS || '')
  */
 export function applyCors(req, res) {
   const origin = req.headers.origin;
+  // Vary must be unconditional: responses are edge-cached (s-maxage), and a copy
+  // cached without Vary would serve one origin's CORS headers to every origin.
+  res.setHeader('Vary', 'Origin');
   if (origin && ALLOWED.includes(origin)) {
     res.setHeader('Access-Control-Allow-Origin', origin);
-    res.setHeader('Vary', 'Origin');
   }
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');

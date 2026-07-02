@@ -3,6 +3,13 @@ const BRIDGE2 = '0x2Df1c51E09aECF9cacB7bc98cB1742757f163dF7';
 const USDC_ARB = '0xaf88d065e77c8cC2239327C5EDb3A432268e5831';
 const DEST_CHAIN = 42161;
 
+// Deposits are disabled: this flow bridged with recipient = Bridge2, but an
+// Across fill delivers the USDC from the relayer/SpokePool, and Bridge2
+// credits the SENDER of the transfer — the user's Hyperliquid account never
+// receives the funds. Do not re-enable without Across's proper Hyperliquid
+// integration (embedded actions + batchedDepositWithPermit).
+const DEPOSITS_DISABLED = true;
+
 const CHAINS = [
   { id:1,     name:'Ethereum', slug:'ethereum' },
   { id:42161, name:'Arbitrum', slug:'arbitrum' },
@@ -35,18 +42,26 @@ const TOKENS = [
 let walletAddress=null, fromTokenIdx=1, fromChainIdx=0, fromBal=null, cachedBalances=null, prices={}, lastQuote=null, quoteTimer=null;
 
 async function connectWallet(){
-  if(!window.ethereum){alert('Install MetaMask');return;}
-  const accs=await window.ethereum.request({method:'eth_requestAccounts'});
-  walletAddress=accs[0];
-  document.getElementById('connect-label').textContent=formatAddr(walletAddress);
-  resolveWalletENS(walletAddress);
-  fetchBalance();updateBtn();
+  if(!window.ethereum){showNoWalletMessage();return;}
+  try{
+    const accs=await window.ethereum.request({method:'eth_requestAccounts'});
+    localStorage.removeItem('sage_disconnected');
+    walletAddress=accs[0];
+    document.getElementById('connect-label').textContent=formatAddr(walletAddress);
+    resolveWalletENS(walletAddress);
+    fetchBalance();updateBtn();
+  }catch(e){
+    if(e&&e.code!==4001)console.warn('Wallet connect failed:',e.message||e);
+  }
 }
 
 async function fetchBalance(){
   if(!walletAddress)return;
+  const addr=walletAddress;
   try{
-    const res=await fetch(`/api/balances?address=${walletAddress}&_t=${Date.now()}`);
+    const res=await fetch(`/api/balances?address=${encodeURIComponent(addr)}&_t=${Date.now()}`);
+    if(!res.ok)throw new Error('API error '+res.status);
+    if(walletAddress!==addr)return;
     cachedBalances=await res.json();
     const t=TOKENS[fromTokenIdx],cid=CHAINS[fromChainIdx].id;
     const bal=cachedBalances?.[cid]?.[t.symbol]||0;
@@ -77,15 +92,18 @@ function updateBtn(){
   const minErr=document.getElementById('min-error');
   const activeBtn='w-full py-4 bg-surface-container-lowest text-hl-green border border-hl-green/30 rounded-full font-black text-lg active:scale-[0.98] transition-transform hover:border-hl-green/60';
   const dimBtn='w-full py-4 bg-surface-container text-on-surface-variant/60 border border-outline-variant/15 rounded-full font-black text-lg';
+  if(DEPOSITS_DISABLED){btn.textContent='Deposits temporarily unavailable';btn.className=dimBtn;btn.disabled=true;minErr.classList.add('hidden');return;}
   if(!walletAddress){btn.textContent='Connect Wallet';btn.className=activeBtn;minErr.classList.add('hidden');}
   else if(amt<=0){btn.textContent='Enter amount';btn.className=dimBtn;minErr.classList.add('hidden');}
   else if(fromBal!=null&&amt>fromBal){minErr.classList.add('hidden');btn.textContent='Insufficient balance';btn.className=dimBtn;}
-  else if(usdVal<5&&usdVal>0){minErr.classList.remove('hidden');btn.textContent='Amount too low';btn.className=dimBtn;}
+  else if(usdVal<5){minErr.classList.remove('hidden');btn.textContent='Amount too low';btn.className=dimBtn;}
   else{minErr.classList.add('hidden');btn.textContent='Deposit to Hyperliquid';btn.className=activeBtn;}
 }
 
 function onAmountChange(){
   clearTimeout(quoteTimer);lastQuote=null;updateBtn();
+  // No point quoting a flow that cannot execute
+  if(DEPOSITS_DISABLED)return;
   const val=parseFloat(document.getElementById('input-amount').value)||0;
   if(val<=0){document.getElementById('output-amount').textContent='--';document.getElementById('output-amount-usd').textContent='';document.getElementById('fee-display').textContent='--';return;}
   const p=prices[TOKENS[fromTokenIdx].symbol]||0;
@@ -99,7 +117,7 @@ async function fetchQuote(amount){
     const t=TOKENS[fromTokenIdx],c=CHAINS[fromChainIdx];
     const inputAddr=t.native?t.wrapAddresses?.[c.id]:t.addresses[c.id];
     if(!inputAddr)return;
-    const amountWei=BigInt(Math.floor(amount*10**t.decimals)).toString();
+    const amountWei=toUnits(amount,t.decimals);
     const params=new URLSearchParams({
       tradeType:'exactInput',amount:amountWei,inputToken:inputAddr,outputToken:USDC_ARB,
       originChainId:c.id,destinationChainId:DEST_CHAIN,
@@ -125,12 +143,15 @@ async function fetchQuote(amount){
 }
 
 async function execute(){
+  if(DEPOSITS_DISABLED)return;
   if(!walletAddress){connectWallet();return;}
   const amount=parseFloat(document.getElementById('input-amount').value)||0;
   if(amount<=0)return;
   if(fromBal!=null&&amount>fromBal)return;
+  // Unknown price must block, not bypass, the $5 Bridge2 minimum —
+  // sub-minimum deposits are discarded by Hyperliquid.
   const usdVal=amount*(prices[TOKENS[fromTokenIdx].symbol]||0);
-  if(usdVal<5&&usdVal>0)return;
+  if(usdVal<5)return;
   try{
     if(!lastQuote)await fetchQuote(amount);
     if(!lastQuote)throw new Error('No quote');
@@ -145,13 +166,20 @@ async function execute(){
     const hash=await sendTx(lastQuote.swapTx);
     btn.textContent='Bridging...';
     document.getElementById('tx-text').textContent='Bridging to Hyperliquid...';
-    for(let i=0;i<120;i++){
-      try{const r=await fetch(`${ACROSS_API}/deposit/status?originChainId=${CHAINS[fromChainIdx].id}&depositTxHash=${hash}`);const d=await r.json();if(d.status==='filled')break;}catch{}
-      await new Promise(r=>setTimeout(r,2000));
+    let filled=false;
+    for(let i=0;i<120&&!filled;i++){
+      try{const r=await fetch(`${ACROSS_API}/deposit/status?originChainId=${CHAINS[fromChainIdx].id}&depositTxHash=${hash}`);const d=await r.json();if(d.status==='filled')filled=true;}catch{}
+      if(!filled)await new Promise(r=>setTimeout(r,2000));
     }
     document.getElementById('tx-status').classList.add('hidden');
-    document.getElementById('tx-done').classList.remove('hidden');
-    btn.textContent='Deposit complete!';
+    if(filled){
+      document.getElementById('tx-done').classList.remove('hidden');
+      btn.textContent='Deposit complete!';
+    }else{
+      document.getElementById('tx-text').textContent='Still pending — the bridge has not confirmed yet. Check back in a few minutes.';
+      document.getElementById('tx-status').classList.remove('hidden');
+      btn.textContent='Bridge pending...';
+    }
     try{
       const k='sage_tx_'+(walletAddress||'').toLowerCase();
       const h=JSON.parse(localStorage.getItem(k)||'[]');
@@ -246,8 +274,6 @@ function fmt(n){if(n>=1000)return n.toLocaleString('en-US',{maximumFractionDigit
   });
 })();
 
-function toggleMobileMenu() { document.getElementById('mobile-menu').classList.toggle('hidden'); }
-function closeMobileMenu(e) { if (e.target === document.getElementById('mobile-menu')) document.getElementById('mobile-menu').classList.add('hidden'); }
 
 // ── Event delegation & input listeners ──────────────────────────────────────
 document.addEventListener('click', function(e) {

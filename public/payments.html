@@ -7,6 +7,7 @@
 (function(){var t=localStorage.getItem('sage-theme')||(window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');document.documentElement.className=t;})();
 </script>
 <title>Payments - Sage</title>
+<meta name="description" content="Pay any address or ENS name and create payment request links with Sage."/>
 <link rel="icon" type="image/svg+xml" href="favicon.svg"/>
 <link rel="stylesheet" href="tailwind.output.css"/>
 <link rel="stylesheet" href="page-styles.css"/>
@@ -92,7 +93,7 @@
   <div id="sidebar-wallet" class="mt-auto p-4 bg-surface-container rounded-3xl">
     <div id="sidebar-disconnected">
       <p class="text-xs text-on-surface-variant mb-3 text-center tracking-wide">Connect your wallet to get started</p>
-      <button onclick="connectWallet()" class="w-full py-3 px-4 bg-primary text-on-primary rounded-full text-sm font-bold tracking-wide shadow-sm active:scale-[0.98] transition-transform">
+      <button data-action="connect-wallet" class="w-full py-3 px-4 bg-primary text-on-primary rounded-full text-sm font-bold tracking-wide shadow-sm active:scale-[0.98] transition-transform">
         Connect Wallet
       </button>
     </div>
@@ -106,7 +107,7 @@
           <p id="sidebar-addr" class="text-xs text-on-surface-variant font-mono">0x...</p>
         </div>
       </div>
-      <button onclick="window.location.href='bridge.html'" class="w-full py-3 px-4 bg-primary text-on-primary rounded-full text-sm font-bold shadow-sm active:scale-[0.98] transition-transform">
+      <button data-action="navigate" data-arg="bridge.html" class="w-full py-3 px-4 bg-primary text-on-primary rounded-full text-sm font-bold shadow-sm active:scale-[0.98] transition-transform">
         Bridge
       </button>
     </div>
@@ -186,7 +187,7 @@
     </div>
 
     <div class="mb-5">
-      <label class="text-sm font-bold text-on-surface mb-2 block">Recipient address</label>
+      <label for="recipient" class="text-sm font-bold text-on-surface mb-2 block">Recipient address</label>
       <input id="recipient" type="text" placeholder="0x... or name.eth" class="w-full px-4 py-3 rounded-xl border border-primary/20 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-primary/40 bg-surface-container-lowest text-on-surface"/>
       <p id="addr-error" class="hidden text-xs text-error mt-1">Invalid address</p>
       <p id="ens-resolved" class="hidden text-xs text-primary mt-1"></p>
@@ -197,8 +198,8 @@
       <div class="flex items-end justify-between gap-4">
         <button data-action="open-picker" data-arg="pay" class="inline-flex items-center gap-2 bg-surface-container-low pl-1.5 pr-4 py-1.5 rounded-full border border-outline-variant/10 hover:bg-surface-container-high transition-colors">
           <div class="relative">
-            <img id="pay-token-icon" src="" class="w-8 h-8 rounded-full"/>
-            <img id="pay-chain-icon" src="" class="w-5 h-5 rounded-full absolute -right-1 -bottom-0.5 border-2 border-surface-container-lowest bg-surface-container-lowest"/>
+            <img id="pay-token-icon" src="" class="w-8 h-8 rounded-full" alt=""/>
+            <img id="pay-chain-icon" src="" class="w-5 h-5 rounded-full absolute -right-1 -bottom-0.5 border-2 border-surface-container-lowest bg-surface-container-lowest" alt=""/>
           </div>
           <span id="pay-label" class="font-bold text-sm ml-1">ETH</span>
           <span class="material-symbols-outlined text-base text-on-surface-variant">expand_more</span>
@@ -250,8 +251,8 @@
       <button data-action="open-picker" data-arg="request" class="w-full flex items-center justify-between px-4 py-3 bg-surface-container-lowest rounded-xl border border-outline-variant/10 hover:border-primary/30 transition-colors">
         <div class="flex items-center gap-3">
           <div class="relative">
-            <img id="req-token-icon" src="" class="w-8 h-8 rounded-full"/>
-            <img id="req-chain-icon" src="" class="w-5 h-5 rounded-full absolute -right-1 -bottom-0.5 border-2 border-surface-container-lowest bg-surface-container-lowest"/>
+            <img id="req-token-icon" src="" class="w-8 h-8 rounded-full" alt=""/>
+            <img id="req-chain-icon" src="" class="w-5 h-5 rounded-full absolute -right-1 -bottom-0.5 border-2 border-surface-container-lowest bg-surface-container-lowest" alt=""/>
           </div>
           <span id="req-label" class="font-bold text-sm">USDC on Base</span>
         </div>
@@ -260,7 +261,7 @@
     </div>
 
     <div class="mb-5">
-      <label class="text-sm font-bold text-on-surface mb-2 block">Amount</label>
+      <label for="amount-input" class="text-sm font-bold text-on-surface mb-2 block">Amount</label>
       <div class="bg-surface-container-lowest rounded-xl border border-outline-variant/10 p-5">
         <input id="amount-input" type="number" placeholder="0.00" class="w-full text-center text-5xl font-black text-on-background border-none focus:ring-0 p-0 bg-transparent placeholder:text-on-surface-variant/15"/>
         <div class="flex justify-center gap-2 mt-4">
@@ -273,7 +274,7 @@
     </div>
 
     <div class="mb-6">
-      <label class="text-sm font-bold text-on-surface mb-2 block">Add a note (optional)</label>
+      <label for="note-input" class="text-sm font-bold text-on-surface mb-2 block">Add a note (optional)</label>
       <textarea id="note-input" rows="3" placeholder="What's this for?" class="w-full px-4 py-3 bg-surface-container-lowest rounded-xl border border-outline-variant/10 text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none"></textarea>
     </div>
 
@@ -344,7 +345,7 @@
       <span class="text-[10px] font-bold uppercase">Bridge</span>
     </a>
     <a class="flex flex-col items-center gap-0.5 px-4 py-2 bg-primary-container text-primary rounded-full active:scale-90 transition-transform" href="payments.html">
-      <span class="material-symbols-outlined text-xl">payments</span>
+      <span class="material-symbols-outlined text-xl">send</span>
       <span class="text-[10px] font-bold uppercase">Pay</span>
     </a>
     <button data-action="toggle-mobile-menu" class="flex flex-col items-center gap-0.5 px-4 py-2 text-on-surface-variant active:scale-90 transition-transform">

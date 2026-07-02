@@ -7,6 +7,7 @@
 (function(){var t=localStorage.getItem('sage-theme')||(window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');document.documentElement.className=t;})();
 </script>
 <title>Gas - Sage</title>
+<meta name="description" content="Top up gas on multiple chains at once from a single balance with Sage, powered by Across."/>
 <link rel="icon" type="image/svg+xml" href="favicon.svg"/>
 <link rel="stylesheet" href="tailwind.output.css"/>
 <link rel="stylesheet" href="page-styles.css"/>
@@ -91,7 +92,7 @@
   <div id="sidebar-wallet" class="mt-auto p-4 bg-surface-container rounded-3xl">
     <div id="sidebar-disconnected">
       <p class="text-xs text-on-surface-variant mb-3 text-center tracking-wide">Connect your wallet to get started</p>
-      <button onclick="connectWallet()" class="w-full py-3 px-4 bg-primary text-on-primary rounded-full text-sm font-bold tracking-wide shadow-sm active:scale-[0.98] transition-transform">
+      <button data-action="connect-wallet" class="w-full py-3 px-4 bg-primary text-on-primary rounded-full text-sm font-bold tracking-wide shadow-sm active:scale-[0.98] transition-transform">
         Connect Wallet
       </button>
     </div>
@@ -105,7 +106,7 @@
           <p id="sidebar-addr" class="text-xs text-on-surface-variant font-mono">0x...</p>
         </div>
       </div>
-      <button onclick="window.location.href='bridge.html'" class="w-full py-3 px-4 bg-primary text-on-primary rounded-full text-sm font-bold shadow-sm active:scale-[0.98] transition-transform">
+      <button data-action="navigate" data-arg="bridge.html" class="w-full py-3 px-4 bg-primary text-on-primary rounded-full text-sm font-bold shadow-sm active:scale-[0.98] transition-transform">
         Bridge
       </button>
     </div>
