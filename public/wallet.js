@@ -18,6 +18,16 @@ document.addEventListener('error', function(e) {
   }
 }, true); // capture phase — error doesn't bubble
 
+// Selector images get their src swapped as the user picks tokens/chains. If a
+// previous src 404'd (image hidden above), a later successful load must bring
+// the image back — and re-arm the fallback for the next swap.
+document.addEventListener('load', function(e) {
+  var img = e.target;
+  if (!img || img.tagName !== 'IMG' || !img.hasAttribute('data-img-fallback')) return;
+  if (img.style.display === 'none') img.style.display = '';
+  img.removeAttribute('data-fallback-applied');
+}, true); // capture phase — load on subresources doesn't bubble
+
 // ── Mobile menu (shared by all pages that render #mobile-menu) ───────────────
 function toggleMobileMenu() { document.getElementById('mobile-menu').classList.toggle('hidden'); }
 function closeMobileMenu(e) { if (e.target === document.getElementById('mobile-menu')) document.getElementById('mobile-menu').classList.add('hidden'); }

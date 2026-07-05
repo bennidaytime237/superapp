@@ -61,10 +61,8 @@ function sourceToken() { return SOURCE_TOKENS[sourceTokenIdx]; }
 function sourceChain() { return SOURCE_CHAINS[sourceChainIdx]; }
 
 function tokenIconUrl(token, chainId) {
-  if (token.native) return `${TW}/ethereum/assets/0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2/logo.png`;
-  const addr = token.addresses?.[chainId];
-  const slug = SOURCE_CHAINS.find(c=>c.chainId===chainId)?.slug || DEST_CHAINS.find(c=>c.chainId===chainId)?.slug;
-  if (addr && slug) return `${TW}/${slug}/assets/${addr}/logo.png`;
+  const local = tokenIconBySymbol(token.symbol);
+  if (local) return local;
   if (token.addresses?.[1]) return `${TW}/ethereum/assets/${token.addresses[1]}/logo.png`;
   return '';
 }
@@ -149,8 +147,8 @@ function filterSourceList() {
     const usdEl = bal>0 ? Safe.html`<span class="text-xs text-on-surface-variant">$${fmt(bal*p)}</span>` : Safe.html``;
     return Safe.html`<button data-ti="${ti}" data-ci="${ci}" class="src-pick w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-surface-container-low transition-colors text-left">
       <div class="relative flex-shrink-0">
-        <img src="${Safe.url(tokenIconUrl(t,c.chainId))}" class="w-10 h-10 rounded-full bg-surface-container"/>
-        <img src="${Safe.url(chainLogoUrl(c.chainId))}" class="w-5 h-5 rounded-full absolute -bottom-0.5 -right-0.5 border-2 border-surface-container-lowest bg-surface-container-lowest"/>
+        <img src="${Safe.url(tokenIconUrl(t,c.chainId))}" class="w-10 h-10 rounded-full bg-surface-container" data-img-fallback/>
+        <img src="${Safe.url(chainLogoUrl(c.chainId))}" class="w-5 h-5 rounded-full absolute -bottom-0.5 -right-0.5 border-2 border-surface-container-lowest bg-surface-container-lowest" data-img-fallback/>
       </div>
       <div class="flex-1"><p class="font-bold text-[15px] ${bal>0?'text-on-background':'text-on-surface-variant'}">${bal>0?fmt(bal)+' ':'0 '}${t.symbol}</p><p class="text-xs text-on-surface-variant">${t.name} · ${c.name}</p></div>
       ${usdEl}
@@ -197,13 +195,12 @@ function renderChains() {
     const active = c.selected && !isSelf;
     const sp = prices[sourceToken().symbol] || 0;
     const perUsd = active ? perChain * sp : 0;
-    const srcImg = `https://icons.llamao.fi/icons/chains/rsz_${c.slug}.jpg`;
-    const fallbackImg = `${TW}/${c.slug}/info/logo.png`;
+    const srcImg = chainLogoUrl(c.chainId);
     const sourceLabel = isSelf ? Safe.html`<p class="text-xs text-on-surface-variant">Source chain</p>` : Safe.html``;
     const usdLabel = active ? Safe.html`<p class="text-sm font-bold text-on-background">≈ $${fmt(perUsd)} of ${c.gas}</p>` : Safe.html``;
     const checkIcon = active ? Safe.html`<span class="material-symbols-outlined text-on-primary text-sm">check</span>` : Safe.html``;
     return Safe.html`<button data-chain-id="${c.chainId}" class="dest-chain-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-colors ${isSelf ? 'opacity-30 pointer-events-none' : active ? 'bg-surface-container-lowest border border-primary/20' : 'bg-surface-container-low border border-transparent hover:border-outline-variant/20'}">
-      <img src="${Safe.url(srcImg)}" data-fallback="${fallbackImg}" class="w-8 h-8 rounded-full dest-chain-img"/>
+      <img src="${Safe.url(srcImg)}" class="w-8 h-8 rounded-full" data-img-fallback/>
       <div class="flex-1 text-left">
         <p class="text-sm font-bold ${active ? 'text-on-background' : 'text-on-surface-variant'}">${c.name}</p>
         ${sourceLabel}
@@ -219,12 +216,6 @@ function renderChains() {
   Safe.setHTML(list, chainBtns);
   list.querySelectorAll('button.dest-chain-btn').forEach(btn => {
     btn.addEventListener('click', () => toggleChain(Number(btn.dataset.chainId)));
-  });
-  list.querySelectorAll('img.dest-chain-img').forEach(img => {
-    img.addEventListener('error', () => {
-      const fb = img.dataset.fallback;
-      if (fb && img.src !== fb) img.src = fb;
-    }, { once: true });
   });
 }
 

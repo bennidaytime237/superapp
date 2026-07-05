@@ -135,7 +135,7 @@ function renderAssets(){
   }
   const items=sweepItems.map((item,idx)=>{
     const icon=TOKEN_ICONS[item.symbol]||'';
-    const cicon=chainIconBySlug(item.chainSlug);
+    const cicon=chainIcon(item.chainId);
     const stateClass=item.done?'opacity-60':item.failed?'opacity-60':'';
     const checkClass=item.selected&&!item.done?'bg-primary border-primary':'bg-surface-container-lowest border-outline-variant/30';
     const statusIcon=item.done
@@ -146,7 +146,7 @@ function renderAssets(){
     return Safe.html`<button data-idx="${idx}" data-active="${item.done||item.failed?'0':'1'}" class="sweep-item w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl mb-2 bg-surface-container-lowest border border-outline-variant/10 text-left transition-colors hover:border-primary/20 ${stateClass}">
       <div class="relative flex-shrink-0">
         <img src="${Safe.url(icon)}" class="w-10 h-10 rounded-full bg-surface-container" data-img-fallback/>
-        <img src="${Safe.url(cicon)}" class="w-5 h-5 rounded-full absolute -bottom-0.5 -right-0.5 border-2 border-white"/>
+        <img src="${Safe.url(cicon)}" class="w-5 h-5 rounded-full absolute -bottom-0.5 -right-0.5 border-2 border-white" data-img-fallback/>
       </div>
       <div class="flex-1 min-w-0">
         <p class="font-bold text-sm text-on-background">${fmt(item.amount)} ${item.symbol}</p>

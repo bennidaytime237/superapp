@@ -140,8 +140,8 @@
     const items = rows.map(({ t, ti, c, ci, bal }) =>
       Safe.html`<button data-ti="${ti}" data-ci="${ci}" class="pick-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-surface-container-low transition-colors text-left">
         <div class="relative flex-shrink-0">
-          <img src="${Safe.url(TOKEN_ICONS[t.symbol] || '')}" class="w-9 h-9 rounded-full bg-surface-container"/>
-          <img src="${Safe.url(chainIcon(c.id))}" class="w-4 h-4 rounded-full absolute -bottom-0.5 -right-0.5 border-2 border-surface-container-lowest bg-surface-container-lowest"/>
+          <img src="${Safe.url(TOKEN_ICONS[t.symbol] || '')}" class="w-9 h-9 rounded-full bg-surface-container" data-img-fallback/>
+          <img src="${Safe.url(chainIcon(c.id))}" class="w-4 h-4 rounded-full absolute -bottom-0.5 -right-0.5 border-2 border-surface-container-lowest bg-surface-container-lowest" data-img-fallback/>
         </div>
         <div class="flex-1"><p class="font-bold text-sm text-on-surface">${bal > 0 ? fmt(bal) + ' ' : ''}${t.symbol}</p><p class="text-xs text-on-surface-variant">${t.name} · ${c.name}</p></div>
         <span class="material-symbols-outlined text-on-surface-variant text-base">chevron_right</span>
