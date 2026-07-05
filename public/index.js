@@ -22,7 +22,8 @@ const CHAINS = {
   232:   { name:'Lens',      slug:'lens%20network' },
 };
 function tokenIcon(symbol) {
-  if (TOKEN_ICON_MAP[symbol]) return TOKEN_ICON_MAP[symbol];
+  const local = tokenIconBySymbol(symbol);
+  if (local) return local;
   const ethAddr = TOKEN_ADDRS[symbol]?.[1];
   if (ethAddr) return `${TW}/ethereum/assets/${ethAddr}/logo.png`;
   return '';
@@ -394,7 +395,7 @@ function toggleAssetDrop(symbol) {
     const p = prices[symbol]?.usd || 0;
     rowItems.push(Safe.html`<div class="flex items-center justify-between px-4 py-2.5">
       <div class="flex items-center gap-2.5">
-        <img src="${Safe.url(chainIcon(Number(chainId)))}" class="w-5 h-5 rounded-full"/>
+        <img src="${Safe.url(chainIcon(Number(chainId)))}" class="w-5 h-5 rounded-full" data-img-fallback/>
         <span class="text-sm text-on-surface">${c.name}</span>
       </div>
       <div class="text-right">

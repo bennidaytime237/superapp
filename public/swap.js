@@ -66,10 +66,11 @@ const QUOTE_MAX_AGE_MS = 30000; // re-quote before executing anything older
 
 // ── Icon helpers ──
 function tokenIconUrl(token) {
-  if (TOKEN_ICON_MAP[token.symbol]) return TOKEN_ICON_MAP[token.symbol];
+  const local = tokenIconBySymbol(token.symbol);
+  if (local) return local;
   const ethAddr = token.addresses?.[1];
   if (ethAddr) return `${TW}/ethereum/assets/${ethAddr}/logo.png`;
-  return '';
+  return token.logoURI || '';
 }
 const chainLogoUrl = chainIcon;
 
@@ -176,7 +177,7 @@ function buildChainGrid(chainsToShow) {
   Safe.setHTML(grid, [allBtn].concat(list.map(c => {
     const active = modalChainFilter === c.id;
     return Safe.html`<button data-action="set-chain-filter" data-arg="${c.id}" class="flex flex-col items-center justify-center w-12 h-12 rounded-xl transition-colors ${active ? 'bg-primary' : 'bg-surface-container-low hover:bg-surface-container-high'}" title="${c.name}">
-        <img src="${Safe.url('https://icons.llamao.fi/icons/chains/rsz_' + c.slug + '.jpg')}" class="w-6 h-6 rounded-full" data-fallback-src="${Safe.url(TW + '/' + c.slug + '/info/logo.png')}" data-img-fallback/>
+        <img src="${Safe.url(chainLogoUrl(c.id) || c.logoURI || '')}" class="w-6 h-6 rounded-full" data-img-fallback/>
       </button>`;
   })));
   document.getElementById('chain-toggle').textContent = showAllChains ? 'Show less' : 'View all';
@@ -244,13 +245,13 @@ function renderModalRows(rows) {
     const isSelected = selToken.symbol === token.symbol && selChain.id === chain.id;
     const highlight = isSelected ? 'bg-primary-container/20' : 'hover:bg-surface-container-low';
     const tIcon = tokenIconUrl(token);
-    const cIcon = `https://icons.llamao.fi/icons/chains/rsz_${chain.slug}.jpg`;
+    const cIcon = chainLogoUrl(chain.id) || chain.logoURI || '';
     const usdEl = bal > 0 ? Safe.html`<span class="text-xs text-on-surface-variant font-medium">$${fmtNum(usdVal)}</span>` : Safe.html``;
 
     return Safe.html`<button data-tidx="${tIdx}" data-chain-id="${chain.id}" class="token-pick w-full flex items-center gap-3 px-4 py-3 ${highlight} rounded-xl transition-colors text-left" data-search="${token.symbol + ' ' + token.name + ' ' + chain.name}">
       <div class="relative flex-shrink-0">
         <img src="${Safe.url(tIcon)}" alt="${token.symbol}" class="w-10 h-10 rounded-full bg-surface-container" data-img-fallback/>
-        <img src="${Safe.url(cIcon)}" alt="${chain.name}" class="w-5 h-5 rounded-full absolute -bottom-0.5 -right-0.5 border-2 border-surface-container-lowest bg-surface-container-lowest"/>
+        <img src="${Safe.url(cIcon)}" alt="${chain.name}" class="w-5 h-5 rounded-full absolute -bottom-0.5 -right-0.5 border-2 border-surface-container-lowest bg-surface-container-lowest" data-img-fallback/>
       </div>
       <div class="flex-1 min-w-0">
         <p class="font-bold text-[15px] ${bal > 0 ? 'text-on-background' : 'text-on-surface-variant'}">${bal > 0 ? fmtNum(bal) + ' ' : '0 '}${token.symbol}</p>
@@ -1051,6 +1052,7 @@ async function loadRoutes() {
             decimals: t.decimals || 18,
             native: false,
             addresses: { [t.chainId]: t.address },
+            logoURI: typeof t.logoURI === 'string' ? t.logoURI : '',
           });
         }
       }
@@ -1063,7 +1065,8 @@ async function loadRoutes() {
           CHAINS.push({
             id: c.chainId,
             name: c.name || `Chain ${c.chainId}`,
-            slug: (c.name || '').toLowerCase().replace(/\s+/g, ''),
+            // Chains we don't bundle an icon for render via the API's logoURI.
+            logoURI: typeof c.logoURI === 'string' ? c.logoURI : '',
           });
         }
       }

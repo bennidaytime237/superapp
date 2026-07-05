@@ -33,15 +33,17 @@
     return Math.floor(diff / 86400) + "d ago";
   }
 
+  // Prefer the self-hosted icon set (CHAIN_ICONS / tokenIconBySymbol from
+  // config.js); the Across API's logoURI is the fallback for chains and
+  // tokens we don't bundle. Note the API field is logoURI, not logoUrl.
   function chainIcon(chain) {
-    if (chain && chain.logoUrl) return chain.logoUrl;
-    const name = chain ? chain.name.toLowerCase() : "unknown";
-    return "https://icons.llamao.fi/icons/chains/rsz_" + name + ".jpg";
+    if (!chain) return "";
+    return CHAIN_ICONS[chain.chainId] || chain.logoURI || "";
   }
 
   function tokenIcon(token) {
-    if (token && token.logoUrl) return token.logoUrl;
-    return "";
+    if (!token) return "";
+    return tokenIconBySymbol(token.symbol) || token.logoURI || "";
   }
 
   function tokenKey(chainId, address) {
